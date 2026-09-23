@@ -1,0 +1,101 @@
+{% extends "core_analysis/mf/_base.html" %}
+{% block title %}Sector Allocation{% endblock %}
+{% block heading %}Mutual Fund Sector Allocation{% endblock %}
+{% block subheading %}Each fund's equity book across the thirteen NEPSE sectors{% endblock %}
+
+{% block content %}
+<div class="mfd-bar">
+  <div class="mfd-field">
+    <label for="mf-month">Month Year</label>
+    <select id="mf-month" class="mfd-select"></select>
+  </div>
+  <div class="mfd-field">
+    <label for="mf-basis">Value Basis</label>
+    <select id="mf-basis" class="mfd-select">
+      <option value="book">Book Value</option>
+      <option value="market">Market Value</option>
+    </select>
+  </div>
+  <div class="mfd-spacer"></div>
+  <button type="button" class="mfd-btn" id="mf-export">Export CSV</button>
+</div>
+
+<div class="mfd-wrap"><table class="mfd-table" id="mf-table"></table></div>
+<div class="mfd-note" id="mf-note"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var M = window.MFD;
+  var table = null, sel = document.getElementById("mf-month"),
+      basis = document.getElementById("mf-basis");
+
+  function build(d) {
+    var cols = [
+      {key:"symbol", label:"MFs", fmt:function(r){
+        return r.symbol === "MF Inds" ? "MF Inds"
+          : '<a href="/mutual-fund/desk/financials/?symbol='+encodeURIComponent(r.symbol)+
+            '&month='+encodeURIComponent(d.period)+'">'+M.esc(r.symbol)+'</a>'; }},
+      {key:"daily_nav", label:"Daily NAV", fmt:function(r){ return M.num(r.daily_nav); }},
+      {key:"monthly_nav", label:"Monthly NAV", fmt:function(r){ return M.num(r.monthly_nav); }},
+      {key:"ltp", label:"LTP", fmt:function(r){ return M.num(r.ltp); }},
+      {key:"invested", label:"Inv In Share", fmt:function(r){ return M.num(r.invested, 0); },
+       raw:function(r){ return r.invested; }}
+    ];
+    d.sectors.forEach(function (code) {
+      cols.push({
+        key: "s_" + code,
+        label: code + "%",
+        title: d.sector_labels[code] || code,
+        fmt: function (r) { return M.pct(r.sectors[code]); },
+        raw: function (r) { return r.sectors[code]; }
+      });
+    });
+    table = new M.Table(document.getElementById("mf-table"), cols,
+      {empty:"No holdings stored for this month."});
+  }
+
+  function load() {
+    M.getJSON(M.urls.sector, {month: sel.value || M.urlParam("month") || M.latestPeriod,
+                              basis: basis.value}).then(function (d) {
+      if (!d.ok) {
+        document.getElementById("mf-table").innerHTML =
+          '<tbody><tr><td class="mfd-empty">' + M.esc(d.error || "No data.") + "</td></tr></tbody>";
+        return;
+      }
+      M.fillPeriods(sel, d.periods, d.period);
+      M.syncUrl({month: d.period, basis: d.basis});
+      build(d);
+      table.setRows(d.funds, d.industry);
+      document.getElementById("mf-note").innerHTML =
+        "<b>" + d.period + " · " + d.count + " funds · " +
+        (d.basis === "book" ? "book (cost) value" : "current market value") + ".</b> " +
+        "Splits are computed from the underlying values, not from each fund's " +
+        "published per-line weights: those are rounded to two decimals before " +
+        "publication, and re-aggregating them is measurably less accurate " +
+        "(0.060 total error against 0.018 across HLICF's thirteen columns). Each " +
+        "fund's own stated weight is shown per holding on the Financials screen, " +
+        "where nothing is aggregated. The <b>MF Inds</b> row is value-weighted — " +
+        "averaging percentages across funds of very different sizes would let a " +
+        "small fund count as much as a large one. " +
+        "Percentages are of each fund's own <b>equity book</b>, never of its total " +
+        "assets — otherwise two funds holding identical stocks would look different " +
+        "purely because one held more cash. Sectors are resolved from the platform's " +
+        "company register, not from the feed's spelling: the feed files CIT, HIDCL " +
+        "and NRN under \"Organized Fund\", which is the Investment sector, not a " +
+        "mutual fund. Hover a column header for the full sector name.";
+    }).catch(function(){});
+  }
+
+  sel.addEventListener("change", load);
+  basis.addEventListener("change", load);
+  document.getElementById("mf-export").addEventListener("click", function () {
+    if (table) table.csv("sector-allocation-" + (sel.value||"latest").replace(/\s+/g,"-") +
+                         "-" + basis.value + ".csv");
+  });
+  var b = M.urlParam("basis"); if (b === "market" || b === "book") basis.value = b;
+  load();
+});
+</script>
+{% endblock %}

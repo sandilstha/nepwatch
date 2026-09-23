@@ -1,0 +1,68 @@
+    <div class="tab-pane fade {% if active_tab == 'sop_backtest' %}show active{% endif %}" id="sop-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="mb-0" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">SOP Strategy — 5 Optimized Indicators (long-only)</h5>
+          <span class="text-muted" style="font-size: 11px;">Master SOP v2.0 · 80 bps cost · 200-SMA regime filter</span>
+        </div>
+        <form method="GET" action="." id="sopForm">
+          <input type="hidden" name="active_tab" value="sop_backtest">
+          <input type="hidden" name="sop_backtest_symbol" id="sopSymbolHidden" value="{{ sop_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text"
+                       class="autocomplete-input"
+                       id="sopSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ sop_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="sopDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="sopFromDate" name="sop_from_date" class="form-control form-control-sm" value="{{ sop_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="sopToDate" name="sop_to_date" class="form-control form-control-sm" value="{{ sop_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Indicator (SOP-optimized)</label>
+              <select name="sop_indicator" class="form-select form-select-sm">
+
+                <option value="volume_breakout" {% if sop_indicator == 'volume_breakout' %}selected{% endif %}>Volume Breakout 40/20/2.0×</option>
+                <option value="ema" {% if sop_indicator == 'ema' %}selected{% endif %}>EMA 20/50 crossover</option>
+                <option value="macd" {% if sop_indicator == 'macd' %}selected{% endif %}>MACD 26/45/20</option>
+                <option value="supertrend" {% if sop_indicator == 'supertrend' %}selected{% endif %}>Supertrend 20/2.0 SD</option>
+                <option value="donchian" {% if sop_indicator == 'donchian' %}selected{% endif %}>Donchian 20/10 breakout</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Cost (bps, round-trip)</label>
+              <input type="number" step="1" min="0" name="sop_cost_bps" class="form-control form-control-sm" value="{{ sop_cost_bps }}" required>
+            </div>
+          </div>
+          <div class="row g-3 align-items-center mt-1">
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="sop_use_regime" value="1" id="sopUseRegime" {% if sop_use_regime %}checked{% endif %}>
+                <label class="form-check-label text-muted small" for="sopUseRegime">
+                  Apply mandatory 200-SMA market-regime filter (bear → hold cash / exit longs)
+                </label>
+              </div>
+            </div>
+            <div class="col-md-6 text-end">
+              <button type="submit" class="btn btn-primary btn-sm fw-medium py-2 px-4 rounded-2">Execute SOP Model</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="sopFromDate" to_id="sopToDate" %}
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="sop_backtestResults" data-tab-key="sop_backtest">
+        {% include "core_analysis/includes/_sop_results.html" %}
+      </div>
+    </div>

@@ -1,0 +1,19 @@
+# Normalize line endings so the repo is consistent across Windows/macOS/Linux.
+# Text files are stored with LF in the repo; Git converts on checkout as needed.
+* text=auto eol=lf
+
+# Windows-only scripts must stay CRLF or cmd/PowerShell can misread them.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Shell scripts must stay LF (they run in the Linux container).
+*.sh text eol=lf
+
+# Treat these as binary — never touch their bytes.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

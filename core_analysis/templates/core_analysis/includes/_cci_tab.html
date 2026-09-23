@@ -1,0 +1,60 @@
+    <div class="tab-pane fade {% if active_tab == 'cci_backtest' %}show active{% endif %}" id="cci-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">CCI +100 Long-Only Strategy Parameters</h5>
+        <form method="GET" action="." id="cciForm">
+          <input type="hidden" name="active_tab" value="cci_backtest">
+          <input type="hidden" name="cci_backtest_symbol" id="cciSymbolHidden" value="{{ cci_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="cciSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ cci_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="cciDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="cciFromDate" name="cci_from_date" class="form-control form-control-sm" value="{{ cci_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="cciToDate" name="cci_to_date" class="form-control form-control-sm" value="{{ cci_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">CCI Period</label>
+              <input type="number" min="1" step="1" name="cci_period" class="form-control form-control-sm" value="{{ cci_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">ADX Threshold</label>
+              <input type="number" step="0.01" min="0" name="cci_adx_threshold" class="form-control form-control-sm" value="{{ cci_adx_threshold }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Vol Avg</label>
+              <input type="number" min="1" step="1" name="cci_volume_avg_period" class="form-control form-control-sm" value="{{ cci_volume_avg_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Vol Mult</label>
+              <input type="number" step="0.01" min="0.1" name="cci_volume_multiplier" class="form-control form-control-sm" value="{{ cci_volume_multiplier }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute CCI Model</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="cciFromDate" to_id="cciToDate" %}
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="cci_backtestResults" data-tab-key="cci_backtest">
+        {% include "core_analysis/includes/_cci_results.html" %}
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 5 — RSI/SMA
+    ══════════════════════════════════════════════════════════════════ -->

@@ -1,0 +1,72 @@
+{% extends "core_analysis/mf/_base.html" %}
+{% block title %}Assets Allocation{% endblock %}
+{% block heading %}Mutual Fund Assets Allocation{% endblock %}
+{% block subheading %}Equity, fixed income and cash as a share of each fund's net assets{% endblock %}
+
+{% block content %}
+<div class="mfd-bar">
+  <div class="mfd-field">
+    <label for="mf-month">Month Year</label>
+    <select id="mf-month" class="mfd-select"></select>
+  </div>
+  <div class="mfd-spacer"></div>
+  <button type="button" class="mfd-btn" id="mf-export">Export CSV</button>
+</div>
+
+<div class="mfd-wrap"><table class="mfd-table" id="mf-table"></table></div>
+<div class="mfd-note" id="mf-note"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var M = window.MFD;
+  /* Values print in thousands to line up with the published tables; the
+     database holds rupees. The footnote says so on every load. */
+  function k(f){ return function(r){ return M.thousands(r[f]); }; }
+  function p(f){ return function(r){ return M.pct(r[f]); }; }
+
+  var cols = [
+    {key:"symbol", label:"MFs", fmt:function(r){
+      return r.symbol === "MF Inds" ? "MF Inds"
+        : '<a href="/mutual-fund/desk/financials/?symbol='+encodeURIComponent(r.symbol)+
+          '&month='+encodeURIComponent(current())+'">'+M.esc(r.symbol)+'</a>'; }},
+    {key:"monthly_nav", label:"Monthly NAV", fmt:function(r){ return M.num(r.monthly_nav); }},
+    {key:"equity_value", label:"Equity Value", fmt:k("equity_value"), raw:function(r){return r.equity_value;}},
+    {key:"equity_pct", label:"Equity %", fmt:p("equity_pct")},
+    {key:"fixed_income_value", label:"Fixed Income Value", fmt:k("fixed_income_value"),
+     raw:function(r){return r.fixed_income_value;}},
+    {key:"fixed_income_pct", label:"Fixed Income %", fmt:p("fixed_income_pct")},
+    {key:"cash_value", label:"Cash Value", fmt:k("cash_value"), raw:function(r){return r.cash_value;}},
+    {key:"cash_pct", label:"Cash %", fmt:p("cash_pct")}
+  ];
+  var table = new M.Table(document.getElementById("mf-table"), cols,
+    {empty:"No portfolios stored for this month."});
+  var sel = document.getElementById("mf-month");
+  function current(){ return sel.value || ""; }
+
+  function load(month) {
+    M.getJSON(M.urls.assets, {month: month}).then(function (d) {
+      if (!d.ok) { table.setRows([]); document.getElementById("mf-note").textContent = d.error || ""; return; }
+      M.fillPeriods(sel, d.periods, d.period);
+      M.syncUrl({month: d.period});
+      table.setRows(d.funds, d.industry);
+      document.getElementById("mf-note").innerHTML =
+        "<b>" + d.period + " · " + d.count + " funds.</b> " +
+        "Values are in <b>thousands of rupees</b>, matching the published tables; " +
+        "the database stores rupees. Percentages divide by each fund's own <b>net " +
+        "assets</b>, not by the sum of the three buckets — that is the fund's own " +
+        "convention, and it is why a row can total slightly over or under 100%: " +
+        "liabilities and fee accruals net out of NAV without being one of the buckets. " +
+        "The <b>MF Inds</b> row aggregates every fund shown.";
+    }).catch(function(){ table.setRows([]); });
+  }
+
+  sel.addEventListener("change", function(){ load(sel.value); });
+  document.getElementById("mf-export").addEventListener("click", function () {
+    table.csv("assets-allocation-" + (current() || "latest").replace(/\s+/g,"-") + ".csv");
+  });
+  load(M.urlParam("month") || M.latestPeriod);
+});
+</script>
+{% endblock %}

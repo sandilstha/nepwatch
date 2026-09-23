@@ -1,0 +1,132 @@
+      {% if rrg_indices_metrics %}
+        {% if rrg_indices_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rrg_indices_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Plotted Indices</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_indices_metrics.indices_plotted }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_indices_metrics.skipped_count }} skipped</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Leading / Weakening</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_indices_metrics.quadrant_counts.Leading }} / {{ rrg_indices_metrics.quadrant_counts.Weakening }}</h4>
+                <div class="small text-muted mt-1">Green and yellow quadrants</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Lagging / Improving</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_indices_metrics.quadrant_counts.Lagging }} / {{ rrg_indices_metrics.quadrant_counts.Improving }}</h4>
+                <div class="small text-muted mt-1">Red and blue quadrants</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Benchmark</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_indices_benchmark_symbol }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_indices_metrics.latest_date }} | Lookback {{ rrg_indices_metrics.lookback }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4 border-0 metric-card shadow-sm rounded-3 mb-4 rrg-indices-chart-card">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">NEPSE Indices Relative Rotation Graph</h6>
+                <div class="small text-muted mt-1">Each dot is the latest index position versus {{ rrg_indices_benchmark_symbol }}. Axis center is 100.</div>
+              </div>
+              <div class="rrg-legend">
+                <span class="rrg-legend-item rrg-leading">Leading</span>
+                <span class="rrg-legend-item rrg-weakening">Weakening</span>
+                <span class="rrg-legend-item rrg-lagging">Lagging</span>
+                <span class="rrg-legend-item rrg-improving">Improving</span>
+              </div>
+            </div>
+            <div class="rrg-indices-toolbar" role="toolbar" aria-label="RRG indices chart controls">
+              <button type="button" id="rrgIndicesAnimateBtn" class="rrg-toolbar-btn primary" aria-pressed="false">&#9658; Animate</button>
+              <button type="button" id="rrgIndicesFitBtn" class="rrg-toolbar-btn" aria-pressed="false">Fit</button>
+              <button type="button" id="rrgIndicesMaxBtn" class="rrg-toolbar-btn" aria-pressed="false" title="Full-screen chart (Esc to close)">Max</button>
+              <button type="button" id="rrgIndicesCenterBtn" class="rrg-toolbar-btn" aria-pressed="true">Center</button>
+              <button type="button" id="rrgIndicesLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-pressed="false" aria-label="Lock scale" title="Lock scale">&#128275;</button>
+              <div class="rrg-tail-control">
+                <label class="rrg-tail-label" for="rrgIndicesTailNumber">Tail Length</label>
+                {# Opens at 1 (latest dot only); max is corrected to the fetched trail depth by JS. #}
+                <input type="range" id="rrgIndicesTailSlider" class="rrg-tail-slider" min="1" max="{{ rrg_indices_tail_length }}" value="1" aria-label="Tail length">
+                <input type="number" id="rrgIndicesTailNumber" class="rrg-tail-number" min="1" max="{{ rrg_indices_tail_length }}" step="1" value="1">
+              </div>
+              <label class="rrg-arrow-mode">
+                <input type="checkbox" id="rrgIndicesArrowMode">
+                <span>Arrow Mode</span>
+              </label>
+            </div>
+            <div id="rrgIndicesChart" class="rrg-indices-chart-wrap">
+              <div class="rrg-chart-empty">RRG indices chart data is not available.</div>
+            </div>
+          </div>
+          {{ rrg_indices_points|json_script:"rrg-indices-points-data" }}
+          {{ rrg_indices_trails|json_script:"rrg-indices-trails-data" }}
+          {{ rrg_indices_benchmark_points|json_script:"rrg-indices-benchmark-data" }}
+
+          <div class="panel-outer mb-4">
+            <div class="p-3 bg-raised border-bottom d-flex justify-content-between align-items-center gap-3">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Indices Output Ordered By NEPSE Index List</h6>
+              <span class="text-muted small">{{ rrg_indices_metrics.indices_scanned }} scanned</span>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Index</th>
+                    <th>Date</th>
+                    <th>Quadrant</th>
+                    <th class="th-num" title="Consecutive sessions in the current quadrant; hover shows where it rotated in from">In Quad</th>
+                    <th class="th-num">Close</th>
+                    <th class="th-num">RS-Ratio</th>
+                    <th class="th-num">RS-Momentum</th>
+                    <th class="th-num">Ratio Delta</th>
+                    <th class="th-num">Momentum Delta</th>
+                    <th class="th-num">Calc Rows</th>
+                    <th class="th-num">Shared Bars</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for point in rrg_indices_points %}
+                  <tr>
+                    <td class="td-num">{{ point.order }}</td>
+                    <td><span class="td-ticker">{{ point.label }}</span><span class="text-muted ms-2 small">{{ point.symbol }}</span></td>
+                    <td class="td-date">{{ point.business_date }}{% if point.stale %} <span class="text-warning" title="Feed lags the benchmark's latest session — this point is older than the rest of the chart">⚠</span>{% endif %}</td>
+                    <td><span class="rrg-index-badge {{ point.Quadrant|lower }}"{% if point.rotated_from %} title="Rotated in from {{ point.rotated_from }} {{ point.bars_in_quadrant }} bar{{ point.bars_in_quadrant|pluralize }} ago"{% endif %}>{{ point.Quadrant }}</span></td>
+                    <td class="td-num{% if point.bars_in_quadrant <= 3 %} text-warning{% endif %}" title="{% if point.rotated_from %}From {{ point.rotated_from }}{% else %}In this quadrant for the whole window{% endif %}">{{ point.bars_in_quadrant }}</td>
+                    <td class="td-num">{{ point.close|floatformat:2 }}</td>
+                    <td class="td-num">{{ point.RS_Ratio|floatformat:2 }}</td>
+                    <td class="td-num">{{ point.RS_Momentum|floatformat:2 }}</td>
+                    <td class="td-num {% if point.ratio_delta >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ point.ratio_delta|floatformat:2 }}</td>
+                    <td class="td-num {% if point.momentum_delta >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ point.momentum_delta|floatformat:2 }}</td>
+                    <td class="td-num">{{ point.data_points }}</td>
+                    <td class="td-num">{{ point.matched_bars }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="12" class="text-center text-muted py-4">No RRG index data generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {% if rrg_indices_skipped %}
+            <div class="alert alert-secondary border-0 rounded-3 shadow-sm small">
+              <strong>Skipped indices:</strong>
+              {% for skipped in rrg_indices_skipped %}
+                {{ skipped.symbol }}{% if skipped.reason %} ({{ skipped.reason }}){% endif %}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endif %}

@@ -1,0 +1,90 @@
+    <div class="tab-pane fade {% if active_tab == 'msv_backtest' %}show active{% endif %}" id="msv-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Momentum Scan Parameters</h5>
+        <form method="GET" action="." id="msvForm">
+          <input type="hidden" name="active_tab" value="msv_backtest">
+          <input type="hidden" name="msv_backtest_symbol" id="msvSymbolHidden" value="{{ msv_selected_symbol }}">
+
+          <div class="row g-3 msv-primary-row">
+            <div class="col-md-3 msv-asset-field">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text"
+                       class="autocomplete-input"
+                       id="msvSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ msv_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="msvDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2 msv-date-field">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="msvFromDate" name="msv_from_date" class="form-control form-control-sm" value="{{ msv_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2 msv-date-field">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="msvToDate" name="msv_to_date" class="form-control form-control-sm" value="{{ msv_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="msv-quickrange-field">
+              <label class="form-label text-muted small fw-medium">Quick Range</label>
+              <div class="d-flex gap-1 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="latest" data-from-id="msvFromDate" data-to-id="msvToDate">Latest</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="1m" data-from-id="msvFromDate" data-to-id="msvToDate">1M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="3m" data-from-id="msvFromDate" data-to-id="msvToDate">3M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="6m" data-from-id="msvFromDate" data-to-id="msvToDate">6M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="1y" data-from-id="msvFromDate" data-to-id="msvToDate">1Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="ytd" data-from-id="msvFromDate" data-to-id="msvToDate">YTD</button>
+              </div>
+              <span class="text-muted" style="font-size:11px;">To Date auto-limits to today.</span>
+            </div>
+          </div>
+
+          <div class="row g-3 align-items-end msv-settings-row">
+            <div class="col-md-1 msv-param-field msv-param-sm">
+              <label class="form-label text-muted small fw-medium">MACD Fast</label>
+              <input type="number" min="1" step="1" name="msv_macd_fast" class="form-control form-control-sm" value="{{ msv_macd_fast }}" required>
+            </div>
+            <div class="col-md-1 msv-param-field msv-param-sm">
+              <label class="form-label text-muted small fw-medium">MACD Slow</label>
+              <input type="number" min="2" step="1" name="msv_macd_slow" class="form-control form-control-sm" value="{{ msv_macd_slow }}" required>
+            </div>
+            <div class="col-md-1 msv-param-field msv-param-md">
+              <label class="form-label text-muted small fw-medium">MACD Signal</label>
+              <input type="number" min="1" step="1" name="msv_macd_signal" class="form-control form-control-sm" value="{{ msv_macd_signal }}" required>
+            </div>
+            <div class="col-md-1 msv-param-field msv-param-xs">
+              <label class="form-label text-muted small fw-medium">ATR Len</label>
+              <input type="number" min="2" step="1" name="msv_atr_length" class="form-control form-control-sm" value="{{ msv_atr_length }}" required>
+            </div>
+            <div class="col-md-1 msv-param-field msv-param-sm">
+              <label class="form-label text-muted small fw-medium">ATR Mult</label>
+              <input type="number" min="0.1" step="0.1" name="msv_atr_multiplier" class="form-control form-control-sm" value="{{ msv_atr_multiplier }}" required>
+            </div>
+            <div class="col-md-2 msv-param-field msv-param-md">
+              <label class="form-label text-muted small fw-medium">RVOL Period</label>
+              <input type="number" min="2" step="1" name="msv_rvol_period" class="form-control form-control-sm" value="{{ msv_rvol_period }}" required>
+            </div>
+            <div class="col-md-2 msv-param-field msv-param-lg">
+              <label class="form-label text-muted small fw-medium">RVOL Threshold</label>
+              <input type="number" min="0.1" step="0.1" name="msv_rvol_threshold" class="form-control form-control-sm" value="{{ msv_rvol_threshold }}" required>
+            </div>
+            <div class="col-md-2 msv-param-field msv-param-lg">
+              <label class="form-label text-muted small fw-medium">Supertrend Len</label>
+              <input type="number" min="2" step="1" name="msv_supertrend_length" class="form-control form-control-sm" value="{{ msv_supertrend_length }}" required>
+            </div>
+            <div class="col-md-2 msv-param-field msv-param-xl">
+              <label class="form-label text-muted small fw-medium">Supertrend Mult</label>
+              <input type="number" min="0.1" step="0.1" name="msv_supertrend_multiplier" class="form-control form-control-sm" value="{{ msv_supertrend_multiplier }}" required>
+            </div>
+            <div class="col-md-2 msv-run-field">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute MSV Model</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="msv_backtestResults" data-tab-key="msv_backtest">
+        {% include "core_analysis/includes/_msv_results.html" %}
+      </div>
+    </div>

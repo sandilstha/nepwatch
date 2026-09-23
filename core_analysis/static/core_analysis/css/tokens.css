@@ -1,0 +1,139 @@
+/* ============================================================================
+   Design tokens — SINGLE SOURCE OF TRUTH for the whole app.
+
+   These used to live inside insights.css, which meant the pages that do NOT
+   load that sheet (the workbench via base.html, and Stock 360) had no tokens at
+   all: every var(--fs-*) there was undefined, so those pages could never pick up
+   the type scale. This file is imported by insights.css and linked directly by
+   base.html and stock360.html, so one edit reaches every page.
+
+   Load this BEFORE any component stylesheet.
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  --bg:          #020b1f;
+  --bg-grad-a:   rgba(33, 88, 255, 0.16);
+  --bg-grad-b:   rgba(18, 211, 154, 0.10);
+  --surface:     #07142e;
+  --surface-2:   #0b1d3f;
+  --raised:      #0e2348;
+  --line:        #17345c;
+  --line-soft:   rgba(92, 179, 255, 0.10);
+
+  --ink-1:       #edf4ff;
+  --ink-2:       #a9bedf;
+  --ink-3:       #6f88ad;
+
+  --accent:      #12d39a;
+  --accent-soft: rgba(18, 211, 154, 0.16);
+
+  --up:          #14e7a0;
+  --up-soft:     rgba(20, 231, 160, 0.14);
+  --down:        #ff6e72;
+  --down-soft:   rgba(255, 110, 114, 0.14);
+  --flat:        #9bb0d3;
+  --flat-soft:   rgba(155, 176, 211, 0.14);
+
+  /* Cards previously carried a 1px border AND an 18px radius AND a 44px-blur
+     shadow. Three weights on every block made a column of them read as hard
+     boxes. Radius tightened to a terminal-like 12px and the shadow cut to a
+     hint, leaving the border to do the edge work. */
+  --shadow:      0 2px 10px rgba(0, 0, 0, 0.30);
+  --radius:      12px;
+  --radius-sm:   8px;
+}
+
+[data-theme="light"] {
+  --bg:          #eef2f9;
+  --bg-grad-a:   rgba(33, 88, 255, 0.10);
+  --bg-grad-b:   rgba(18, 159, 117, 0.08);
+  --surface:     #ffffff;
+  --surface-2:   #f5f8fd;
+  --raised:      #ffffff;
+  --line:        #d7e0ee;
+  --line-soft:   rgba(20, 50, 100, 0.08);
+
+  --ink-1:       #0e1b33;
+  --ink-2:       #41587c;
+  --ink-3:       #7186a4;
+
+  --accent:      #0c9c72;
+  --accent-soft: rgba(12, 156, 114, 0.12);
+
+  --up:          #0ba36e;
+  --up-soft:     rgba(11, 163, 110, 0.12);
+  --down:        #e0414b;
+  --down-soft:   rgba(224, 65, 75, 0.12);
+  --flat:        #6b7d99;
+  --flat-soft:   rgba(107, 125, 153, 0.12);
+
+  --shadow:      0 2px 8px rgba(20, 40, 80, 0.10);
+}
+
+/* ── Design scale ─────────────────────────────────────────────────────────
+   Type and space tokens. Everything maps onto these; do not introduce a
+   one-off value — pick the nearest token. SVG <text> in the fear/greed gauge
+   is exempt: those px are viewBox units that scale with the graphic.
+   ------------------------------------------------------------------------ */
+:root {
+  /* type — ~1.25 ratio, each step distinguishable from the next.
+     Plain rem, NOT per-token clamps: the fluid behaviour now lives once on
+     <html> below. Every hard-coded px across the internal stylesheets was
+     converted to rem too, so a single root value scales the entire app in
+     proportion and nothing double-scales. */
+  --fs-xs:   0.75rem;    /* 12px @root16 -> 13.1px @root17.5 */
+  --fs-sm:   0.875rem;   /* 14px -> 15.3px */
+  --fs-base: 1rem;       /* 16px -> 17.5px */
+  --fs-lg:   1.25rem;    /* 20px -> 21.9px */
+  --fs-xl:   1.75rem;    /* 28px -> 30.6px */
+  --fs-2xl:  2.5rem;     /* 40px -> 43.8px */
+
+  /* space — 4px base; no in-between values */
+  --sp-1: 0.25rem;   /*  4px */
+  --sp-2: 0.5rem;    /*  8px */
+  --sp-3: 0.75rem;   /* 12px */
+  --sp-4: 1rem;      /* 16px */
+  --sp-5: 1.25rem;   /* 20px */
+  --sp-6: 1.5rem;    /* 24px */
+  --sp-8: 2rem;      /* 32px */
+  --sp-10: 2.75rem;  /* 44px — wide-viewport rhythm */
+  /* Gap BETWEEN major sections. Previously sections and the cards inside them
+     both used 24px, so nothing grouped and the page read as one dense wall.
+     Reference dashboards separate sections by 60-80px. */
+  --sp-section: 3.25rem; /* 52px */
+
+  /* THE page measure. Every page shell must use this — .mi-shell, .nd-wrap,
+     .fa-main, Stock 360's .wrap. They had each hard-coded 1280px separately,
+     so widening one left the others narrow. Prose pages (the SOP documents at
+     980px) deliberately opt out. */
+  /* The 1280px floor is a floor on the MEASURE, not a licence to exceed the
+     window: on a viewport narrower than ~1362px `max(1280px, 94vw)` alone
+     pinned the shell at 1280px, so the whole page overflowed horizontally and
+     scrolled sideways with an unpainted strip past the shell. The trailing
+     96vw term clamps it back to the window. */
+  --shell-max: min(max(1280px, 94vw), 1720px, 96vw);
+  --shell-pad: clamp(16px, 2.2vw, 44px);
+}
+
+/* ── Global fluid scale ───────────────────────────────────────────────────
+   ONE knob for the whole application. The shell now runs to 1720px and a scale
+   sized for a 1280px column read small on that canvas. Root grows 16px -> 17.5px
+   between 1280px and 1920px, so laptops are pixel-identical to before and only
+   the wide layout gains ~9%. Everything else is rem, so it follows in
+   proportion — type, spacing and radii keep their exact relationships.
+   ------------------------------------------------------------------------ */
+html { font-size: clamp(16px, 13px + 0.234vw, 17.5px); }
+
+/* Semantic aliases used by the Floorsheet, Portfolio and NEPSE Data desks
+   (previously defined only in stock360.css, so those pages always fell back
+   to their hard-coded dark values in BOTH themes). */
+:root, [data-theme="dark"] {
+  --pos: var(--up); --pos-weak: var(--up-soft);
+  --neg: var(--down); --neg-weak: var(--down-soft);
+  --neutral: var(--flat); --neutral-weak: var(--flat-soft);
+  --warn: #e6b04a; --warn-weak: rgba(230, 176, 74, .14);
+}
+[data-theme="light"] {
+  --warn: #b7811f; --warn-weak: rgba(183, 129, 31, .13);
+}

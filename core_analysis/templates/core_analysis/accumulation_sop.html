@@ -1,0 +1,467 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A/D Radar SOP — Accumulation &amp; Distribution</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    .sop-main { max-width: 980px; margin: 0 auto; padding: 18px 16px 56px; }
+    .sop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .sop-head h1 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--ink-1); }
+    .sop-head p { margin: 0; max-width: 70ch; font-size: 14px; line-height: 1.6; color: var(--ink-2); opacity: .85; }
+    .sop-back {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px;
+      color: inherit; text-decoration: none; font-size: 13px; background: var(--surface);
+    }
+    .sop-back:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+    .sop-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; align-items: start; }
+    .sop-toc {
+      position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 13px 14px; background: var(--surface); font-size: 13px;
+    }
+    .sop-toc b { display: block; margin-bottom: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+    .sop-toc a { display: block; padding: 4px 0; color: inherit; text-decoration: none; opacity: .82; }
+    .sop-toc a:hover { opacity: 1; text-decoration: underline; }
+    .sop-doc { min-width: 0; }
+    .sop-sec {
+      border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px;
+      margin-bottom: 14px; background: var(--surface); scroll-margin-top: 16px;
+    }
+    .sop-sec:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .sop-sec h2 { margin: 0 0 7px; font-size: 18px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec h3 { margin: 16px 0 5px; font-size: 14px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec p, .sop-sec li { color: var(--ink-2); font-size: 14px; line-height: 1.62; }
+    .sop-sec p { margin: 7px 0; }
+    .sop-sec ul { margin: 8px 0 0; padding-left: 20px; }
+    .sop-sec li { margin: 5px 0; }
+    .sop-lead { font-size: 15px !important; color: var(--ink-1) !important; font-weight: 600; }
+    .sop-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    .sop-table th, .sop-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--ink-2); }
+    .sop-table th { color: var(--ink-1); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .75; }
+    .sop-table code { color: var(--ink-1); }
+    .sop-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .sop-eg {
+      margin: 10px 0; padding: 11px 14px; border-radius: 8px;
+      background: var(--surface-2); border-left: 3px solid var(--accent);
+      font-size: 13.5px; line-height: 1.6; color: var(--ink-2);
+    }
+    .sop-eg b { color: var(--ink-1); }
+    .sop-note { margin-top: 10px; padding: 9px 12px; border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+    .sop-warn { margin-top: 10px; padding: 9px 12px; border-left: 3px solid #ef4444; background: var(--surface-2); color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+    .sop-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .sop-pill.acc  { background: rgba(34,197,94,.16); color: #22c55e; }
+    .sop-pill.macc { background: rgba(34,197,94,.10); color: #22c55e; }
+    .sop-pill.neu  { background: rgba(148,163,184,.16); color: #94a3b8; }
+    .sop-pill.mdis { background: rgba(239,68,68,.10); color: #ef4444; }
+    .sop-pill.dis  { background: rgba(239,68,68,.16); color: #ef4444; }
+    .pos { color: #22c55e; font-weight: 700; }
+    .neg { color: #ef4444; font-weight: 700; }
+    details.sop-tech { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+    details.sop-tech summary {
+      cursor: pointer; font-size: 12px; font-weight: 700; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    details.sop-tech summary:hover { color: var(--accent); }
+    details.sop-tech[open] summary { margin-bottom: 8px; }
+    @media (max-width: 820px) {
+      .sop-head { flex-direction: column; }
+      .sop-grid { grid-template-columns: 1fr; }
+      .sop-toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+<main class="sop-main">
+  <div class="sop-head">
+    <div>
+      <h1>A/D Radar — how it works</h1>
+      <p>NEPSE publishes a record of every trade, and that record names the <b>buying broker</b> and the
+        <b>selling broker</b>. This tab reads those records and answers one question for each company:
+        <b>is someone quietly building up a position, or quietly getting out?</b> This page explains, in
+        plain words, how it works, how to read it, and — importantly — what it cannot tell you.</p>
+    </div>
+    <a href="{% url 'floorsheet' %}" class="sop-back" title="Back to the Floorsheet desk">Back to desk</a>
+  </div>
+
+  <div class="sop-grid">
+    <nav class="sop-toc" aria-label="SOP sections">
+      <b>Contents</b>
+      <a href="#overview">1. What this tab does</a>
+      <a href="#score">2. The three things it measures</a>
+      <a href="#bands">3. Reading the table</a>
+      <a href="#views">4. The four lists</a>
+      <a href="#universe">5. Which companies are included</a>
+      <a href="#backtest">6. Does it actually work?</a>
+      <a href="#rejected">7. What we tried that failed</a>
+      <a href="#workflow">8. How to use it</a>
+      <a href="#limits">9. What it cannot see</a>
+      <a href="#data">10. Where the data comes from</a>
+    </nav>
+
+    <section class="sop-doc">
+
+      <!-- 1 -->
+      <section class="sop-sec" id="overview">
+        <h2>1. What this tab does</h2>
+        <p class="sop-lead">Every other tab on this desk starts with a broker. This one starts with a
+          company.</p>
+        <p>On the other tabs you pick a broker and see what it traded. Here you look at the whole market and
+          ask, for each company: <b>who has been buying it, and who has been selling it?</b></p>
+        <p>The idea behind “accumulation” is simple. If someone wants to build a large position, they cannot
+          buy it all at once — that would push the price up and cost them more. So they buy steadily, over
+          weeks, often through several different brokers. If you can see the broker records, you can
+          sometimes see that happening. “Distribution” is the same thing in reverse: someone steadily
+          getting out.</p>
+        <div class="sop-eg">
+          <b>A simple picture.</b> Imagine 60 people sell shares of a company over a month, and just 3
+          buyers end up holding almost all of those shares. That is very different from 60 people selling
+          and 60 people buying. The <i>amount</i> traded is the same — but in the first case somebody is
+          collecting, and in the second nothing in particular is happening.
+        </div>
+        <p>Two things about this are built in deliberately:</p>
+        <ul>
+          <li><b>It looks at many days, not one.</b> Building a position takes weeks, so a single day tells
+            you nothing. The shortest window offered is one month.</li>
+          <li><b>It looks at several brokers, not just the biggest one.</b> Buying is often spread across a
+            few brokers, so the tab shows you how many were involved.</li>
+        </ul>
+        <div class="sop-note">Everything here describes trades that have <b>already happened</b>. It is a
+          record of what took place, not a prediction of what comes next. Section 6 explains why that
+          distinction matters more than you might expect.</div>
+      </section>
+
+      <!-- 2 -->
+      <section class="sop-sec" id="score">
+        <h2>2. The three things it measures</h2>
+        <p>For each company, the tab works out every broker's <b>net position</b> for the period — how much
+          it bought minus how much it sold. A broker that bought 10,000 shares and sold 2,000 has a net of
+          +8,000. Then it measures three things.</p>
+
+        <h3>a) How much ended up with the big buyers — “Absorbed”</h3>
+        <p>Take the five brokers who ended up holding the most, add up what they gained, and compare it to
+          <b>everything traded</b> in that period.</p>
+        <div class="sop-eg">
+          If a company traded <b>100,000 shares</b> during the month and the top five net buyers came away
+          holding <b>40,000</b> more than they started with, Absorbed is <b>40%</b>. A high number means a
+          lot of what changed hands ended up concentrated in a few pairs of hands.
+        </div>
+
+        <h3>b) Was it one broker, or several — “Top Broker” and “Buy Group”</h3>
+        <p><b>Top Broker</b> is the share of all the net buying done by the single largest buyer.
+          <b>Buy Group</b> is how many brokers it took to account for half of the net buying.</p>
+        <div class="sop-eg">
+          <b>Buy Group 1</b> and <b>Top Broker 90%</b> means one broker did nearly everything.
+          <b>Buy Group 5</b> and <b>Top Broker 25%</b> means the buying was spread across several.
+        </div>
+
+        <h3>c) Was the selling concentrated — “Sell Conc.”</h3>
+        <p>This measures whether the shares came from <b>one seller or many</b>. It runs from near 0
+          (hundreds of small sellers) to 10,000 (a single seller providing everything).</p>
+        <div class="sop-eg">
+          <b>Low Sell Conc. + high Absorbed</b> = many people sold, a few people collected. That is the
+          accumulation pattern.<br>
+          <b>High Sell Conc.</b> = one party is releasing a lot of stock into many small buyers. That is the
+          distribution pattern.
+        </div>
+
+        <h3>Putting them together</h3>
+        <p>Each company is compared against <b>every other company in the market that day</b> — not against
+          a fixed target. So a score of “high” means “more of this than most other shares right now”, which
+          keeps it meaningful whether the market is busy or quiet.</p>
+
+        <details class="sop-tech">
+          <summary>Technical detail</summary>
+          <p>Per broker, <code>net = shares bought − shares sold</code> over the window. Across all brokers
+            that sums to exactly zero, so neither ratio divides by it. <code>sum_pos</code> is the total of
+            the positive nets; <code>sum_neg</code> is the total of the negative nets in absolute terms; the
+            two are equal by construction and this is verified on every observation.
+            <code>volume</code> is gross shares traded (the sum of every broker's buy quantity), which
+            includes a broker's self-crosses.</p>
+          <table class="sop-table">
+            <thead><tr><th>Shown as</th><th>Name</th><th>Exactly</th></tr></thead>
+            <tbody>
+              <tr><td>Absorbed</td><td><code>absorb</code></td><td>(sum of the top-5 positive nets) ÷ <code>volume</code> — a net numerator over a gross denominator</td></tr>
+              <tr><td>Top Broker</td><td><code>top1_share</code></td><td>(largest single positive net) ÷ <code>sum_pos</code></td></tr>
+              <tr><td>Sell Conc.</td><td><code>sell_hhi</code></td><td>Herfindahl index of the negative nets as shares of <code>sum_neg</code>, ×10,000</td></tr>
+            </tbody>
+          </table>
+          <p>Each is converted to a z-score across all scored companies for that date, then combined with
+            equal weights: <code>score = z(absorb) − z(top1_share) − z(sell_hhi)</code>. Equal weights are a
+            deliberate choice — fitted weights would be roughly (+1.00, −0.87, −0.41) and score better on
+            the same data they were fitted to, which is exactly the trap described in section 6.</p>
+
+          <h3 style="font-size:14px;margin:18px 0 6px">A worked example — NADEP, one-month window</h3>
+          <p>An ordinary Accumulation reading, followed all the way through. Nadep Laghubittiya
+            had <b>38 different sellers</b> and <b>23 buyers</b>, with no single broker dominating
+            either side. All three ingredients lean the same way, none of them dramatically —
+            which is what a typical reading looks like.</p>
+          <table class="sop-table">
+            <thead><tr><th>Ingredient</th><th>Raw</th><th>z-score</th><th>Sign</th><th>Contributes</th></tr></thead>
+            <tbody>
+              <tr><td><code>absorb</code></td><td class="num">33.2%</td><td class="num">+0.97</td><td>+</td><td class="num pos">+0.97</td></tr>
+              <tr><td><code>top1_share</code></td><td class="num">18.0%</td><td class="num">−0.30</td><td>−</td><td class="num pos">+0.30</td></tr>
+              <tr><td><code>sell_hhi</code></td><td class="num">668</td><td class="num">−0.55</td><td>−</td><td class="num pos">+0.55</td></tr>
+              <tr><td colspan="4"><b>score</b></td><td class="num pos"><b>+1.81</b></td></tr>
+            </tbody>
+          </table>
+          <div class="sop-eg">
+            <b>Reading it in words.</b> The top five buyers ended up with 33% of everything
+            traded, which is more than most companies that month — so <code>absorb</code> helps.
+            The largest single buyer took only 18% of the net buying, so the buying was
+            <i>spread</i> rather than one broker's doing — <code>top1_share</code> is below
+            average, and because the formula subtracts it, that helps too. And the selling came
+            from many hands (<code>sell_hhi</code> 668 against a market median near 957), so
+            <code>sell_hhi</code> helps as well. Three modest pushes in the same direction give
+            +1.81, near the top of the market that month:
+            <span class="sop-pill acc">Accumulation</span>.
+          </div>
+          <p>The other end works identically. Everest Colour scored <b>−1.95</b> the same month
+            from <code>absorb</code> 9.6% (z −1.04, contributing −1.04), <code>top1_share</code>
+            21.7% (z −0.01, +0.01) and <code>sell_hhi</code> 2,427 (z +0.91, −0.91): little was
+            absorbed, and what selling there was came from fewer hands —
+            <span class="sop-pill dis">Distribution</span>.</p>
+          <div class="sop-note">
+            Both examples are snapshots of one rolling one-month window and will change as the
+            window moves. The arithmetic is what matters, not these particular figures.
+          </div>
+        </details>
+      </section>
+
+      <!-- 3 -->
+      <section class="sop-sec" id="bands">
+        <h2>3. Reading the table</h2>
+        <p>Companies are sorted by score and split into five equal groups — top fifth, next fifth, and so
+          on.</p>
+        <table class="sop-table">
+          <thead><tr><th>Reading</th><th>Means</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sop-pill acc">Accumulation</span></td><td>Top 20%. Heavy buying, spread across brokers, coming from many different sellers.</td></tr>
+            <tr><td><span class="sop-pill macc">Mild Accumulation</span></td><td>Leaning that way, but weaker.</td></tr>
+            <tr><td><span class="sop-pill neu">Neutral</span></td><td>Middle 20%. Buying and selling look ordinary — nobody is dominating.</td></tr>
+            <tr><td><span class="sop-pill mdis">Mild Distribution</span></td><td>Leaning toward the selling side.</td></tr>
+            <tr><td><span class="sop-pill dis">Distribution</span></td><td>Bottom 20%. Concentrated selling into scattered buyers.</td></tr>
+          </tbody>
+        </table>
+        <p><b>Neutral is a real answer, not a missing one.</b> It means nobody is controlling that share —
+          which is genuinely worth knowing, and is the case for most companies most of the time.</p>
+
+        <h3>The columns</h3>
+        <table class="sop-table">
+          <thead><tr><th>Column</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr><td>Reading</td><td>The band above.</td></tr>
+            <tr><td>Position bar</td><td>Where this company sits versus the whole market. Middle line = average; right = accumulation.</td></tr>
+            <tr><td>Score</td><td>The combined number. Only comparable within one scan.</td></tr>
+            <tr><td>Absorbed</td><td>Share of all trading that ended up with the top five net buyers.</td></tr>
+            <tr><td>Buy Group</td><td>How many brokers did half the net buying.</td></tr>
+            <tr><td>Top Broker</td><td>How much of it the single biggest buyer did. Higher = more one-sided.</td></tr>
+            <tr><td>Sell Conc.</td><td>How concentrated the selling was. Higher = fewer sellers.</td></tr>
+            <tr><td>Price Δ</td><td>How the price moved over the same period.</td></tr>
+          </tbody>
+        </table>
+        <p><b>Click any row</b> to see the actual brokers on both sides with their quantities, and a
+          sentence explaining what the numbers say.</p>
+      </section>
+
+      <!-- 4 -->
+      <section class="sop-sec" id="views">
+        <h2>4. The four lists</h2>
+        <ul>
+          <li><b>Accumulation candidates</b> — the top fifth.</li>
+          <li><b>Quiet Accumulation candidates</b> — the top fifth <i>and</i> the price did not rise.
+            Someone took a lot of stock without paying up for it. Usually the most interesting list.</li>
+          <li><b>Distribution candidates</b> — the bottom fifth.</li>
+          <li><b>All Scored</b> — every company, so you can find a specific one.</li>
+        </ul>
+        <div class="sop-note">The word <b>candidates</b> is used on purpose. Heavy buying with a flat price
+          looks like quiet accumulation, but it is equally consistent with ordinary two-sided trading in a
+          dull market. The list tells you <b>where to look</b>, not what is true.</div>
+      </section>
+
+      <!-- 5 -->
+      <section class="sop-sec" id="universe">
+        <h2>5. Which companies are included</h2>
+        <p>Only <b>ordinary shares</b> that trade enough to measure.</p>
+        <table class="sop-table">
+          <thead><tr><th>Rule</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Must trade at least <b>Rs 5 lakh a day</b></td><td>A share that barely trades has no pattern to read.</td></tr>
+            <tr><td>No <b>debentures</b></td><td>They are loans, not shares. “Accumulation” means nothing for them, and they trade through one or two brokers, which distorts everything.</td></tr>
+            <tr><td>No <b>mutual funds</b></td><td>Fund units behave differently from company shares.</td></tr>
+            <tr><td>No <b>promoter shares</b></td><td>They are locked in and cannot be freely traded, so their movement is not market activity.</td></tr>
+          </tbody>
+        </table>
+        <p>The count of everything excluded is printed under the table on every scan — a screen that quietly
+          drops half the market would look like “nothing is happening” when it really means “we did not
+          look”.</p>
+        <div class="sop-note"><b>Why a rupee amount rather than a share count.</b> An earlier version
+          required 800 shares a day. But 800 shares of a Rs 200 share is Rs 1.6 lakh, while 800 shares of a
+          Rs 5,300 share is Rs 42 lakh — the same rule was 26 times stricter on expensive shares. A rupee
+          amount treats every company the same way.</div>
+        <p>The sector dropdown only narrows the list you see. Every company is still scored against the
+          whole market, so a Trading-sector share with just one peer is still ranked against all ~270
+          companies rather than against its single neighbour.</p>
+      </section>
+
+      <!-- 6 -->
+      <section class="sop-sec" id="backtest">
+        <h2>6. Does it actually work?</h2>
+        <p class="sop-lead">Honest answer: as a description of what happened, yes. As a prediction of what
+          happens next — <b>no, we could not show that</b>.</p>
+
+        <h3>What we did</h3>
+        <p>We took 3½ years of trade records (2023 to 2026), scored every company every month, and then
+          checked what those shares did afterwards. To be fair about it we:</p>
+        <ul>
+          <li>only used information available <b>at the time</b> — no peeking ahead;</li>
+          <li>adjusted for <b>bonus shares</b>, otherwise a 14% bonus looks like a 14% crash;</li>
+          <li>compared each share against <b>the market that day</b>, so a rising market cannot make a
+            useless signal look clever.</li>
+        </ul>
+
+        <h3>The result that matters</h3>
+        <p>At first it looked excellent. But that test had a flaw: we had <b>chosen</b> what to measure
+          using the same years we then tested on. That is like picking the winning horse after watching the
+          race.</p>
+        <p>So we did it properly — decided everything using only <b>2023–2024</b>, then tested on
+          <b>2025–2026</b>, which the model had never seen:</p>
+        <table class="sop-table">
+          <thead><tr><th>Holding period</th><th class="num">On the old years<br>(used to build it)</th><th class="num">On the new years<br>(never seen)</th><th>Real, or luck?</th></tr></thead>
+          <tbody>
+            <tr><td>1 month</td><td class="num">+1.40%</td><td class="num">+0.80%</td><td>Just about real, but too small to cover trading costs</td></tr>
+            <tr><td>3 months</td><td class="num">+5.18%</td><td class="num">+1.74%</td><td>Could easily be luck</td></tr>
+            <tr><td><b>6 months</b></td><td class="num">+11.15%</td><td class="num"><b>+1.64%</b></td><td><b>Could easily be luck</b></td></tr>
+          </tbody>
+        </table>
+        <p>About <b>85% of the apparent advantage disappeared</b> once the model faced data it had not been
+          built on. Testing year by year tells the same story: 2024 looked strong, 2025 and 2026 showed
+          nothing.</p>
+        <div class="sop-warn"><b>This is why the tab carries a banner saying it is not a validated
+          predictive signal.</b> An earlier version of this page showed the good-looking numbers as if they
+          proved something. They did not, and leaving them up would have been misleading.</div>
+
+        <h3>Why it faded</h3>
+        <p>The “Absorbed” measure was doing nearly all the work, and it simply stopped lining up with future
+          prices after 2024. Markets change; a pattern that worked in one period need not work in the next.
+          That is normal, and it is exactly why holding back some data to test on matters.</p>
+
+        <details class="sop-tech">
+          <summary>Technical detail</summary>
+          <p>Out-of-sample, forward-disjoint sampling (anchors spaced at least one full horizon apart per
+            symbol, so forward returns never overlap), standard errors clustered by anchor date.</p>
+          <table class="sop-table">
+            <thead><tr><th>Horizon</th><th class="num">n</th><th class="num">Spread</th><th class="num">t</th><th class="num">p</th></tr></thead>
+            <tbody>
+              <tr><td>20 sessions</td><td class="num">4,525</td><td class="num">+0.80%</td><td class="num">2.05</td><td class="num">0.040</td></tr>
+              <tr><td>60 sessions</td><td class="num">1,500</td><td class="num">+1.74%</td><td class="num">1.51</td><td class="num">0.131</td></tr>
+              <tr><td>120 sessions</td><td class="num">745</td><td class="num">+1.64%</td><td class="num">0.82</td><td class="num">0.412</td></tr>
+            </tbody>
+          </table>
+          <p>Walk-forward (train on all prior years, test on the next): 2024 +13.16% (t=2.27, p=0.024);
+            2025 +1.05% (t=0.38); 2026 +2.78% (t=0.94).</p>
+          <p>Feature stability, univariate correlation with 120-session forward excess return:
+            <code>absorb</code> +0.187 (t=5.73) in 2023–24 falling to +0.026 (t=0.70) in 2025–26;
+            <code>top1_share</code> +0.018 then −0.004 — <b>no univariate power in either period</b>, so the
+            earlier claim that dispersed buying beats concentrated buying is retracted;
+            <code>sell_hhi</code> −0.051 then −0.029, weak but sign-consistent.</p>
+          <p>Earlier figures reported anchors spaced by the 25-session formation window and described as
+            "non-overlapping". That was wrong for longer horizons — consecutive 120-session forward returns
+            shared 95 of their sessions — and overstated significance.</p>
+          <p><b>Implementation parity:</b> the research pipeline and the shipped code were compared
+            company-by-company on three historical windows. Maximum difference 0.05 percentage points
+            (display rounding). What runs is what was tested.</p>
+        </details>
+      </section>
+
+      <!-- 7 -->
+      <section class="sop-sec" id="rejected">
+        <h2>7. What we tried that failed</h2>
+        <p>Recorded because a tool is only trustworthy if its failures are visible too.</p>
+        <table class="sop-table">
+          <thead><tr><th>Idea</th><th>What happened</th></tr></thead>
+          <tbody>
+            <tr><td>“The buyers kept buying day after day” — counting consecutive days of buying</td><td>Did not predict anything. What mattered was <i>how much</i> was absorbed, not over how many separate days.</td></tr>
+            <tr><td>Volume going up versus the previous period</td><td>Added nothing once absorption was known.</td></tr>
+            <tr><td>Number of brokers in the buying group on its own</td><td>Not useful by itself.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>The classic “price and volume” rule also failed here</h3>
+        <p>The textbook rule says: <i>high volume with a flat or rising price = accumulation</i>. We tested
+          that on the same data. Shares matching that description went on to do <b>worse</b> than the market
+          average (+1.48% against +2.96%). The volume part contributed nothing at all.</p>
+        <p>Our reading is that price-and-volume was always an <b>indirect guess</b> at who was buying —
+          useful before broker-level records existed. NEPSE publishes the broker on every trade, so this tab
+          measures the thing itself instead of guessing at it.</p>
+      </section>
+
+      <!-- 8 -->
+      <section class="sop-sec" id="workflow">
+        <h2>8. How to use it</h2>
+        <ul>
+          <li><b>Pick a period.</b> One month is the default. Three months gives a steadier picture. A
+            company that shows up in <b>both</b> is a more convincing case than one appearing in only the
+            shorter window.</li>
+          <li><b>Start with Quiet Accumulation.</b> Buying without the price rising is the most interesting
+            pattern, because the market has not reacted yet.</li>
+          <li><b>Open the row.</b> Look at the actual brokers on each side.</li>
+          <li><b>Check the company elsewhere.</b> Use Script Deep Dive for the broker split and Stock 360
+            for fundamentals. This tab is one input among several, never the whole decision.</li>
+          <li><b>Do not act on the score by itself.</b> Section 6 explains why.</li>
+        </ul>
+      </section>
+
+      <!-- 9 -->
+      <section class="sop-sec" id="limits">
+        <h2>9. What it cannot see</h2>
+        <div class="sop-warn"><b>Shares can move without appearing here at all.</b> Transfers made directly
+          between demat accounts, shares pledged to a bank, and privately negotiated deals never appear in
+          the trade records. Someone can build a large holding entirely this way and this tab will show
+          nothing. A <b>Neutral</b> reading means “no on-market pattern detected” — it does not mean
+          “nothing is happening”.</div>
+        <ul>
+          <li><b>It cannot tell you why anyone traded.</b> The records name the broker, not the client or
+            the reason. A broker with many ordinary retail customers can look exactly like one large
+            deliberate buyer. Everything here describes the <i>shape</i> of trading, never anyone's
+            intention.</li>
+          <li><b>Concentration is not proof of anything improper.</b> Plenty of innocent explanations
+            produce the same pattern.</li>
+          <li><b>A high score is not a buy signal.</b> Section 6 covers this in full.</li>
+          <li><b>Heavily self-traded shares score lower than they should.</b> When one broker is on both
+            sides of a trade, it inflates the total traded figure without changing anyone's net position,
+            which pushes the “Absorbed” percentage down. We left this as-is because the testing was done
+            this way, and changing it would mean shipping something untested.</li>
+          <li><b>Scores compare companies within one scan only</b> — not across different dates or
+            different periods.</li>
+          <li><b>Not investment advice.</b> It shows you where to look.</li>
+        </ul>
+      </section>
+
+      <!-- 10 -->
+      <section class="sop-sec" id="data">
+        <h2>10. Where the data comes from</h2>
+        <table class="sop-table">
+          <thead><tr><th>Information</th><th>Source</th><th>Updated</th></tr></thead>
+          <tbody>
+            <tr><td>Every trade, with buying and selling broker</td><td>NEPSE floorsheet</td><td>After each trading session</td></tr>
+            <tr><td>Sector and company names</td><td>Company records</td><td>When listings change</td></tr>
+            <tr><td>Closing prices</td><td>Daily price table</td><td>Daily after close</td></tr>
+            <tr><td>Bonus-adjusted prices</td><td>Adjusted price table</td><td>Used in the testing only</td></tr>
+          </tbody>
+        </table>
+        <p>The tab reuses the same stored daily summaries as the rest of the desk, so it adds no extra load
+          — a scan takes about a tenth of a second once the day's data is prepared.</p>
+      </section>
+
+    </section>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,133 @@
+/* NEPSE Data — raw exchange report pages.
+   Builds on floorsheet.css (.dsx-card / .dsx-table / .dsx-select / .dsx-combo),
+   so only the page shell and the report switcher are defined here. */
+
+/* base.html's .workspace-wrap already applies --shell-max and --shell-pad, and
+   this block renders inside it. Re-applying them here inset the page a second
+   --shell-pad on each side, so NEPSE Data sat visibly narrower than every other
+   page. Only the vertical rhythm belongs to this wrapper. */
+.nd-wrap { padding: 4px 0 48px; }
+
+.nd-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.nd-title {
+  /* Matches .mi-title exactly. The old rule was 800 weight at 24px and, more
+     importantly, omitted system-ui from the font stack: when Manrope had not
+     loaded this page fell back to Arial while the rest of the app fell back to
+     Segoe UI, so the heading visibly differed. */
+  margin: 0;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+.nd-blurb { margin: 5px 0 0; font: 500 var(--fs-sm)/1.45 'Manrope', system-ui, sans-serif; color: var(--ink-2); }
+.nd-back {
+  flex: 0 0 auto;
+  font: 600 var(--fs-xs)/1 'Manrope', system-ui, sans-serif;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.nd-back:hover { color: var(--ink-1); }
+
+/* Report switcher — scrolls rather than wrapping into a tall block. */
+.nd-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.nd-tab {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  font: 600 var(--fs-xs)/1 'Manrope', system-ui, sans-serif;
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.nd-tab:hover { color: var(--ink-1); }
+.nd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.nd-controls {
+  display: flex;
+  flex-wrap: wrap;
+  /* Row gap is larger than the column gap: when these wrap onto a second line
+     the uppercase field captions would otherwise sit almost against the inputs
+     above them. */
+  gap: 16px 14px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+.nd-grow { flex: 1 1 240px; }
+.nd-grow .dsx-select { width: 100%; box-sizing: border-box; text-transform: none; }
+.nd-narrow { min-width: 110px; }
+
+.nd-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line);
+}
+.nd-page-btn {
+  appearance: none;
+  cursor: pointer;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font: 600 var(--fs-xs)/1 'Manrope', system-ui, sans-serif;
+}
+.nd-page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.nd-page-btn:disabled { opacity: .4; cursor: default; }
+.nd-page-info {
+  min-width: 130px;
+  text-align: center;
+  font: 600 var(--fs-xs)/1 'Manrope', system-ui, sans-serif;
+  color: var(--ink-2);
+}
+
+.nd-note {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font: 500 var(--fs-xs)/1.45 'Manrope', system-ui, sans-serif;
+}
+
+/* Wide sheets scroll inside the card; the page itself never scrolls sideways.
+   Header stays put so a 300-row price sheet keeps its column labels. */
+/* .dsx-table already supplies the sticky header, its opaque background, the cell
+   padding and the left/right alignment rules. Only the sort affordance and the
+   up/down tinting are added here — re-declaring the rest would drift out of sync
+   with the tables on every other page. */
+.nd-table-wrap { overflow: auto; max-height: 72vh; }
+.nd-table thead th {
+  z-index: 2;          /* above tbody, which scrolls underneath it */
+  cursor: pointer;
+  user-select: none;
+}
+.nd-table thead th:hover { color: var(--ink-1); }
+.nd-table thead th.sorted { color: var(--accent); }
+.nd-table td.up { color: var(--up); }
+.nd-table td.down { color: var(--down); }
+
+@media (max-width: 720px) {
+  .nd-wrap { padding: 4px 0 36px; }
+}

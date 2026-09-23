@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock 360 — Where Every Number Comes From</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    .sop-wrap { max-width: 980px; margin: 0 auto; padding: 28px 18px 80px; }
+    .sop-wrap h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    .sop-kicker { color: var(--ink-3); font-size: .8rem; margin-bottom: 26px; }
+    .sop-wrap h2 { font-size: 1.05rem; margin: 34px 0 10px; padding-top: 18px;
+                   border-top: 1px solid var(--line); }
+    .sop-wrap p, .sop-wrap li { font-size: .9rem; line-height: 1.65; color: var(--ink-1); }
+    .sop-wrap li { margin-bottom: 7px; }
+    .sop-note { background: var(--surface); border: 1px solid var(--line);
+                border-left: 4px solid var(--warn, #d9a63f); border-radius: 8px;
+                padding: 12px 16px; margin: 14px 0; }
+    .sop-tbl { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .85rem; }
+    .sop-tbl th, .sop-tbl td { text-align: left; padding: 8px 10px;
+                               border-bottom: 1px solid var(--line); vertical-align: top; }
+    .sop-tbl th { color: var(--ink-3); font-size: .7rem; text-transform: uppercase;
+                  letter-spacing: .06em; }
+    /* The source column is all table/endpoint names — keep it monospaced and
+       narrow so the "what it shows" column stays readable prose. */
+    .sop-tbl td.src { font-family: ui-monospace, Consolas, monospace; font-size: .78rem;
+                      color: var(--ink-2); white-space: normal; }
+    .sop-scroll { overflow-x: auto; }
+    /* The pill name is a wayfinding aid, not part of the heading — set apart so
+       the panel title still reads as the page's own wording. */
+    .sop-pill { display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: 20px;
+                background: var(--surface-2); border: 1px solid var(--line);
+                font-size: .62rem; font-weight: 700; letter-spacing: .04em;
+                text-transform: uppercase; color: var(--ink-3); vertical-align: middle; }
+    .sop-sub { font-size: .74rem; color: var(--ink-3); }
+    details.sop-tech { margin: 10px 0 0; border: 1px dashed var(--line);
+                       border-radius: 8px; padding: 8px 14px; }
+    details.sop-tech summary { cursor: pointer; font-size: .78rem; color: var(--ink-3); }
+    details.sop-tech p, details.sop-tech li { font-size: .8rem; color: var(--ink-2); }
+    .sop-back { display: inline-block; margin-bottom: 18px; font-size: .8rem; }
+    code { background: var(--surface-2); border: 1px solid var(--line);
+           border-radius: 4px; padding: 1px 5px; font-size: .8em; }
+  </style>
+</head>
+<body>
+<div class="sop-wrap">
+  <a class="sop-back" href="{% url 'stock360' %}">&larr; Back to Stock 360</a>
+  <h1>Stock 360 — where every number comes from</h1>
+  <p class="sop-kicker">One symbol in, every desk's read on it out. This page says which
+     table or service each panel is reading, in short.</p>
+
+  <h2>1. The one rule that explains most of the page</h2>
+  <p><b>Adjusted prices for anything measured over time; the raw exchange print for
+     "what it did today."</b> A bonus or split makes the price fall without anyone
+     selling, so a return calculated on raw closes would invent a crash. Everything
+     that spans days — returns, volatility, moving averages, RSI, beta, the SOP
+     backtest — runs on the split/bonus-adjusted series. The hero quote (last close,
+     day change, volume, 52-week range, market cap) is the raw print, because that is
+     the number the exchange actually published.</p>
+  <p>The adjusted series is built <b>once per request</b> and shared by every block
+     that needs it, so the returns, the technicals and the SOP signal can never
+     disagree about the price history.</p>
+
+  <h2>2. Panel by panel, where the data is pulled from</h2>
+  <p>Panels are listed in page order, named exactly as their heading reads on Stock 360,
+     with the section pill that jumps to them.</p>
+  <div class="sop-scroll">
+  <table class="sop-tbl">
+    <tr><th>Panel</th><th>What it shows</th><th>Pulled from</th></tr>
+
+    <tr>
+      <td><b>Company header &amp; quote</b><span class="sop-pill">Overview</span></td>
+      <td>Company name, last close, day change, the 52 Weeks H / L gauge and the
+          freshness chip.</td>
+      <td class="src">nepse_daily_stock_prices<br><i>(raw, server-rendered)</i></td>
+    </tr>
+    <tr>
+      <td><b>Market</b><span class="sop-pill">Overview</span></td>
+      <td>Market cap, 60-day average volume, 5-year weekly beta.</td>
+      <td class="src">nepse_daily_stock_prices;<br>beta vs nepse_market_indices</td>
+    </tr>
+    <tr>
+      <td><b>Key Ratios</b><span class="sop-pill">Overview</span></td>
+      <td>P/E, P/B, ROE, EPS, book value.</td>
+      <td class="src">GET /fundamentals/api/<br>&rarr; fundamentals_financialstatdbs</td>
+    </tr>
+    <tr>
+      <td><b>Dividend</b><span class="sop-pill">Overview</span></td>
+      <td>Per-year dividend per share, payout streak, and any board-proposed dividend.</td>
+      <td class="src">GET /stock/api/dividends/<br>&rarr; FundaFundamentalSnapshot (KeyStats)<br>+ proposed_dividends</td>
+    </tr>
+    <tr>
+      <td><b>Fund NAV &amp; discount</b><span class="sop-pill">Fund NAV</span></td>
+      <td>Mutual funds only. NAV per unit, market price and the premium/discount
+          between them, plus fund size and maturity.</td>
+      <td class="src">mutual_fund_nav<br><i>(ShareSansar NAV feed)</i></td>
+    </tr>
+    <tr>
+      <td><b>Technical &middot; trend &amp; momentum</b><span class="sop-pill">Technical</span></td>
+      <td>Trend structure (MA10/20/50/200 stack), RSI 14, 20-session return, position in
+          the adjusted 52-week range, volume vs 20-day, beta (5Y weekly).</td>
+      <td class="src">adjusted series<br><i>(server-rendered)</i></td>
+    </tr>
+    <tr>
+      <td><b>SOP Confluence &middot; signal</b><span class="sop-pill">SOP Signal</span></td>
+      <td>BUY / HOLD / SELL / WAIT, as two readings: the indicators alone, and the
+          tradeable call after the market-regime filter.</td>
+      <td class="src">GET /stock/api/sop/<br>&rarr; the Strategy Simulator's own
+          "SOP Combined" engine, run on the adjusted series</td>
+    </tr>
+    <tr>
+      <td><b>Fundamental Analysis</b><br>
+          <span class="sop-sub">incl. Price Momentum &middot; adjusted returns</span>
+          <span class="sop-pill">Fundamentals</span></td>
+      <td>The ratio cards and multi-period trend, plus 1D / 1W / 1M / 3M / YTD / 1Y
+          returns and annualised volatility.</td>
+      <td class="src">GET /fundamentals/api/<br>&rarr; fundamentals_financialstatdbs;<br>
+          returns from the adjusted series</td>
+    </tr>
+    <tr>
+      <td><b>Financial Statements &middot; last 8 quarters</b><span class="sop-pill">Statements</span></td>
+      <td>Balance Sheet / Income Statement / Key Statistics, over a 5&ndash;24 quarter window.</td>
+      <td class="src">GET /fundamentals/api/matrix/<br>&rarr; fundamentals_financialstatdbs</td>
+    </tr>
+    <tr>
+      <td><b>AI Narrative Analysis &middot; Gemini</b><span class="sop-pill">AI Narrative</span></td>
+      <td>A written read of support/resistance structure, momentum and the recent price
+          path. On demand only.</td>
+      <td class="src">GET /stock/api/ai/<br>&rarr; support/resistance computed locally,
+          then Google Gemini</td>
+    </tr>
+    <tr>
+      <td><b>Floorsheet &middot; Broker Conviction</b><span class="sop-pill">Floorsheet</span></td>
+      <td>Concentration, per-broker accumulation and net buying over the selected window
+          (1W / 1M / 3M / 1Y).</td>
+      <td class="src">GET /floorsheet/api/stockwise/<br>&rarr; floorsheet_raw</td>
+    </tr>
+  </table>
+  </div>
+
+  <h2>3. Two sources of fundamentals, and which one wins</h2>
+  <p>The ratio cards and the statement matrix read the platform's own financial-statement
+     table (<code>fundamentals_financialstatdbs</code>), harvested by the separate
+     <code>fundamentals</code> app. The dividend card and the valuation workspace read a
+     second store, <code>FundaFundamentalSnapshot</code> &mdash; a per-symbol snapshot synced
+     on demand from <b>funda.aurasrp.com.np</b>. A synced snapshot is preferred over a live
+     read; a symbol nobody has synced simply shows no dividend history rather than a guess.</p>
+
+  <h2>4. Mutual funds are a different instrument</h2>
+  <p>A mutual fund files no balance sheet and no income statement &mdash; it has no revenue
+     and no ROE &mdash; so P/E, P/B and EPS are category errors for one, and every ratio card
+     on this page is structurally blank for a fund no matter how often the fundamentals sync
+     runs. What a fund publishes instead is its <b>NAV</b> (net asset value per unit).</p>
+  <p>Because almost every Nepali scheme is <b>closed-end</b>, the figure that matters is the
+     gap between NAV and the market price: a fund trading at 8.96 against a NAV of 9.93 is on
+     a 9.8% discount. That is the fund equivalent of P/B, and it is what the <b>Fund NAV &amp;
+     discount</b> panel leads with. A negative number means trading <i>below</i> NAV, which is
+     the normal state here.</p>
+  <div class="sop-note">
+    <p><b>NAV is a month-end reading, not a live one.</b> Funds report per Nepali month
+       (e.g. "Asadh 2083"), so the discount pairs a current market price against a NAV that
+       may be up to a month old. Open-end schemes also publish a daily NAV, which the panel
+       shows when it exists. The panel states our own close-vs-NAV figure and, alongside it,
+       the publisher's own figure from its own price snapshot &mdash; so a disagreement is
+       explainable rather than mysterious.</p>
+  </div>
+
+  <h2>5. What is computed here vs. borrowed from another desk</h2>
+  <ul>
+    <li><b>Computed on this page:</b> the quote, returns, volatility and every technical
+        reading. They are server-rendered so the page cannot show a figure that no
+        endpoint would confirm.</li>
+    <li><b>Borrowed, deliberately:</b> the SOP signal runs the Strategy Simulator's engine
+        with that desk's own defaults, and the floorsheet block calls the broker desk's
+        endpoint. Neither has a private copy of the logic, so Stock 360 and the desk it
+        links to cannot print different calls for the same symbol.</li>
+    <li><b>Linked, not embedded:</b> the full valuation model and the seller&rarr;buyer flow
+        map live on their own pages; the panels here link across rather than keep a thinner
+        duplicate.</li>
+  </ul>
+
+  <h2>6. Freshness and caching</h2>
+  <ul>
+    <li>The computed payload is cached per <b>(symbol, latest EOD date)</b> for 30 minutes,
+        so the pandas work runs once per symbol per session, not on every page view. A new
+        trading session invalidates it automatically.</li>
+    <li>The AI narrative is cached for ~6 hours &mdash; one Gemini spend per symbol per
+        trading day, roughly.</li>
+    <li>The <b>freshness chip</b> in the hero answers two different questions with one
+        label: is the platform's EOD store up to date at all, and has <i>this</i> symbol
+        traded since. A stock that simply did not trade is not a broken pipeline, and the
+        chip says which it is.</li>
+  </ul>
+
+  <h2>7. Limits, said plainly</h2>
+  <div class="sop-note">
+    <p><b>No ATR, ADX or DMI anywhere on this page.</b> A large share of NEPSE bars print
+       high equal to low. Range-based indicators divide by that range, so on this market
+       they produce confident-looking nonsense. They are left out rather than shown with a
+       caveat.</p>
+  </div>
+  <ul>
+    <li><b>Adjustments can go stale.</b> If the corporate-action table has not been synced,
+       the "adjusted" series quietly degrades toward raw closes, and returns spanning a
+       bonus issue will be wrong. The freshness chip covers price staleness, not
+       adjustment staleness.</li>
+    <li><b>Dividends come from what was filed.</b> The fiscal year's payout is taken as the
+       largest <code>DividendPerShare</code> reported in that year &mdash; Q4 usually carries
+       it, but a company reporting it earlier is still picked up. A company that filed
+       nothing shows nothing.</li>
+    <li><b>The SOP call is a model, not advice.</b> It is the same engine the simulator
+       backtests, run on today's data. A BUY is the rule set firing, not a forecast.</li>
+    <li><b>The AI narrative is generated text.</b> It describes levels computed from real
+       price data, but the prose itself is a language model's and is not checked figure by
+       figure.</li>
+  </ul>
+
+  <details class="sop-tech">
+    <summary>Technical appendix — exact tables and endpoints</summary>
+    <ul>
+      <li><b>Prices:</b> <code>nepse_daily_stock_prices</code> (raw EOD),
+          <code>nepse_todayprice_adj</code> (corporate-action factors). Combined by the
+          workbench's shared dataframe builder, 5 years back, with an unadjusted
+          fallback.</li>
+      <li><b>Index:</b> <code>nepse_market_indices</code> &mdash; used for the 5-year weekly
+          beta and the SOP regime filter (NEPSE 200-SMA).</li>
+      <li><b>Financials:</b> <code>fundamentals_financialstatdbs</code>, served by
+          <code>/fundamentals/api/</code> and <code>/fundamentals/api/matrix/</code>.</li>
+      <li><b>Synced snapshot:</b> <code>FundaFundamentalSnapshot</code>, filled by
+          <code>/stock/api/funda/sync/</code> from <code>funda.aurasrp.com.np</code>
+          (signed-in users only &mdash; it triggers an outbound fetch and a write).</li>
+      <li><b>Proposed dividends:</b> <code>proposed_dividends</code>.</li>
+      <li><b>Mutual fund NAV:</b> <code>mutual_fund_nav</code>, filled by <b>Sync Fund NAV</b>
+          in the Raw Inventory Manager from ShareSansar's <code>/mutual-fund-navs</code>
+          feed. One row per fund per Nepali month; the feed exposes only each fund's latest
+          reading, so history accumulates from syncs and cannot be backfilled.</li>
+      <li><b>Floorsheet:</b> <code>floorsheet_raw</code> &mdash; one row per executed trade,
+          carrying both the buying and the selling broker.</li>
+      <li><b>Beta:</b> weekly returns vs the NEPSE Index over 5 years. Weekly, not daily
+          &mdash; do not compare it against a daily volatility figure.</li>
+      <li><b>Returns windows</b> use approximate NEPSE session counts, deliberately
+          conservative: 1W&nbsp;=&nbsp;5, 1M&nbsp;=&nbsp;22, 3M&nbsp;=&nbsp;66,
+          1Y&nbsp;=&nbsp;246 sessions.</li>
+      <li><b>AI model:</b> Gemini 2.5 Pro, called only when you press Generate.</li>
+    </ul>
+  </details>
+</div>
+</body>
+</html>

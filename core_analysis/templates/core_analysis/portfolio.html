@@ -1,0 +1,481 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Risk &amp; Portfolio Desk</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">RP</span>
+      <div>
+        <h1 class="mi-title">Risk &amp; Portfolio Desk</h1>
+        <p class="mi-subtitle">Valuation, exposure, accounting &amp; risk</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      {% if is_approver %}
+      <!-- Account-request notifications (admin only): pending signups + inline approve/reject. -->
+      <div class="pf-bell-wrap" id="pf-bell-wrap">
+        <button type="button" class="mi-icon-btn pf-bell" id="pf-bell"
+                title="Account requests" aria-haspopup="true" aria-expanded="false" aria-controls="pf-notif">
+          <span class="pf-bell-ico" aria-hidden="true">🔔</span>
+          <span class="pf-bell-badge{% if not pending_approvals %} hidden{% endif %}" id="pf-bell-badge">{{ pending_approvals }}</span>
+        </button>
+        <div class="pf-notif" id="pf-notif" role="menu" aria-label="Pending account requests" hidden>
+          <div class="pf-notif-head">
+            <span>Account requests</span>
+            <span class="pf-notif-count" id="pf-notif-count"></span>
+          </div>
+          <div class="pf-notif-list" id="pf-notif-list">
+            <div class="pf-notif-empty">Loading…</div>
+          </div>
+          <div class="pf-notif-foot">
+            <a href="{% url 'admin:core_analysis_accountapproval_changelist' %}" target="_blank" rel="noopener">Manage in admin →</a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <span class="pf-user">{{ request.user.username }}</span>
+      <a href="{% url 'portfolio_sop' %}" class="mi-icon-btn" title="How every metric is calculated — methodology SOP">Methodology</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+      <form method="post" action="{% url 'logout' %}" class="pf-logout">
+        {% csrf_token %}
+        <button type="submit" class="mi-icon-btn" title="Sign out">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='portfolio' %}
+
+  <section class="pf-portfolio-board" aria-label="Portfolio management">
+    <div class="pf-portfolio-context">
+      {% if active_portfolios|length > 1 %}
+      <form method="get" action="{% url 'portfolio' %}" class="pf-selector-form">
+        <label for="pf-portfolio-select">Portfolio</label>
+        <select id="pf-portfolio-select" name="portfolio" data-pf-selector>
+          {% for p in active_portfolios %}
+          <option value="{{ p.id }}"{% if p.id == active_portfolio.id %} selected{% endif %}>
+            {{ p.name }}{% if p.is_default %} (default){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+      {% else %}
+      <div class="pf-current-portfolio">
+        <span class="pf-eyebrow">Portfolio</span>
+        <strong>{{ active_portfolio.name }}</strong>
+      </div>
+      {% endif %}
+      <div class="pf-portfolio-meta">
+        <span>{{ active_portfolio.get_portfolio_type_display }}</span>
+        {% if active_portfolio.is_default %}<span>Default</span>{% endif %}
+      </div>
+    </div>
+    <details class="pf-portfolio-manager"{% if not has_holdings %} open{% endif %}>
+      <summary>Manage portfolios</summary>
+      <div class="pf-manager-stack">
+        <details class="pf-create-panel"{% if not has_holdings %} open{% endif %}>
+          <summary>Create new portfolio</summary>
+          <form method="post" action="{% url 'portfolio_manage' %}"
+                class="pf-manager-form pf-create-series" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <input type="hidden" name="portfolio_type" value="personal">
+            <label>
+              <span>1 &middot; Name</span>
+              <input type="text" name="name" maxlength="120"
+                     placeholder="Auto from Holdings report">
+            </label>
+            <div class="pf-manager-upload">
+              <span>2 &middot; Upload Holdings</span>
+              <span class="pf-upload">
+                <input class="pf-file-input" type="file" name="file"
+                       accept=".csv,.xlsx,.xlsm,.pdf" id="pf-new-portfolio-file" required>
+                <label class="pf-file-picker pf-file-picker-combined" for="pf-new-portfolio-file">
+                  <span class="pf-file-name" data-empty-label="My Shares Values">My Shares Values</span>
+                </label>
+              </span>
+            </div>
+            <div class="pf-manager-upload">
+              <span>3 &middot; Upload WACC</span>
+              <span class="pf-upload">
+                <input class="pf-file-input" type="file" name="wacc_file"
+                       accept=".csv,.xlsx,.xlsm,.pdf" id="pf-new-wacc-file">
+                <label class="pf-file-picker pf-file-picker-combined" for="pf-new-wacc-file">
+                  <span class="pf-file-name" data-empty-label="My WACC Report">My WACC Report</span>
+                </label>
+              </span>
+            </div>
+            <div class="pf-create-action">
+              <span>4 &middot; Create Portfolio</span>
+              <button type="submit" class="pf-btn pf-btn-primary">Create Portfolio</button>
+            </div>
+          </form>
+        </details>
+        <details class="pf-create-panel pf-ledger-manager-panel">
+          <summary>Broker ledger &amp; Nepali FY</summary>
+          <div class="pf-ledger-toolbar pf-manager-ledger-tools">
+            <form method="post" action="{% url 'portfolio_ledger_import' %}"
+                  enctype="multipart/form-data" class="pf-ledger-import">
+              {% csrf_token %}
+              <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
+              <span class="pf-upload">
+                <input class="pf-file-input" type="file" name="file"
+                       accept=".csv,.xlsx,.xlsm,.pdf" id="pf-ledger-file" required>
+                <label class="pf-file-picker" for="pf-ledger-file">
+                  <span class="pf-file-name" data-empty-label="Broker Account Statement">Broker Account Statement</span>
+                </label>
+              </span>
+              <button type="submit" class="pf-btn pf-btn-primary">Import Ledger</button>
+            </form>
+            {% if ledger.available_fiscal_years %}
+            <form method="get" action="{% url 'portfolio' %}" class="pf-fy-filter">
+              <input type="hidden" name="portfolio" value="{{ active_portfolio.id }}">
+              <label for="pf-fy-select">Nepali FY</label>
+              <select name="fy" id="pf-fy-select" onchange="this.form.submit()">
+                {% for fy in ledger.available_fiscal_years %}
+                <option value="{{ fy }}"{% if fy == ledger.selected_fiscal_year %} selected{% endif %}>FY {{ fy }}</option>
+                {% endfor %}
+              </select>
+            </form>
+            {% endif %}
+          </div>
+        </details>
+        {% if has_holdings %}
+        <details class="pf-create-panel">
+          <summary>Active portfolio actions</summary>
+          <form method="post" action="{% url 'portfolio_manage' %}"
+                class="pf-active-actions" data-pf-delete data-name="{{ active_portfolio.name }}">
+            {% csrf_token %}
+            <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
+            <span>Delete the selected portfolio and its private holdings, WACC and ledger data.</span>
+            <button type="submit" name="action" value="delete" class="pf-btn pf-btn-danger"
+                    {% if active_portfolios|length <= 1 %}disabled
+                    title="Create another portfolio before deleting the last active portfolio"{% endif %}>
+              Delete Portfolio
+            </button>
+          </form>
+        </details>
+        {% endif %}
+      </div>
+      {% if archived_portfolios %}
+      <div class="pf-archived-list" aria-label="Archived portfolios">
+        <span class="pf-eyebrow">Archived</span>
+        {% for p in archived_portfolios %}
+        <form method="post" action="{% url 'portfolio_manage' %}" class="pf-archived-row">
+          {% csrf_token %}
+          <input type="hidden" name="portfolio_id" value="{{ p.id }}">
+          <span class="pf-archived-name">{{ p.name }}</span>
+          <span class="pf-archived-meta">{{ p.get_portfolio_type_display }} &middot; {{ p.holdings_count }} holdings</span>
+          <button type="button" class="pf-btn pf-btn-ghost" data-pf-rename
+                  data-id="{{ p.id }}" data-name="{{ p.name }}">Rename</button>
+          <button type="submit" name="action" value="restore" class="pf-btn pf-btn-ghost">Restore</button>
+          <button type="submit" name="action" value="duplicate" class="pf-btn pf-btn-ghost">Duplicate</button>
+          <button type="submit" name="action" value="delete" class="pf-btn pf-btn-danger"
+                  data-pf-delete-button data-name="{{ p.name }}">Delete</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </details>
+  </section>
+
+  {% if messages %}
+  <div class="pf-flash">
+    {% for message in messages %}
+    <div class="pf-flash-item {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+
+  {% if has_holdings %}
+
+  <!-- ══ Overview ═════════════════════════════════════════════════════ -->
+  <div class="pf-section pf-broker-section"><span>Portfolio Overview
+    <a class="pf-help" href="{% url 'portfolio_sop' %}#overview" title="Overview KPIs — how each tile is calculated">?</a></span>
+    <small class="pf-section-meta" id="pf-asof"></small></div>
+  <div class="pf-kpis pf-overview-strip" id="pf-kpis"></div>
+
+  {% comment %}
+    Winners/losers snapshot. Sits directly under the KPI strip because it is the
+    first question anyone asks of a portfolio ("what's up, what's down") and it
+    needs no scrolling to answer. Requires the WACC cost basis; renders a prompt
+    to import it rather than an empty card when cost is missing.
+  {% endcomment %}
+  <div class="pf-card pf-snapshot-card" id="pf-snapshot-card">
+    <div class="pf-card-head">Profit &amp; Loss Snapshot
+      <a class="pf-help" href="{% url 'portfolio_sop' %}#pl-snapshot" title="Winners vs losers on unrealised P/L, and the best and worst holdings by percentage">?</a></div>
+    <div class="pf-snapshot" id="pf-snapshot"></div>
+  </div>
+
+  <!-- ══ Portfolio Summary ════════════════════════════════════════════ -->
+  <div class="pf-section pf-broker-section"><span>Stock Holdings
+    <a class="pf-help" href="{% url 'portfolio_sop' %}#portfolio-summary" title="Portfolio Summary desk — full methodology">?</a></span></div>
+  <details class="pf-card pf-summary-card pf-ledger-collapse pf-holdings-collapse">
+    <summary class="pf-card-head pf-ledger-table-head pf-holdings-collapse-head">
+      <span>Holdings / WACC</span>
+      <span class="pf-ledger-table-meta">
+        <b class="pf-ledger-toggle-hide">Hide</b><b class="pf-ledger-toggle-show">Show</b>
+      </span>
+    </summary>
+    <div class="pf-holdings-tabs" role="tablist" aria-label="Stock holdings view">
+      <button type="button" class="pf-holdings-tab active" data-pf-holdings-tab="top"
+              role="tab" aria-selected="true">Top Holdings</button>
+      <button type="button" class="pf-holdings-tab" data-pf-holdings-tab="gaining"
+              role="tab" aria-selected="false">Gaining</button>
+      <button type="button" class="pf-holdings-tab" data-pf-holdings-tab="losing"
+              role="tab" aria-selected="false">Losing</button>
+    </div>
+    <details class="pf-summary-tools">
+      <summary>Scenario &amp; advanced filters</summary>
+    <div class="pf-sum-controls">
+      <div class="pf-sum-idx">
+        <label for="pf-idx-current">Current NEPSE</label>
+        <input type="text" id="pf-idx-current" readonly>
+      </div>
+      <div class="pf-sum-idx">
+        <label for="pf-idx-expected">Expected NEPSE</label>
+        <input type="number" id="pf-idx-expected" step="0.01" inputmode="decimal">
+      </div>
+      <div class="pf-sum-idx">
+        <label>Change</label>
+        <span class="pf-idx-change" id="pf-idx-change">0.00%</span>
+      </div>
+    </div>
+    <div class="pf-kpis pf-sum-tiles" id="pf-sum-tiles"></div>
+    <div class="pf-sum-filterbar" aria-label="Portfolio summary filters">
+      <label class="pf-filter-field" for="pf-sum-query">
+        <span>Search</span>
+        <input type="search" id="pf-sum-query" placeholder="Symbol">
+      </label>
+      <label class="pf-filter-field" for="pf-sum-sector-filter">
+        <span>Sector</span>
+        <select id="pf-sum-sector-filter">
+          <option value="">All sectors</option>
+        </select>
+      </label>
+      <label class="pf-filter-field" for="pf-sum-liq-filter">
+        <span>Liquidity</span>
+        <select id="pf-sum-liq-filter">
+          <option value="">All</option>
+          <option value="liquid">Low</option>
+          <option value="moderate">Moderate</option>
+          <option value="illiquid">High</option>
+          <option value="untradeable">Very High</option>
+        </select>
+      </label>
+      <label class="pf-filter-field" for="pf-sum-sort">
+        <span>Sort</span>
+        <select id="pf-sum-sort">
+          <option value="symbol">Symbol</option>
+          <option value="value">Market Value</option>
+          <option value="day">Day Gain/Loss</option>
+          <option value="unrealized">Unrealized Gain/Loss</option>
+          <option value="quantity">Kitta</option>
+          <option value="wacc">WACC</option>
+          <option value="price">LTP</option>
+          <option value="weight">Weight</option>
+          <option value="vol">Vol</option>
+          <option value="beta">Beta</option>
+          <option value="dtl">Liquidity</option>
+          <option value="expPrice">Exp. Price</option>
+          <option value="expValue">Exp. Value</option>
+          <option value="gain">Scenario Gain/Loss</option>
+          <option value="var1w">VaR 1W</option>
+          <option value="loss1w">Loss 1W</option>
+          <option value="var1m">VaR 1M</option>
+          <option value="loss1m">Loss 1M</option>
+        </select>
+      </label>
+      <button type="button" class="pf-btn pf-btn-ghost pf-sort-dir" id="pf-sum-dir">Desc</button>
+      <button type="button" class="pf-btn pf-btn-ghost" id="pf-sum-reset">Reset</button>
+      <span class="pf-filter-count" id="pf-sum-count"></span>
+    </div>
+    </details>
+    <div class="pf-table-wrap">
+      <table class="pf-table pf-sum-table" id="pf-sum-table"></table>
+    </div>
+    <div class="pf-note" id="pf-sum-note"></div>
+  </details>
+
+  {% endif %}
+
+  {% if not has_holdings %}
+  <!-- Empty active portfolio: creation/import controls are open above. -->
+  <div class="pf-empty" id="pf-empty">
+    <div class="pf-empty-icon">📂</div>
+    <h3>No holdings in {{ active_portfolio.name }}</h3>
+    <p>Use the open Create new portfolio panel above to add Holdings, optional WACC, and create the portfolio.</p>
+  </div>
+  {% else %}
+
+  <!-- ══ Risk & Allocation ════════════════════════════════════════════ -->
+  <div class="pf-section"><span>Risk &amp; Allocation
+    <a class="pf-help" href="{% url 'portfolio_sop' %}#var" title="Risk methodology — VaR, stress, factor model, liquidity">?</a></span></div>
+
+  {% comment %}
+  How much to trust the numbers below. Placed FIRST in the risk section, not
+  buried at the end, because the whole point is to be read before the metrics
+  it qualifies. Grades describe input quality — stale prices, beta precision,
+  model assumptions — not how risky the portfolio is.
+  {% endcomment %}
+  <div class="pf-card pf-reliability-card">
+    <div class="pf-card-head pf-rel-head">
+      <span>How reliable are these numbers?
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#reliability" title="What each grade means and how it is derived">?</a></span>
+      <span class="pf-rel-summary" id="pf-rel-summary"></span>
+    </div>
+    <div class="pf-reliability" id="pf-reliability"></div>
+  </div>
+
+  <!-- Row 1: Value at Risk · Compliance — both are "where do we stand"
+       summaries, and they finish at similar heights (424 / 462). -->
+  <div class="pf-grid pf-risk-market-grid">
+    <div class="pf-card">
+      <div class="pf-card-head">Value at Risk &amp; Drawdown</div>
+      <div class="pf-var" id="pf-var"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head pf-compliance-head">
+        <span>Compliance &amp; Risk Limits
+          <a class="pf-help" href="{% url 'portfolio_sop' %}#compliance" title="Policy limits — every check, watch &amp; breach threshold">?</a></span>
+        <span class="pf-compliance-summary" id="pf-compliance-summary"></span>
+      </div>
+      <div class="pf-compliance" id="pf-compliance"></div>
+    </div>
+  </div>
+
+  <!-- Row 2: the two stress tests — market shock beside liquidation
+       capacity (576 / 632). -->
+  <div class="pf-grid">
+    <div class="pf-card">
+      <div class="pf-card-head">Stress Scenarios
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#stress" title="Stress scenarios — beta-propagated market shocks">?</a></div>
+      <div class="pf-stress" id="pf-stress"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head">Liquidity Stress Test
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#liquidity" title="One-year ADV, participation limits and days-to-liquidate">?</a></div>
+      <div class="pf-liq-controls" aria-label="Liquidity stress assumptions">
+        <label>ADV participation
+          <select id="pf-liq-participation">
+            <option value="10">10%</option>
+            <option value="20" selected>20%</option>
+            <option value="25">25%</option>
+          </select>
+        </label>
+        <label>Custom liquidation
+          <span><input id="pf-liq-target" type="number" min="0.1" max="100" step="0.1" value="100" inputmode="decimal">%</span>
+        </label>
+        <button type="button" class="pf-btn pf-btn-ghost" id="pf-liq-calculate">Run</button>
+      </div>
+      <div class="pf-liq" id="pf-liq"></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Risk/sector decomposition · Concentration/attribution -->
+  <div class="pf-grid pf-risk-attribution-grid">
+    <div class="pf-card pf-risk-sector-card" id="pf-risk-sector-decomposition">
+      <div class="pf-card-head">Risk Decomposition &amp; Sector Exposure
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#factor-model" title="Factor risk contribution compared with invested capital by sector">?</a></div>
+      <div class="pf-risk-sector-subhead">Factor-model risk contribution</div>
+      <div class="pf-factors" id="pf-factors"></div>
+      {% comment %}
+        Capital and risk side by side, not stacked. The same sectors used to be
+        listed twice (once per measure), which made the card tall and buried the
+        comparison that matters: a sector can be a small share of invested
+        capital and a large share of risk.
+      {% endcomment %}
+      <div class="pf-sec-split">
+        <div class="pf-sec-col">
+          <div class="pf-risk-sector-subhead">Invested capital by sector
+            <a class="pf-help" href="{% url 'portfolio_sop' %}#sectors" title="Sector weights based on current market value">?</a></div>
+          <div class="pf-sec-donut" id="pf-sector-donut"></div>
+        </div>
+        <div class="pf-sec-col">
+          <div class="pf-risk-sector-subhead">Risk contribution by sector
+            <a class="pf-help" href="{% url 'portfolio_sop' %}#factor-model" title="Share of total portfolio variance contributed by each sector">?</a></div>
+          <div class="pf-sec-bars" id="pf-sector-risk"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pf-card pf-concentration-reconciliation-card" id="pf-concentration-reconciliation">
+      <div class="pf-card-head">Concentration &amp; Attribution
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#concentration" title="Top holdings, cumulative concentration and return/risk attribution">?</a></div>
+      <div class="pf-conc" id="pf-conc"></div>
+      {% include "core_analysis/_portfolio_reconciliation.html" %}
+    </div>
+  </div>
+
+  {% comment %}
+    Row 4: was the volume's biggest gap — the desk measured risk exhaustively
+    but never asked whether the risk was PAID FOR. Left card answers that
+    (Sharpe / Treynor / M² / alpha vs NEPSE); right card asks whether the
+    holdings actually move apart, which a holdings count cannot tell you.
+  {% endcomment %}
+  <div class="pf-grid pf-risk-attribution-grid">
+    <div class="pf-card" id="pf-performance-card">
+      <div class="pf-card-head">Risk-Adjusted Performance
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#performance" title="Sharpe, Treynor, M-squared, Jensen's alpha, tracking error and information ratio versus the NEPSE index">?</a></div>
+      <div class="pf-perf" id="pf-performance"></div>
+    </div>
+    <div class="pf-card" id="pf-correlation-card">
+      <div class="pf-card-head">Correlation &amp; Diversification
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#correlation" title="Average pairwise correlation between holdings and the diversification ratio">?</a></div>
+      <div class="pf-corr" id="pf-correlation"></div>
+    </div>
+  </div>
+
+  {% endif %}
+
+  {% include "core_analysis/_portfolio_ledger.html" %}
+
+</div>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function sync() {
+      if (!btn) return;
+      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = light ? 'Dark' : 'Light';
+    }
+    sync();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      sync();
+    });
+  })();
+</script>
+<script>
+  window.PF_HAS_HOLDINGS = {% if has_holdings %}true{% else %}false{% endif %};
+  window.PF_DATA_URL = "{% url 'portfolio_data_api' %}?portfolio={{ active_portfolio.id }}{% if ledger.selected_fiscal_year %}&fy={{ ledger.selected_fiscal_year|urlencode }}{% endif %}";
+  window.PF_MANAGE_URL = "{% url 'portfolio_manage' %}";
+  window.PF_SOP_URL = "{% url 'portfolio_sop' %}";
+  window.PF_IS_APPROVER = {% if is_approver %}true{% else %}false{% endif %};
+  window.PF_CSRF = "{{ csrf_token }}";
+  window.PF_APPROVALS_URL = "{% url 'portfolio_approvals_api' %}";
+  window.PF_APPROVAL_ACTION_URL = "{% url 'portfolio_approval_action' %}";
+</script>
+<script src="{% static 'core_analysis/js/portfolio.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
+</body>
+</html>

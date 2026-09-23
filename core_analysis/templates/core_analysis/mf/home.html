@@ -1,0 +1,86 @@
+{% extends "core_analysis/mf/_base.html" %}
+{% block title %}Mutual Fund Desk{% endblock %}
+{% block heading %}Mutual Fund Desk{% endblock %}
+{% block subheading %}Scheme facts, holdings, allocations and NAV for every listed fund{% endblock %}
+
+{% block content %}
+<div class="mfd-cards">
+  <div class="mfd-card">
+    <div class="v">{{ overview.total_funds }}</div>
+    <div class="k">Total Funds</div>
+    <div class="h">Listed schemes on the board</div>
+  </div>
+  <div class="mfd-card">
+    <div class="v">{{ overview.active_funds }}</div>
+    <div class="k">Active Funds</div>
+    <div class="h">Not suspended or delisted</div>
+  </div>
+  <div class="mfd-card">
+    <div class="v">{{ overview.funds_traded }}</div>
+    <div class="k">Funds Traded</div>
+    <div class="h">On the latest market date</div>
+  </div>
+  <div class="mfd-card">
+    <div class="v">{{ overview.total_turnover|floatformat:0 }}</div>
+    <div class="k">Total Turnover</div>
+    <div class="h">Rupees traded, latest session</div>
+  </div>
+  <div class="mfd-card">
+    <div class="v">{{ overview.price_date|date:"M j, Y" }}</div>
+    <div class="k">Price Date</div>
+    <div class="h">Most recent market snapshot</div>
+  </div>
+</div>
+
+{% comment %}
+  Coverage, stated plainly. A report that silently covers eleven of fourteen
+  months reads as complete, so the counts that bound every screen below go here
+  rather than in a footnote nobody reaches.
+{% endcomment %}
+<div class="mfd-cards">
+  <div class="mfd-card">
+    <div class="v">{{ overview.fund_months }}</div>
+    <div class="k">Fund-months stored</div>
+    <div class="h">{{ overview.covered_funds }} funds covered by the holdings feed,
+      {{ overview.periods|length }} months, newest {{ overview.latest_period }}</div>
+  </div>
+  <div class="mfd-card">
+    <div class="v">{{ overview.holdings }}</div>
+    <div class="k">Holding rows</div>
+    <div class="h">Per-script positions across all funds</div>
+  </div>
+</div>
+
+<div class="mfd-links">
+  <a class="mfd-link" href="{% url 'mf_list_page' %}">
+    <div class="t">Mutual Fund List</div>
+    <div class="d">Every scheme with fund size, maturity, both NAVs, market price
+      and the premium or discount to NAV.</div>
+  </a>
+  <a class="mfd-link" href="{% url 'mf_financials_page' %}">
+    <div class="t">Mutual Fund Financials</div>
+    <div class="d">One fund, one month: the balance sheet and every script it
+      holds, with cost, market value and unrealised P/L.</div>
+  </a>
+  <a class="mfd-link" href="{% url 'mf_holdings_page' %}">
+    <div class="t">Mutual Fund Holdings</div>
+    <div class="d">Pick a stock and see which funds own it, month by month, and
+      whether they are adding or trimming.</div>
+  </a>
+  <a class="mfd-link" href="{% url 'mf_sector_page' %}">
+    <div class="t">Sector Allocation</div>
+    <div class="d">Each fund's equity book split across thirteen sectors, on
+      either cost or market value.</div>
+  </a>
+  <a class="mfd-link" href="{% url 'mf_assets_page' %}">
+    <div class="t">Assets Allocation</div>
+    <div class="d">Equity, fixed income and cash per fund, as a share of the
+      fund's own net assets.</div>
+  </a>
+  <a class="mfd-link" href="{% url 'mutual_fund' %}">
+    <div class="t">NAV &amp; Discount</div>
+    <div class="d">Where every fund trades against its newest published NAV —
+      the closed-end equivalent of price to book.</div>
+  </a>
+</div>
+{% endblock %}

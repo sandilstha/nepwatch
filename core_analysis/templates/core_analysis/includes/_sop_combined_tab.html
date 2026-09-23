@@ -1,0 +1,104 @@
+    <div class="tab-pane fade {% if active_tab == 'sop_combined' %}show active{% endif %}" id="sop-combined-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="mb-0" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">SOP Combined — Multi-Indicator Confluence (long-only)</h5>
+          <span class="text-muted" style="font-size: 11px;">Long-only · next-open (T+1) fills · bear → cash · 80 bps</span>
+        </div>
+        <form method="GET" action="." id="sopcForm">
+          <input type="hidden" name="active_tab" value="sop_combined">
+          <input type="hidden" name="sopc_backtest_symbol" id="sopcSymbolHidden" value="{{ sopc_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="sopcSearchInput" placeholder="Type to search..." value="{{ sopc_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="sopcDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="sopcFromDate" name="sopc_from_date" class="form-control form-control-sm" value="{{ sopc_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="sopcToDate" name="sopc_to_date" class="form-control form-control-sm" value="{{ sopc_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Cost (bps, round-trip)</label>
+              <input type="number" step="1" min="0" name="sopc_cost_bps" class="form-control form-control-sm" value="{{ sopc_cost_bps }}" required>
+            </div>
+            <div class="col-md-3 text-end">
+              <button type="submit" class="btn btn-primary btn-sm fw-medium py-2 px-4 rounded-2 w-100">Execute Combined Model</button>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label text-muted small fw-medium d-block mb-2">Indicators to combine (each at its optimized parameters)</label>
+            <div class="d-flex flex-wrap gap-3">
+              {% for key, label in sopc_indicator_choices %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="sopc_indicator" value="{{ key }}" id="sopc_{{ key }}"
+                       {% if key in sopc_indicators %}checked{% endif %}>
+                <label class="form-check-label small" for="sopc_{{ key }}">{{ label }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label text-muted small fw-medium d-block mb-1">
+              Confluence — minimum indicators that must agree to go long:
+              <strong id="sopcMinAgreeLabel" class="text-primary">{{ sopc_min_agree }}</strong> of 5
+            </label>
+            <input type="range" class="form-range" min="3" max="5" step="1" name="sopc_min_agree" id="sopcMinAgree" value="{{ sopc_min_agree }}"
+                   oninput="var l=document.getElementById('sopcMinAgreeLabel'); if(l) l.textContent=this.value;">
+            <div class="small text-muted">Minimum is 3 — one or two indicators firing is noise, and 3 tested best (Sharpe 1.30). 5 = ALL must agree. Clamped to the number of indicators you tick.</div>
+          </div>
+
+          <div class="row g-3 align-items-center mt-1">
+            <div class="col-md-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="sopc_use_regime" value="1" id="sopcUseRegime" {% if sopc_use_regime %}checked{% endif %}>
+                <label class="form-check-label text-muted small" for="sopcUseRegime">
+                  Apply 200-SMA market-regime filter
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {% comment %}
+            Bear-regime behaviour. Default stays strict; the measured cost of the
+            other two modes is printed so the choice is informed, not blind.
+          {% endcomment %}
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-4">
+              <label class="form-label text-muted small fw-medium">Bear-regime behaviour</label>
+              <select name="sopc_regime_mode" class="form-select form-select-sm" id="sopcRegimeMode">
+                <option value="strict" {% if sopc_regime_mode == 'strict' %}selected{% endif %}>Strict &mdash; hold cash in bear (recommended)</option>
+                <option value="swing" {% if sopc_regime_mode == 'swing' %}selected{% endif %}>Swing &mdash; trade in bear on higher agreement</option>
+                <option value="off" {% if sopc_regime_mode == 'off' %}selected{% endif %}>Off &mdash; ignore the regime entirely</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Bear agreement (swing mode)</label>
+              <input type="number" min="1" max="5" step="1" name="sopc_bear_min_agree"
+                     class="form-control form-control-sm" value="{{ sopc_bear_min_agree }}">
+            </div>
+            <div class="col-md-5">
+              <div class="small text-muted" style="line-height:1.45;">
+                <strong class="text-warning">Measured on NEPSE 2003&ndash;2026:</strong>
+                bear-regime entries alone run at profit factor <strong>0.44</strong> (3 of 5) down to
+                <strong>0.12</strong> (5 of 5). Strict beat both alternatives on total return, Sharpe,
+                drawdown and PF. Use swing mode deliberately.
+              </div>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="sopcFromDate" to_id="sopcToDate" %}
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="sop_combinedResults" data-tab-key="sop_combined">
+        {% include "core_analysis/includes/_sop_combined_results.html" %}
+      </div>
+    </div>

@@ -1,0 +1,1 @@
+{% if v is not None %}<div class="v num {% if v >= 0 %}pos{% else %}neg{% endif %}">{% if v >= 0 %}+{% endif %}{{ v|floatformat:2 }}%</div>{% else %}<div class="v num neu">—</div>{% endif %}

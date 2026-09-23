@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAN SLIM Screen — NEPSE</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">CS</span>
+      <div>
+        <h1 class="mi-title">CAN SLIM Screen</h1>
+        <p class="mi-subtitle">Seven-factor growth screen, ranked across the market</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn">Sign in</a>
+      {% endif %}
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='canslim' %}
+
+  {% comment %}
+    M is rendered ONCE here, as a gate over the whole screen, and is deliberately
+    NOT part of any stock's score. It is identical for every stock on a given
+    day, so folding it into each row's average would shift all scores by the
+    same amount and flatten the spread the screen exists to show.
+  {% endcomment %}
+  <section class="cs-gate" id="cs-gate" hidden></section>
+
+  <section class="dsx-panel active">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="cs-sector" class="dsx-select dsx-sector"></select>
+      </div>
+      <div class="dsx-field">Show
+        <select id="cs-conf" class="dsx-select">
+          <option value="all">All scored</option>
+          <option value="full">Full data only (5 of 5 factors)</option>
+        </select>
+      </div>
+      <button type="button" id="cs-refresh" class="dsx-analyze">Refresh</button>
+    </div>
+
+    <div class="dsx-kpis" id="cs-kpis"></div>
+
+    <div class="dsx-ad-evidence" id="cs-limits"></div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="cs-title">RANKED BY CAN SLIM SCORE</span>
+        <span class="dsx-ad-sub">
+          <span id="cs-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'canslim_sop' %}" target="_blank" rel="noopener"
+             title="How every factor and score is calculated — in simple language">Methodology</a>
+        </span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="cs-table"></table></div>
+      <div class="dsx-ad-note" id="cs-universe"></div>
+    </div>
+  </section>
+</div>
+
+<script>window.CS_CONFIG = { scanUrl: "{% url 'canslim_scan_api' %}" };</script>
+<script defer src="{% static 'core_analysis/js/canslim.js' %}?v={{ asset_version }}"></script>
+<script>
+  /* Theme toggle only. insights.js is NOT loaded here: it wires up the Market
+     Insights dashboard (refresh select, heatmap, charts) and throws on this
+     page because none of those elements exist. */
+  (function () {
+    var KEY = "mi-theme";
+    function apply(th) {
+      document.documentElement.setAttribute("data-theme", th);
+      var b = document.getElementById("mi-theme-btn");
+      if (b) b.textContent = th === "dark" ? "Light" : "Dark";
+    }
+    var saved = "dark";
+    try { saved = localStorage.getItem(KEY) || "dark"; } catch (e) {}
+    apply(saved);
+    document.addEventListener("DOMContentLoaded", function () {
+      var b = document.getElementById("mi-theme-btn");
+      if (!b) return;
+      b.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        apply(next);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

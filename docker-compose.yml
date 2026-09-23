@@ -1,0 +1,66 @@
+# Run the whole stack locally with:  docker compose up --build
+# App will be at http://localhost:8000
+#
+# This spins up MySQL + the Django app. The app container waits for MySQL,
+# runs migrations and collectstatic, then serves via gunicorn (WhiteNoise
+# serves the static assets).
+
+services:
+  db:
+    image: mysql:8.4
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: nepse_database
+      MYSQL_ROOT_PASSWORD: nepse_root_pw
+    ports:
+      # Exposed so you can inspect the DB from the host (e.g. MySQL Workbench).
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pnepse_root_pw"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # ── Database (points at the `db` service above) ──────────────────────
+      DB_NAME: nepse_database
+      DB_USER: root
+      DB_PASSWORD: nepse_root_pw
+      DB_HOST: db
+      DB_PORT: "3306"
+
+      # ── Django ───────────────────────────────────────────────────────────
+      # Local dev default: DEBUG on, so no secret key / allowed hosts / TLS
+      # requirements. For a production-style run, comment DJANGO_DEBUG below
+      # back to "0" and set the four DJANGO_* vars that follow it.
+      DJANGO_DEBUG: "1"
+      # DJANGO_DEBUG: "0"
+      # DJANGO_SECRET_KEY: "change-me-to-a-long-random-string"
+      # DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+      # DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost:8000"
+      # DJANGO_SECURE_SSL_REDIRECT: "0"   # keep 0 when serving plain HTTP locally
+
+      # Gunicorn worker count. Keep at 1 so the in-process LocMemCache (and the
+      # dashboard's cold-build stampede lock) stay shared. To scale beyond 1,
+      # also set REDIS_URL so the cache/lock are shared across workers.
+      WEB_CONCURRENCY: "1"
+      # REDIS_URL: "redis://redis:6379/0"
+
+      # ── Optional integrations (leave blank to disable) ───────────────────
+      # GEMINI_API_KEY: ""
+      # OPENROUTER_API_KEY: ""
+      # GOOGLE_ANALYTICS_ID: ""
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

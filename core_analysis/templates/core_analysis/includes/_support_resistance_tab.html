@@ -1,0 +1,60 @@
+    <div class="tab-pane fade {% if active_tab == 'support_resistance' %}show active{% endif %}" id="support-resistance-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">NEPSE Support &amp; Resistance Cheat Sheet</h5>
+        <div class="sop-note"><strong>SOP:</strong> Search one symbol, use a 1Y+ range for full 52-week context, then generate levels. The sheet combines pivots, highs/lows, moving averages, Fibonacci retracements, RSI targets, stochastic triggers, and standard deviation bands.</div>
+        <form method="GET" action="." id="supportResistanceForm">
+          <input type="hidden" name="active_tab" value="support_resistance">
+          <input type="hidden" name="support_resistance_filters_submitted" value="1">
+          <input type="hidden" name="support_resistance_symbol" id="supportResistanceSymbolHidden" value="{{ support_resistance_selected_symbol }}">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="supportResistanceSearchInput" placeholder="Type to search..." value="{{ support_resistance_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="supportResistanceDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="supportResistanceFromDate" name="support_resistance_from_date" class="form-control form-control-sm" value="{{ support_resistance_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="supportResistanceToDate" name="support_resistance_to_date" class="form-control form-control-sm" value="{{ support_resistance_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Std Days</label>
+              <input type="number" min="2" step="1" name="support_resistance_std_period" class="form-control form-control-sm" value="{{ support_resistance_std_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">RSI Len</label>
+              <input type="number" min="2" step="1" name="support_resistance_rsi_length" class="form-control form-control-sm" value="{{ support_resistance_rsi_length }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Stoch Len</label>
+              <input type="number" min="2" step="1" name="support_resistance_stochastic_length" class="form-control form-control-sm" value="{{ support_resistance_stochastic_length }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Fractal</label>
+              <input type="number" min="3" step="2" name="support_resistance_fractal_window" class="form-control form-control-sm" value="{{ support_resistance_fractal_window }}" required>
+            </div>
+            <div class="col-md-1">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate Levels</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="supportResistanceFromDate" to_id="supportResistanceToDate" %}
+          <div class="sr-tools-row" aria-label="Support and resistance level family selectors">
+            {% for option in support_resistance_family_options %}
+              <label class="sr-tool-option" for="supportResistanceTool{{ forloop.counter }}">
+                <input class="form-check-input" type="checkbox" id="supportResistanceTool{{ forloop.counter }}" name="support_resistance_families" value="{{ option.value }}" {% if option.checked %}checked{% endif %}>
+                <span>{{ option.label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="support_resistanceResults" data-tab-key="support_resistance">
+        {% include "core_analysis/includes/_support_resistance_results.html" %}
+      </div>
+    </div>

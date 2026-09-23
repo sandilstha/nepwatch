@@ -1,0 +1,39 @@
+# Local virtualenv — never ship it into the image (huge, platform-specific).
+venv/
+.venv/
+env/
+
+# Python caches / build artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Local secrets & DB — container config is passed via compose env, not baked in.
+.env
+*.sqlite3
+
+# Collected static (regenerated inside the image by collectstatic)
+staticfiles/
+
+# Version control & IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Graphify knowledge-graph output and browser-automation scratch dirs
+graphify-out/
+.tmp-breadth-profile/
+
+# Docker files themselves + docs don't need to be in the build context copy
+Dockerfile
+.dockerignore
+
+# OS noise
+.DS_Store
+Thumbs.db

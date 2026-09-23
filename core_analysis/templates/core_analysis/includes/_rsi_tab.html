@@ -1,0 +1,48 @@
+    <div class="tab-pane fade {% if active_tab == 'rsi_backtest' %}show active{% endif %}" id="rsi-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">RSI/SMA Long-Only Strategy Parameters</h5>
+        <form method="GET" action="." id="rsiForm">
+          <input type="hidden" name="active_tab" value="rsi_backtest">
+          <input type="hidden" name="rsi_backtest_symbol" id="rsiSymbolHidden" value="{{ rsi_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="rsiSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ rsi_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="rsiDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="rsiFromDate" name="rsi_from_date" class="form-control form-control-sm" value="{{ rsi_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="rsiToDate" name="rsi_to_date" class="form-control form-control-sm" value="{{ rsi_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">RSI Length</label>
+              <input type="number" min="1" step="1" name="rsi_length" class="form-control form-control-sm" value="{{ rsi_length }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">RSI SMA</label>
+              <input type="number" min="1" step="1" name="rsi_sma_length" class="form-control form-control-sm" value="{{ rsi_sma_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute RSI Model</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="rsiFromDate" to_id="rsiToDate" %}
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="rsi_backtestResults" data-tab-key="rsi_backtest">
+        {% include "core_analysis/includes/_rsi_results.html" %}
+      </div>
+    </div>

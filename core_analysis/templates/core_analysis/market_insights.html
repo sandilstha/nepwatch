@@ -1,0 +1,397 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEPSE Market Insights</title>
+
+  <!-- App stylesheet first: first paint never waits on any third-party CSS.
+       (Bootstrap was removed — this page uses only its own .mi-* styles and
+       insights.css carries its own reset, so the CDN request was pure latency.) -->
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+
+  <!-- Web fonts loaded non-render-blocking: media="print" lets the browser fetch
+       without blocking the first paint, then onload promotes it to all media.
+       insights.css declares fallback font-families so text paints immediately. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"></noscript>
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────── -->
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">NEPSE</span>
+      <div>
+        <h1 class="mi-title">Market Insights</h1>
+        <p class="mi-subtitle">Live NEPSE market overview &amp; analytics</p>
+      </div>
+    </div>
+
+    <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">Home</a>
+      {% comment %}
+        The built-in /chart/ terminal was REMOVED; charting now lives on the
+        external terminal in settings.EXTERNAL_CHART_URL. Opens in a NEW TAB
+        (target="_blank") so the desk
+        — live polling, A/D scans, anything mid-load — is never torn down to
+        show a chart.
+
+        rel="noopener noreferrer" is required, not decorative: without noopener
+        the opened site gets a live window.opener handle back into this page and
+        can navigate it somewhere else (tabnabbing). noreferrer also stops our
+        internal LAN URL leaking in the Referer header.
+
+        The URL comes from a setting via the global_assets context processor,
+        so repointing the terminal is one settings change, not a template hunt.
+      {% endcomment %}
+      <a href="{{ external_chart_url }}" class="mi-icon-btn"
+         target="_blank" rel="noopener noreferrer"
+         title="Technical Chart (opens in a new tab)"
+         aria-label="Technical Chart, opens in a new tab">Technical Chart</a>
+      <span class="mi-live-badge" id="mi-live-badge" hidden>LIVE</span>
+      <div class="mi-asof">
+        <span class="mi-asof-label" id="mi-asof-label">As of</span>
+        <span class="mi-asof-date" id="mi-asof-date">—</span>
+      </div>
+
+      <div class="mi-status" id="mi-status" title="Connection status">
+        <span class="mi-status-dot"></span>
+        <span class="mi-status-text" id="mi-status-text">Connecting…</span>
+      </div>
+
+      <label class="mi-refresh-wrap" title="Auto-refresh interval">
+        <select id="mi-refresh-select" class="mi-select" aria-label="Auto-refresh interval">
+          <option value="0">Manual</option>
+          <option value="15">15s</option>
+          <option value="30">30s</option>
+          <option value="60">60s</option>
+          <option value="300">5m</option>
+        </select>
+      </label>
+
+      <button type="button" id="mi-refresh-btn" class="mi-icon-btn" title="Refresh now" aria-label="Refresh now">Refresh</button>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+      {% comment %}
+        Account entry point. Before this, the ONLY route to the sign-up page was
+        indirect: "My Portfolio" in the nav -> /portfolio/ -> 302 to the login
+        page -> "create account" link. That works, but nothing on screen reads as
+        "sign in", so a visitor clicking "Workbench" instead lands on the Django
+        ADMIN login (staff-only, no registration) and reasonably concludes the
+        site has no sign-up.
+
+        Signed in, this shows who you are and links to the portfolio desk.
+      {% endcomment %}
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn mi-account-link"
+           title="Your portfolio desk">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn mi-account-link"
+           title="Sign in or create an account">Sign in</a>
+      {% endif %}
+      <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn mi-workbench-link" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='insights' %}
+
+  {% if load_error %}
+  <div class="mi-banner" id="mi-load-banner">{{ load_error }}</div>
+  {% endif %}
+
+  <!-- ── Market Overview ──────────────────────────────────────────────── -->
+  <section class="mi-stats" id="mi-overview">
+    <article class="mi-stat" data-key="nepse">
+      <span class="mi-stat-label">NEPSE Index</span>
+      <span class="mi-stat-value" id="ov-index">—</span>
+      <span class="mi-stat-delta" id="ov-index-delta">—</span>
+      <span class="mi-stat-sub-metric"><span>Prev Close</span><b id="ov-prevclose">—</b></span>
+    </article>
+    <article class="mi-stat" data-key="range-52w">
+      <span class="mi-stat-label">Day High / Low</span>
+      <span class="mi-stat-range"><span id="ov-day-high">—</span><span class="mi-range-div">/</span><span id="ov-day-low">—</span></span>
+      <span class="mi-stat-sub-metric"><span>52W</span><b id="ov-52w-high">—</b>/<b id="ov-52w-low">—</b></span>
+    </article>
+    <article class="mi-stat" data-key="turnover">
+      <span class="mi-stat-label">Total Turnover</span>
+      <span class="mi-stat-valrow">
+        <span class="mi-stat-value" id="ov-turnover">—</span>
+        <span class="mi-stat-delta" id="ov-turnover-delta">—</span>
+      </span>
+      <span class="mi-stat-sub-metric"><span>Mkt Cap</span><b id="ov-mcap">—</b><span class="mi-sub-delta" id="ov-mcap-delta">—</span></span>
+    </article>
+    <article class="mi-stat" data-key="trades">
+      <span class="mi-stat-label">Total Shares Traded</span>
+      <span class="mi-stat-value" id="ov-kitta">—</span>
+      <span class="mi-stat-sub-metric"><span>Trades</span><b id="ov-trades">—</b><span id="ov-scrips"></span></span>
+    </article>
+  </section>
+
+  <!-- ── Market pulse: Index OHLC + Breadth ───────────────────────────── -->
+  <section class="mi-grid mi-grid-market-pulse mi-market-pulse">
+    <article class="mi-card mi-ohlc-card">
+      <div class="mi-card-head">
+        <div>
+          <h2 class="mi-card-title">Index Price &amp; Volume</h2>
+          <p class="mi-card-subtitle">Daily OHLC candles · drag to pan · scroll to zoom</p>
+        </div>
+        <div class="mi-card-tools">
+          <select id="ohlc-symbol" class="mi-select" aria-label="Chart symbol"></select>
+          <span class="mi-card-hint" id="ohlc-sessions">— sessions</span>
+        </div>
+      </div>
+      <div class="mi-draw-toolbar" id="ohlc-toolbar">
+        <div class="mi-draw-group">
+          <button type="button" class="mi-draw-btn is-active" data-tool="cursor">Cursor</button>
+          <button type="button" class="mi-draw-btn" data-tool="line">Line</button>
+          <button type="button" class="mi-draw-btn" data-tool="hline">Horizontal</button>
+          <button type="button" class="mi-draw-btn" data-tool="vline">Vertical</button>
+          <button type="button" class="mi-draw-btn mi-draw-clear" id="ohlc-clear">Clear</button>
+        </div>
+        <span class="mi-draw-hint">Select a drawing · Del removes selected</span>
+      </div>
+      <div class="mi-ohlc-wrap">
+        <div class="mi-chart-ohlc" id="ohlc-chart"></div>
+        <canvas class="mi-draw-canvas" id="ohlc-draw"></canvas>
+        <!-- Upgraded to a TradingView Advanced Charts terminal when the licensed
+             library is installed (see TRADINGVIEW_SETUP.md). -->
+        <div class="mi-tv" id="mi-tv-container"></div>
+      </div>
+    </article>
+
+    <article class="mi-card mi-card-breadth">
+      <div class="mi-card-head">
+        <div>
+          <h2 class="mi-card-title">Market Sentiment</h2>
+          <p class="mi-card-subtitle">Composite mood and participation at a glance</p>
+        </div>
+        <span class="mi-pill" id="breadth-sentiment">—</span>
+      </div>
+      <div class="mi-breadth-layout">
+        <section class="mi-pulse-widget mi-greed-widget" aria-labelledby="greed-title">
+          <div class="mi-widget-head">
+            <div>
+              <h3 class="mi-widget-title" id="greed-title">Fear &amp; Greed Meter</h3>
+              <p class="mi-widget-subtitle">65% breadth · 35% daily momentum</p>
+            </div>
+          </div>
+          <div class="mi-greed" id="greed-meter" title="NEPSE market fear and greed gauge"></div>
+          <div class="mi-greed-components" id="greed-components" aria-label="Fear and greed score components"></div>
+          <div class="mi-greed-history" id="greed-history" aria-label="Historical fear and greed readings"></div>
+          <p class="mi-widget-note">Indicative composite, not an official NEPSE index</p>
+        </section>
+        <section class="mi-pulse-widget mi-breadth-widget" aria-labelledby="breadth-title">
+          <div class="mi-widget-head">
+            <div>
+              <h3 class="mi-widget-title" id="breadth-title">Market Breadth</h3>
+              <p class="mi-widget-subtitle">Advancers vs decliners across traded scrips</p>
+            </div>
+          </div>
+          <div class="mi-chart mi-chart-donut" id="chart-breadth"></div>
+          <div class="mi-breadth-table-wrap">
+            <table class="mi-breadth-table">
+              <caption>Market breadth statistics</caption>
+              <tbody id="breadth-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ── Sector comparison + turnover ─────────────────────────────────── -->
+  <section class="mi-grid mi-grid-sector-compare mi-sector-compare-row">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Sector Index Comparison</h2>
+        <div class="mi-card-tools">
+          <span class="mi-card-hint">% change from start · click legend to toggle</span>
+          <div class="mi-range" id="compare-range" role="group" aria-label="Comparison range">
+            <button type="button" class="mi-range-btn" data-days="22">1M</button>
+            <button type="button" class="mi-range-btn" data-days="66">3M</button>
+            <button type="button" class="mi-range-btn" data-days="132">6M</button>
+            <button type="button" class="mi-range-btn is-active" data-days="250">1Y</button>
+            <button type="button" class="mi-range-btn" data-days="800">Max</button>
+          </div>
+        </div>
+      </div>
+      <div class="mi-chart mi-chart-compare" id="chart-subindex-compare"></div>
+    </article>
+
+    <article class="mi-card mi-sector-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Sector Turnover</h2>
+        <span class="mi-card-hint" id="sector-turnover-hint">column = turnover share</span>
+      </div>
+      <div class="mi-card-tools">
+        <div class="mi-range" id="sector-range" role="group" aria-label="Sector turnover period">
+          <button type="button" class="mi-range-btn is-active" data-period="1D">Daily</button>
+          <button type="button" class="mi-range-btn" data-period="1W">Weekly</button>
+          <button type="button" class="mi-range-btn" data-period="1M">Monthly</button>
+          <button type="button" class="mi-range-btn" data-period="1Q">Quarterly</button>
+          <button type="button" class="mi-range-btn" data-period="6M">Semi-annual</button>
+          <button type="button" class="mi-range-btn" data-period="1Y">Yearly</button>
+          <button type="button" class="mi-range-btn" data-period="CUSTOM">Custom</button>
+        </div>
+        <div class="mi-range-custom" id="sector-range-custom" hidden>
+          <label>From <input type="date" id="sector-from"></label>
+          <label>To <input type="date" id="sector-to"></label>
+          <button type="button" class="mi-range-btn" id="sector-apply">Apply</button>
+        </div>
+      </div>
+      <div class="mi-chart" id="chart-sectors"></div>
+    </article>
+  </section>
+
+  {% comment %}
+  ── Gainers / Losers / Most active — HIDDEN FOR NOW ──────────────────
+  Temporarily hidden on request. To restore, delete the comment tag above
+  and the matching closing tag below this section. The feed still returns
+  gainers/losers/most_active; insights.js skips these tables when the card
+  isn't in the DOM.
+
+  NOTE: keep any explanation INSIDE this block. Django's {# ... #} comment
+  syntax is single-line only, so a multi-line one leaks onto the page.
+  <section class="mi-grid mi-grid-3">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Top Gainers</h2>
+        <span class="mi-pill mi-pill-up">▲</span>
+      </div>
+      <div class="mi-table-wrap">
+        <table class="mi-table">
+          <thead><tr><th>Symbol</th><th class="num">LTP</th><th class="num">% Chg</th></tr></thead>
+          <tbody id="tbl-gainers"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Top Losers</h2>
+        <span class="mi-pill mi-pill-down">▼</span>
+      </div>
+      <div class="mi-table-wrap">
+        <table class="mi-table">
+          <thead><tr><th>Symbol</th><th class="num">LTP</th><th class="num">% Chg</th></tr></thead>
+          <tbody id="tbl-losers"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Most Active</h2>
+        <span class="mi-pill">⚡</span>
+      </div>
+      <div class="mi-table-wrap">
+        <table class="mi-table">
+          <thead><tr><th>Symbol</th><th class="num">Volume</th><th class="num">Turnover</th></tr></thead>
+          <tbody id="tbl-active"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+  {% endcomment %}
+
+  <!-- ── Index Contributors ───────────────────────────────────────────── -->
+  <section class="mi-grid mi-grid-1 mi-contrib-section">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Index Contributors</h2>
+        <span class="mi-card-hint">points each stock moved the NEPSE index today</span>
+      </div>
+      <div class="mi-contrib">
+        <div class="mi-contrib-col">
+          <div class="mi-contrib-head up">▲ Pushing the index up</div>
+          <div id="contrib-positive"></div>
+        </div>
+        <div class="mi-contrib-col">
+          <div class="mi-contrib-head down">▼ Pulling the index down</div>
+          <div id="contrib-negative"></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="mi-card mi-sector-movers-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Sector Movers</h2>
+        <span class="mi-card-hint">same contributors API</span>
+      </div>
+      <div class="mi-sector-movers">
+        <div class="mi-sector-mover-col">
+          <div class="mi-contrib-head up">▲ Top Gainers</div>
+          <div id="sector-positive"></div>
+        </div>
+        <div class="mi-sector-mover-col">
+          <div class="mi-contrib-head down">▼ Top Losers</div>
+          <div id="sector-negative"></div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ── Heatmap ──────────────────────────────────────────────────────── -->
+  <section class="mi-grid mi-grid-1">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Market Heatmap</h2>
+        <div class="mi-card-tools">
+          <span class="mi-card-hint" id="heatmap-asof"></span>
+          <span class="mi-card-hint">size = turnover · colour = daily change</span>
+          <div class="mi-range" role="group" aria-label="Heatmap tile size">
+            <button type="button" class="mi-range-btn" id="heatmap-zoom-out" aria-label="Smaller tiles" title="Smaller tiles">&minus;</button>
+            <button type="button" class="mi-range-btn" id="heatmap-zoom-in" aria-label="Larger tiles" title="Larger tiles">&plus;</button>
+          </div>
+          <select id="heatmap-sector" class="mi-select" aria-label="Filter heatmap by sector">
+            <option value="ALL">All sectors</option>
+          </select>
+        </div>
+      </div>
+      <div class="mi-chart mi-chart-heatmap" id="chart-heatmap"></div>
+    </article>
+  </section>
+
+  <footer class="mi-footer">
+    <span>NEPSE Analytics Platform · data sourced from internal NEPSE API</span>
+    <span id="mi-last-updated"></span>
+  </footer>
+</div>
+
+{{ bootstrap_payload|json_script:"mi-bootstrap" }}
+<script>
+  window.MI_CONFIG = {
+    apiUrl: "{% url 'market_insights_api' %}",
+    refreshSeconds: {{ refresh_seconds }},
+    udfBase: "/insights/udf",
+    tvLibraryPath: "{% static 'core_analysis/charting_library/' %}",
+    tvSymbol: "NEPSE",
+    tvTimezone: "Asia/Kathmandu"
+  };
+</script>
+<!-- All scripts deferred: they download in parallel without blocking parsing/first
+     paint and execute in document order after the DOM is ready, so the charting
+     libraries are present before our code that depends on them runs.
+     Chart libs are self-hosted (no CDN) — they load over the LAN at full speed and
+     work with no internet access; WhiteNoise serves them compressed + cached. -->
+<script defer src="{% static 'core_analysis/vendor/apexcharts.min.js' %}"></script>
+<script defer src="{% static 'core_analysis/vendor/lightweight-charts.standalone.production.js' %}"></script>
+<script defer src="{% static 'core_analysis/js/insights.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/ohlc-chart.js' %}?v={{ asset_version }}"></script>
+{% if tv_enabled %}
+<script defer src="{% static 'core_analysis/js/tv-chart.js' %}?v={{ asset_version }}"></script>
+{% endif %}
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
+</body>
+</html>

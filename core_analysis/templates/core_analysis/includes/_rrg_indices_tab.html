@@ -1,0 +1,77 @@
+    {% comment %}
+      LOWER SECTION — market indices. Unchanged from the standalone Indices tab:
+      its own form, params (rrg_indices_*), results container, chart and toolbar.
+      Nothing here reads or writes the company RRG above it.
+    {% endcomment %}
+    <section class="rrg-desk-section" id="rrg-indices-pane">
+      <div class="rrg-desk-heading">Index RRG</div>
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">RRG Indices Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Select the benchmark index, choose the indices to plot or use Select All, then generate RRG. Use Tail Length, Arrow Mode, Fit, and Center to review index rotation order and momentum shifts.</div>
+        <form method="GET" action="." id="rrgIndicesForm" data-results="rrg_indicesResults">
+          <input type="hidden" name="active_tab" value="rrg_indices">
+          <input type="hidden" name="rrg_indices_benchmark_symbol" id="rrgIndicesBenchmarkHidden" value="{{ rrg_indices_benchmark_symbol }}">
+          <input type="hidden" name="rrg_indices_selection_submitted" value="1">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Benchmark Index <span style="color: #9ca3af; font-size: 11px;">(Indices Only)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="rrgIndicesBenchmarkSearchInput" value="{{ rrg_indices_benchmark_symbol }}" placeholder="Search NEPSE index..." autocomplete="off">
+                <div class="autocomplete-dropdown" id="rrgIndicesBenchmarkDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="rrgIndicesFromDate" name="rrg_indices_from_date" class="form-control form-control-sm" value="{{ rrg_indices_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="rrgIndicesToDate" name="rrg_indices_to_date" class="form-control form-control-sm" value="{{ rrg_indices_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Lookback</label>
+              <input type="number" min="2" step="1" name="rrg_indices_lookback" class="form-control form-control-sm" value="{{ rrg_indices_lookback }}" required>
+            </div>
+            <input type="hidden" id="rrgIndicesTailLengthInput" name="rrg_indices_tail_length" value="{{ rrg_indices_tail_length }}">
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate Indices RRG</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="rrgIndicesFromDate" to_id="rrgIndicesToDate" %}
+          <div class="row g-3 mt-1">
+            <div class="col-12">
+              <div class="rrg-index-picker">
+                <div class="rrg-index-picker-header">
+                  <div>
+                    <div class="rrg-index-picker-title">Indices To Plot</div>
+                    <div class="small text-muted mt-1">Select one, many, or all NEPSE indices for movement trails.</div>
+                  </div>
+                  <div class="rrg-index-picker-actions">
+                    <span class="rrg-index-count" id="rrgIndicesSelectedCount">{{ rrg_indices_selected_count }} selected</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" id="rrgIndicesSelectAllBtn">Select All</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" id="rrgIndicesClearBtn">Clear</button>
+                  </div>
+                </div>
+                <div class="rrg-index-choice-grid" id="rrgIndicesChoiceGrid">
+                  {% for choice in rrg_indices_choices %}
+                    <label class="rrg-index-choice {% if choice.selected %}is-selected{% endif %}">
+                      <input type="checkbox" class="rrg-index-checkbox" name="rrg_indices_selected_symbols" value="{{ choice.value }}" {% if choice.selected %}checked{% endif %}>
+                      <span>
+                        <span class="rrg-index-choice-main">{{ choice.label }}</span>
+                        <span class="rrg-index-choice-sub">{{ choice.value }}</span>
+                      </span>
+                    </label>
+                  {% empty %}
+                    <div class="text-muted small">No NEPSE indices found in the database.</div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="rrg_indicesResults" data-tab-key="rrg_indices">
+        {% include "core_analysis/includes/_rrg_indices_results.html" %}
+      </div>
+    </section>

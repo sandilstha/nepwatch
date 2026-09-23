@@ -1,0 +1,375 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morning Star — Methodology SOP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    .sop-main { max-width: 1020px; margin: 0 auto; padding: 18px 16px 56px; }
+    .sop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .sop-head h1 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--ink-1); }
+    .sop-head p { margin: 0; max-width: 75ch; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); opacity: .82; }
+    .sop-back { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 7px 11px;
+      border: 1px solid var(--line); border-radius: 8px; color: inherit; text-decoration: none; font-size: 13px; background: var(--surface); }
+    .sop-back:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+    .sop-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 18px; align-items: start; }
+    .sop-toc { position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 13px 14px; background: var(--surface); font-size: 13px; }
+    .sop-toc b { display: block; margin-bottom: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+    .sop-toc a { display: block; padding: 4px 0; color: inherit; text-decoration: none; opacity: .82; }
+    .sop-toc a:hover { opacity: 1; text-decoration: underline; }
+    .sop-doc { min-width: 0; }
+    .sop-sec { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px;
+      margin-bottom: 14px; background: var(--surface); scroll-margin-top: 16px; }
+    .sop-sec:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .sop-sec h2 { margin: 0 0 7px; font-size: 17px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec h3 { margin: 14px 0 5px; font-size: 13.5px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec p, .sop-sec li { color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+    .sop-sec p { margin: 6px 0; }
+    .sop-sec ul, .sop-sec ol { margin: 8px 0 0; padding-left: 20px; }
+    .sop-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+    .sop-table th, .sop-table td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--ink-2); }
+    .sop-table th { color: var(--ink-1); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; opacity: .72; }
+    .sop-table td b { color: var(--ink-1); }
+    .sop-note { margin-top: 10px; padding: 8px 11px; border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+    .sop-wrap { overflow-x: auto; }
+    @media (max-width: 820px) {
+      .sop-head { flex-direction: column; }
+      .sop-grid { grid-template-columns: 1fr; }
+      .sop-toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+<main class="sop-main">
+  <div class="sop-head">
+    <div>
+      <h1>Morning Star — How It Works (Simple Language)</h1>
+      <p>Everything the Morning Star tab does, explained in plain words: what each score means, what every
+        parameter (like NII) actually is, and how the stars are given. This is a research screen inspired by the
+        Morningstar style-box idea — not an official Morningstar rating, and not investment advice.</p>
+    </div>
+    <a class="sop-back" href="{% url 'fundamental_analysis' %}">&larr; Back to Fundamentals</a>
+  </div>
+
+  <div class="sop-grid">
+    <nav class="sop-toc">
+      <b>On this page</b>
+      <a href="#short">1. The whole thing in short</a>
+      <a href="#idea">2. The idea behind it</a>
+      <a href="#how">3. How a score is made</a>
+      <a href="#stars">4. Stars, style, size</a>
+      <a href="#quality">5. Quality gates &amp; flags</a>
+      <a href="#dict">6. Every parameter explained</a>
+      <a href="#weights">7. Final parameter matrix</a>
+      <a href="#charts">8. Reading the charts</a>
+      <a href="#limits">9. Warnings</a>
+    </nav>
+
+    <div class="sop-doc">
+
+      <section class="sop-sec" id="short">
+        <h2>1. The whole thing in short</h2>
+        <p>Every company gets <b>two marks out of 100</b>, always compared only against its own sector:</p>
+        <ul>
+          <li><b>Growth score</b> — is the business getting bigger than its peers? (this year vs last year)</li>
+          <li><b>Value score</b> — is the share cheap for what you get, compared to peers?</li>
+        </ul>
+        <p>The two marks combine into one number (usually Growth 60% + Value 40%), and that number becomes the
+          <b>star rating (1★–5★)</b>. Then the <b>balance sheet acts as a police check</b>: it can never add
+          stars, but a serious problem (bad loans above 4%, weak solvency, heavy debt it can barely service)
+          caps the rating at 2★, and smaller warning signs cut a few points.</p>
+        <p>Finally each company gets a <b>style tag</b> (Growth / Blend / Value — which mark is leading) and a
+          <b>size tag</b> (Large / Mid / Small — its share of the sector's total market value).</p>
+        <div class="sop-note"><b>One line:</b> the income statement decides Growth, the market price decides
+          Value, and the balance sheet can only punish — never reward.</div>
+      </section>
+
+      <section class="sop-sec" id="idea">
+        <h2>2. The idea behind it</h2>
+        <p><b>Big returns come from earnings growth, not from cheapness alone.</b> Real NEPSE history: Chhimek
+          grew earnings ~21% a year and returned ~63× in 18 years; Standard Chartered, a "good company" with
+          flat earnings, only doubled in the same time. A cheap share whose profit never grows takes 20 years
+          to pay you back — that is what a P/E of 20 with zero growth means.</p>
+        <p><b>Every sector has a different engine</b>, so each sector is measured with its own parameters:
+          banks live on loans and interest, life insurers on new policies, hydros on selling electricity,
+          hotels on filling rooms. Using one formula for all of them would compare apples to generators.</p>
+      </section>
+
+      <section class="sop-sec" id="how">
+        <h2>3. How a score is made — step by step</h2>
+        <ol>
+          <li><b>Pick the period.</b> The newest quarterly filing for the sector. If fewer than 80% of companies
+            have filed it yet, the previous quarter is used instead (so a few early filers can't distort the ranks).</li>
+          <li><b>Compute each parameter</b> from the filed numbers. Growth items compare this year's total-so-far
+            against last year's same total-so-far (never quarter vs quarter — Nepali filings are cumulative).</li>
+          <li><b>Turn it into a rank.</b> Each parameter becomes "what % of sector peers does this company beat?"
+            — a number from 0 to 100. Direction matters: a LOWER P/E ranks high, a HIGHER loan growth ranks high.</li>
+          <li><b>Average the ranks with weights.</b> Each sector's weights are in section 7. If a number is
+            missing from the filing, that parameter is simply dropped and its weight spreads over the others —
+            missing is never counted as zero. The "n of m factors" tag shows how complete the data was.</li>
+          <li><b>Combine.</b> Combined = Growth 60% + Value 40%. Trading, Investment and Mutual Fund use
+            30% + 70% instead, because those are holdings, not growing businesses.</li>
+        </ol>
+        <div class="sop-note">Click any row in the table to see the full working: every parameter's raw value,
+          its weight, and its sector rank.</div>
+      </section>
+
+      <section class="sop-sec" id="stars">
+        <h2>4. Stars, style, size</h2>
+        <h3>Stars</h3>
+        <p>From the combined score (after flag penalties): <b>80+ → 5★ · 60+ → 4★ · 40+ → 3★ · 20+ → 2★ ·
+          below 20 → 1★</b>. Any hard gate (section 5) caps the result at 2★ no matter how high the score.</p>
+        <h3>Style</h3>
+        <p>Growth score minus Value score. Leading by 15+ points → <b>Growth</b> or <b>Value</b>; otherwise
+          <b>Blend</b>. "Value" just means "cheap relative to its momentum" — it is a description, not advice.</p>
+        <h3>Size</h3>
+        <p>Companies are lined up by market value (share price × total kitta — NEPSE's own capitalisation figure
+          where the filing has no share count; fund size for mutual funds; face value never matters). Walk down
+          the line adding each company's value to a running total: names reached <b>before 70%</b> of the
+          sector's pot are <b>Large</b>, between <b>70–90%</b> are <b>Mid</b>, and the last <b>10%</b> are
+          <b>Small</b>.</p>
+        <h3>Worked example — the Investment sector (real figures)</h3>
+        <div class="sop-wrap">
+        <table class="sop-table">
+          <thead><tr><th>Rank</th><th>Company</th><th>Market value</th><th>Share of sector</th><th>Running total before it</th><th>Tier</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>CIT</td><td>112.4 arba</td><td>38.4%</td><td>0%</td><td>Large</td></tr>
+            <tr><td>2</td><td>HIDCL</td><td>59.0 arba</td><td>20.1%</td><td>38.4%</td><td>Large</td></tr>
+            <tr><td>3</td><td>NIFRA</td><td>51.9 arba</td><td>17.7%</td><td>58.5%</td><td>Large</td></tr>
+            <tr><td>4</td><td>NRN</td><td>24.1 arba</td><td>8.2%</td><td>76.2%</td><td>Mid</td></tr>
+            <tr><td>5</td><td>CHDC</td><td>22.2 arba</td><td>7.6%</td><td>84.4%</td><td>Mid</td></tr>
+            <tr><td>6</td><td><b>HATHY</b></td><td><b>19.0 arba</b></td><td><b>6.5%</b></td><td><b>92.0%</b></td><td><b>Small</b></td></tr>
+            <tr><td>7</td><td>ENL</td><td>4.4 arba</td><td>1.5%</td><td>98.5%</td><td>Small</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p>HATHY at Rs 19 arba is a big company in absolute terms — bigger than most hotels or manufacturers.
+          But three giants (CIT, HIDCL, NIFRA) hold 76% of the whole sector's value, so by the time the count
+          reaches HATHY, 92% of the pot is already spoken for — it lands in the last-10% bucket. <b>The tier
+          describes a company's standing among its own sector peers, not its absolute size.</b> Note also how
+          close the boundary is: HATHY (19.0) vs CHDC (22.2, Mid) — a ~17% price move would flip them, which is
+          why the tier is a sorting label for the charts, not a judgment.</p>
+      </section>
+
+      <section class="sop-sec" id="quality">
+        <h2>5. Quality gates &amp; flags — the police check</h2>
+        <h3>Hard gates (rating capped at 2★)</h3>
+        <ul>
+          <li><b>Negative EPS</b> — the company is losing money.</li>
+          <li><b>Book value per share below par</b> — accumulated losses have eaten into the capital
+            shareholders paid in (Rs 100 par; SHL Rs 10, HATHY Rs 50). A low P/B on a wrecked balance sheet is
+            not "value", and growth off a near-zero base is not growth. Negative book value is the same gate,
+            worse.</li>
+          <li><b>NPL above 4%</b> — more than 4 rupees of every 100 lent has gone bad (lenders).</li>
+          <li><b>Capital below the regulator's floor</b> — no cushion left to absorb losses (lenders).</li>
+          <li><b>Solvency below 1.0</b> — an insurer that might not cover all claims if things go wrong.</li>
+          <li><b>Interest coverage below 1.5×</b> — a hydro barely earning enough to pay its loan interest.</li>
+          <li><b>One-time income above 30% of profit</b> — the "profit" mostly came from selling assets or
+            paper gains, not the business. Next year it disappears.</li>
+        </ul>
+        <p>A hard gate does two things: it caps the rating at 2★, and it <b>bars the company from the High
+          Growth and High Value halves of the quadrant map</b> however high its scores. The scores are still
+          shown — the gate is the reason they cannot be trusted.</p>
+        <h3>Soft flags (−5 points each, max −15)</h3>
+        <ul>
+          <li><b>Inventory growing much faster than sales</b> — unsold goods piling up; discounting comes next.</li>
+          <li><b>Receivables growing much faster than sales</b> — sales made to people who haven't paid yet.</li>
+          <li><b>Provision coverage falling / NPL rising sharply</b> — a lender's safety cushion thinning.</li>
+          <li><b>Current ratio below 1</b> — bills due soon exceed the money available to pay them.</li>
+          <li><b>Fair-value gains above 30% of profit</b> — an insurer's profit came from marking up investments.</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="dict">
+        <h2>6. Every parameter explained in one line</h2>
+
+        <h3>Banking / Finance / Microfinance</h3>
+        <div class="sop-wrap"><table class="sop-table">
+          <tbody>
+            <tr><td><b>NII (Net Interest Income)</b></td><td>Interest earned on loans minus interest paid on deposits — a bank's core profit engine. If NII shrinks, the bank is shrinking.</td></tr>
+            <tr><td><b>Loan growth</b></td><td>How much bigger the loan book got. Loans today = interest income tomorrow. Only good if the loans stay healthy.</td></tr>
+            <tr><td><b>Deposit growth</b></td><td>Deposits are a bank's cheap raw material. No deposit growth → must borrow expensively → thinner profit.</td></tr>
+            <tr><td><b>Fee income</b></td><td>Commissions, cards, remittance, guarantees — money earned without lending, so no credit risk. The highest-quality income a bank has.</td></tr>
+            <tr><td><b>Distributable profit</b></td><td>The profit legally allowed to become your dividend, after forced reserve transfers. EPS can be 16 while distributable is only 12 — we score the one you can actually receive.</td></tr>
+            <tr><td><b>P/B vs ROE</b></td><td>Price-to-book alone is meaningless: a bank earning 20% on equity deserves a high P/B, one earning 5% doesn't. We score cheapness relative to quality.</td></tr>
+            <tr><td><b>NIM / Net interest spread</b></td><td>The gap between the lending rate and deposit rate — profit per rupee lent. High spread = pricing power.</td></tr>
+            <tr><td><b>NPL (Non-Performing Loan)</b></td><td>Share of loans not being repaid. 1% bad loans on a huge book can erase a whole year's profit — this is what kills banks.</td></tr>
+            <tr><td><b>Provision coverage</b></td><td>Money already set aside against bad loans, vs the bad loans recognized. High = the pain is already absorbed.</td></tr>
+            <tr><td><b>CAR / Capital fund</b></td><td>The regulator's minimum capital cushion. Near the floor = no room to grow; below it = gate.</td></tr>
+            <tr><td><b>Cost of funds</b> (microfinance)</td><td>What it pays to borrow the money it lends out. When Nepal's rates fall, this falls, and the saving goes straight to profit.</td></tr>
+            <tr><td><b>Accumulated distributable PS</b> (microfinance)</td><td>Years of undistributed profit piled up per share — a stored future dividend you buy with the share.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Insurance</h3>
+        <div class="sop-wrap"><table class="sop-table">
+          <tbody>
+            <tr><td><b>First-year premium</b> (life)</td><td>Money from brand-new policies sold this year — the purest sign the sales engine works. Each new policy pays for 10–20 more years.</td></tr>
+            <tr><td><b>Renewal premium</b> (life)</td><td>Old policies still being paid. Falling renewals = customers cancelling.</td></tr>
+            <tr><td><b>Policies in force</b> (life)</td><td>Raw count of active policies. Cross-check: premium up but policies down = fewer customers buying bigger tickets.</td></tr>
+            <tr><td><b>Life fund</b></td><td>The big pool of policyholder money the insurer invests. Bigger fund = bigger future investment income.</td></tr>
+            <tr><td><b>MCap / gross premium</b> (life)</td><td>Company price vs premium collected. Used instead of P/E because insurer "profit" is an actuarial estimate, while premium is real cash.</td></tr>
+            <tr><td><b>Bonus rate</b> (life)</td><td>The bonus declared to policyholders — the closest thing to a life insurer's dividend track record. A cut here is a red flag before EPS shows it.</td></tr>
+            <tr><td><b>Investment income / yield</b></td><td>Interest and dividends earned on the fund. Insurers park most premium in FDs — when FD rates crash, profit crashes with nothing wrong in the insurance itself.</td></tr>
+            <tr><td><b>Combined ratio</b> (non-life)</td><td>(Claims + expenses) ÷ premium earned. Below 100% = the insurance itself makes money; above = it survives only on investment income. The single most important non-life number.</td></tr>
+            <tr><td><b>Claim ratio vs own history</b></td><td>Claims ÷ premium, compared to the company's own past. One flood year looks terrible vs peers but normal vs history — so we compare to itself.</td></tr>
+            <tr><td><b>Retention ratio</b></td><td>Share of premium the company keeps vs passes to reinsurers. Keeping more of PROFITABLE risk = more earning power.</td></tr>
+            <tr><td><b>Solvency</b></td><td>Regulator's "can it pay all claims in a disaster" ratio. Below 1.0 = gate.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Hydropower</h3>
+        <div class="sop-wrap"><table class="sop-table">
+          <tbody>
+            <tr><td><b>Core revenue</b></td><td>Money from actually selling electricity — nothing else. Hydro headline profits are routinely inflated by one-off share-market gains, so we strip them.</td></tr>
+            <tr><td><b>Core profit / core P/E</b></td><td>Profit (and the P/E built on it) after removing forex gains, dividend income and other side income. One 474M paper gain was 43% of a real company's PBT — next year it vanished.</td></tr>
+            <tr><td><b>Finance-cost improvement</b></td><td>Is the interest bill falling? Hydros are ~75% debt — as loans repay or rates drop, interest saved becomes pure profit (the "J-curve" climb).</td></tr>
+            <tr><td><b>CWIP growth</b></td><td>Capital Work In Progress — plants under construction. Growing CWIP = a new plant (a revenue step-jump) approaching.</td></tr>
+            <tr><td><b>Interest coverage</b></td><td>Operating profit ÷ interest bill. Below 1.5× means one dry year from being unable to service the loan — gate.</td></tr>
+            <tr><td><b>D/E (Debt/Equity)</b></td><td>How much of the plant is financed by loans vs owners' money. Lower = more of the revenue belongs to shareholders.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Manufacturing, Hotels, Trading, Investment, Funds</h3>
+        <div class="sop-wrap"><table class="sop-table">
+          <tbody>
+            <tr><td><b>Gross margin trend</b> (mfg)</td><td>Profit per rupee of sales, direction over the year. Rising = pricing power; revenue up but margin collapsing = buying sales with discounts.</td></tr>
+            <tr><td><b>ROCE</b> (mfg)</td><td>Operating profit ÷ all money used (equity + debt). "Is the factory a good machine for turning capital into profit?" — the note's ROIC test.</td></tr>
+            <tr><td><b>Inventory vs revenue</b> (flag)</td><td>Stock growing 27% while sales fall 11% = warehouses filling with unsold goods.</td></tr>
+            <tr><td><b>Operating leverage</b> (hotels)</td><td>Profit growth minus revenue growth. Hotels have fixed costs, so past break-even every extra guest is nearly pure profit — profit growing 2–3× faster than revenue is the sector's most bullish sign.</td></tr>
+            <tr><td><b>EV / operating profit</b> (hotels)</td><td>What you pay (price + debt − cash) for the cash the hotel operation throws off, ignoring depreciation on buildings that actually appreciate.</td></tr>
+            <tr><td><b>Net current assets / MCap</b> (trading)</td><td>Graham's test: if cash + stock + receivables minus ALL debts is worth more than the whole company's price, you're buying the business for less than nothing.</td></tr>
+            <tr><td><b>Reserves / paid-up</b> (trading)</td><td>Decades of kept profit vs original capital (15.8× at one company) — a loaded spring for bonus shares.</td></tr>
+            <tr><td><b>NAV discount</b> (investment / funds)</td><td>The share trades below the per-share value of what it holds. A 15% discount = paying Rs 85 for Rs 100 of assets.</td></tr>
+            <tr><td><b>NAV total return</b> (funds)</td><td>Did the manager grow the money? The entire product, in one number.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section class="sop-sec" id="weights">
+        <h2>7. Final Sector Parameter Matrix</h2>
+        <p>The complete framework in one table — what feeds each pillar, per sector. Growth and Value
+          percentages are pillar weights; the Quality column is the gate/flag/context set (never weighted).</p>
+        <div class="sop-wrap">
+        <table class="sop-table">
+          <thead><tr><th>Sector</th><th>Growth score parameters</th><th>Value score parameters</th><th>Quality / balance-sheet parameters</th></tr></thead>
+          <tbody>
+            <tr><td><b>Commercial Banks</b></td>
+              <td>NII Growth 25%; Loan Growth 25%; Distributable Profit Growth 20%; Deposit Growth 15%; Fee Income Growth 15%</td>
+              <td>P/B vs ROE 30%; Distributable PS/Price 25%; P/E 15%; NIM 15%; NPL/Credit-Cost Trend 15%</td>
+              <td>NPL; Provision Coverage; CAR; Equity/NWPS Growth; Loan/Deposit Ratio</td></tr>
+            <tr><td><b>Development Banks</b></td>
+              <td>NII Growth 25%; Loan Growth 25%; Distributable Profit Growth 20%; Deposit Growth 15%; Fee Income Growth 15%</td>
+              <td>P/B vs ROE 30%; Distributable PS/Price 25%; P/E 15%; NIM 15%; NPL/Credit-Cost Trend 15%</td>
+              <td>NPL; Provision Coverage; CAR; Equity/NWPS Growth; Loan/Deposit Ratio</td></tr>
+            <tr><td><b>Finance</b></td>
+              <td>NII Growth 35%; Loan Growth 30%; Distributable Profit Growth 20%; Deposit/Funding Growth 15%</td>
+              <td>P/B vs ROE 30%; Distributable PS Yield 25%; P/E 20%; NPL Trend 15%; ROA 10%</td>
+              <td>NPL; Provision Coverage; Borrowings; Equity/NWPS Growth; CAR</td></tr>
+            <tr><td><b>Microfinance</b></td>
+              <td>Loan Portfolio Growth 40%; NII Growth 35%; Borrowing-Cost Improvement 25%</td>
+              <td>P/B 30%; Accumulated Reserves PS/Price 30%; P/E 25%; NPL Trend 15%</td>
+              <td>NPL; Provision Coverage; Borrowings; Equity/NWPS Growth; Capital Fund</td></tr>
+            <tr><td><b>Life Insurance</b></td>
+              <td>First-Year Premium Growth 35%; Renewal Premium Growth 20%; Policies-in-Force Growth 15%; Life Fund Growth 15%; Investment Income Growth 15%</td>
+              <td>MCap/Gross Premium 35%; P/B 25%; Bonus Rate 25%; Investment Yield 15%</td>
+              <td>Life Fund Growth; Investment Assets Growth; Equity Growth; Total Assets Growth; Solvency</td></tr>
+            <tr><td><b>Non-Life Insurance</b></td>
+              <td>Gross Premium Growth 35%; Policy Count Growth 25%; Written Premium Growth 15%; Investment Income Growth 15%; Renewed Policy Growth 10%</td>
+              <td>Combined Ratio 35%; Claim Ratio vs Own Prior Year 25%; P/B 25%; Retention Ratio 15%</td>
+              <td>Solvency; Outstanding Claims; UPR; Reinsurance/Retention; Investment Assets; Equity</td></tr>
+            <tr><td><b>Hydropower</b></td>
+              <td>Core Revenue Growth 35%; Core Profit Growth 35%; Finance-Cost Improvement 15%; Project/CWIP Progress 15%</td>
+              <td>Core P/E 30%; P/B 25%; Interest Coverage 20%; D/E 15%; ROA 10%</td>
+              <td>Debt; D/E; Finance Cost; Interest Coverage; Equity Growth; CWIP; Current Ratio</td></tr>
+            <tr><td><b>Manufacturing &amp; Processing</b></td>
+              <td>Revenue Growth 40%; Net Profit Growth 35%; Gross-Margin Trend 25%</td>
+              <td>P/E 30%; ROCE 30%; P/B 20%; Margin vs Sector 20%</td>
+              <td>Inventory vs Revenue Growth; Receivables vs Revenue Growth; Debt/D-E; Current Ratio; Working Capital; Equity Growth</td></tr>
+            <tr><td><b>Hotels &amp; Tourism</b></td>
+              <td>Revenue Growth 50%; Operating Leverage 50%</td>
+              <td>P/B 45%; EV/Operating Profit Before Depreciation 35%; P/E 20%</td>
+              <td>Fixed Assets; Debt/Equity; Current Ratio; Working Capital; Equity/NWPS Growth; Finance Cost</td></tr>
+            <tr><td><b>Trading</b></td>
+              <td>Sales/Income Growth 60%; Profit Growth 40%</td>
+              <td>P/B 40%; Net Current Assets/Market Cap 30%; P/E 20%; Reserves Ratio 10%</td>
+              <td>Net Current Assets; Inventory; Receivables; Cash/Bank; Debt; Equity/NWPS; Reserves</td></tr>
+            <tr><td><b>Investment</b></td>
+              <td>Income Growth 60%; Dividend &amp; Interest Income Growth 40%</td>
+              <td>P/B (NAV Discount) 60%; Dividend Yield 40%</td>
+              <td>Investment Portfolio; NAV/Equity; Cash; Debt; Portfolio Concentration</td></tr>
+            <tr><td><b>Mutual Fund</b></td>
+              <td>NAV Growth / Total Return 100%</td>
+              <td>Discount/Premium to NAV 100%</td>
+              <td>NAV; Fund Size; Cash/Bank; Other Assets; Liabilities</td></tr>
+            <tr><td><b>Others</b></td>
+              <td>Revenue Growth 50%; Profit Growth 50%</td>
+              <td>P/E 50%; P/B 50%</td>
+              <td>Debt/D-E; Current Ratio; Inventory; Receivables; Equity; Working Capital</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>Global scoring rules</h3>
+        <div class="sop-wrap">
+        <table class="sop-table">
+          <thead><tr><th>Rule</th><th>Final methodology</th></tr></thead>
+          <tbody>
+            <tr><td><b>Growth / Value scoring</b></td><td>Each parameter → percentile rank within its own sector, 0–100, direction-aware</td></tr>
+            <tr><td><b>Universe</b></td><td>Actively traded companies only — issues marked suspended, delisted or inactive, and anything with no trade in the last 30 days, are left out even though they still file statements</td></tr>
+            <tr><td><b>Comparison period</b></td><td>Newest filed quarter's YTD vs previous fiscal year's same YTD (QoQ never used)</td></tr>
+            <tr><td><b>Period coverage</b></td><td>Newest period used only if ≥80% of the previous period's filers have filed it</td></tr>
+            <tr><td><b>Missing data</b></td><td>Weight redistributed proportionally; never treated as zero; "n of m factors" tag shown</td></tr>
+            <tr><td><b>Combined rating</b></td><td>Growth 60% + Value 40%</td></tr>
+            <tr><td><b>Trading / Investment / Mutual Fund</b></td><td>Growth 30% + Value 70% (no real growth engine)</td></tr>
+            <tr><td><b>Quality / balance sheet</b></td><td>Modifier only — never a weighted score</td></tr>
+            <tr><td><b>Hard gates</b></td><td>Cap the star rating at 2★ and bar the company from High Growth / High Value</td></tr>
+            <tr><td><b>Quadrant</b></td><td>High/Low Growth × High/Low Value, split at the sector <i>median</i> of each score; a gated company is Low on both regardless</td></tr>
+            <tr><td><b>Soft flags</b></td><td>−5 combined points each, maximum −15</td></tr>
+            <tr><td><b>Stars</b></td><td>80+ → 5★ · 60+ → 4★ · 40+ → 3★ · 20+ → 2★ · below 20 → 1★</td></tr>
+            <tr><td><b>Style</b></td><td>Growth − Value spread ≥ +15 → Growth; ≤ −15 → Value; else Blend</td></tr>
+            <tr><td><b>Size</b></td><td>Cumulative sector market-cap share: top 70% Large · next 20% Mid · last 10% Small</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <section class="sop-sec" id="charts">
+        <h2>8. Reading the charts</h2>
+        <p><b>Growth vs Value maps (one per size tier):</b> each dot is one company — right = growing faster
+          than peers, up = cheaper than peers. The dividers sit at the sector <i>median</i> of each score, so the
+          tinted top-right corner is exactly the High Growth / High Value quadrant in the table. <b>Amber dots</b>
+          = 4★/5★. <b>Hollow red rings</b> = quality-gated: plotted where they scored, but not eligible for the
+          sweet spot whatever their position. <b>Blue</b> = everything else. Hover a dot for exact numbers; the
+          "show quality-gated" box hides the rings when you only want the eligible set.</p>
+        <p>A red ring deep in the sweet spot is the most important pattern on the page: the market is pricing it
+          cheap-and-growing <i>because</i> of the balance-sheet problem — for a hydro, usually a book value below
+          par. Decide whether the problem is temporary before being tempted.</p>
+      </section>
+
+      <section class="sop-sec" id="limits">
+        <h2>9. Warnings</h2>
+        <ul>
+          <li><b>Ranks are relative.</b> A 90 Growth score in a shrinking sector means "least bad", not "growing".
+            Open the row and read the raw numbers.</li>
+          <li><b>Early filing season:</b> some sectors score on the previous quarter until enough companies file
+            (the period label always says which quarter was used).</li>
+          <li><b>Amber confidence tag</b> = many factors missing; the score stands on fewer legs.</li>
+          <li><b>Not in the score:</b> hydro real generation vs design (DOED portal), PPA terms, transmission
+            access, subsidiary holdings, remaining tax-holiday years, fund expense ratios. Check these by hand.</li>
+          <li>This is a screen for further research — <b>not a buy/sell signal and not investment advice.</b></li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
+</main>
+</body>
+</html>

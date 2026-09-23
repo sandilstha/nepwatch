@@ -1,0 +1,183 @@
+{% extends "core_analysis/mf/_base.html" %}
+{% block title %}Fund Financials{% endblock %}
+{% block heading %}Mutual Fund Financials{% endblock %}
+{% block subheading %}One fund, one month: the published statement and every script it holds{% endblock %}
+
+{% block content %}
+<div class="mfd-bar">
+  <button type="button" class="mfd-btn" id="mf-export">Export CSV</button>
+</div>
+
+<div class="mfd-fin">
+  {# Left rail: the pickers, then the fund's own statement, exactly as filed. #}
+  <aside>
+    <div class="mfd-rail-head" id="mf-railhead">—</div>
+    <div class="mfd-rail-pick">
+      <select id="mf-symbol" class="mfd-select">
+        {% for f in fund_symbols %}
+          <option value="{{ f.symbol }}">{{ f.symbol }}{% if f.fund_name %} ({{ f.fund_name }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <select id="mf-month" class="mfd-select"></select>
+    </div>
+
+    <div class="mfd-basic">BASIC FUNDAMENTALS</div>
+    <div class="mfd-wrap mfd-wrap--auto"><table class="mfd-table mfd-kv" id="mf-bs"></table></div>
+
+    <div class="mfd-basic">INCOME STATEMENT</div>
+    <div class="mfd-wrap mfd-wrap--auto"><table class="mfd-table mfd-kv" id="mf-is"></table></div>
+    <div class="mfd-note" id="mf-units"></div>
+  </aside>
+
+  <div class="mfd-fin-main">
+    <div class="mfd-wrap mfd-wrap--auto"><table class="mfd-table mfd-facts-t" id="mf-facts"></table></div>
+
+    <div class="mfd-secbar">
+      <span class="mfd-seclabel">Sector</span>
+      <select id="mf-sector" class="mfd-select"></select>
+      <span class="mfd-secpct" id="mf-secpct">—</span>
+    </div>
+
+    <div class="mfd-wrap mfd-wrap--fill"><table class="mfd-table" id="mf-table"></table></div>
+    <div class="mfd-note" id="mf-note"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var M = window.MFD;
+  var fund = document.getElementById("mf-symbol"),
+      month = document.getElementById("mf-month"),
+      sector = document.getElementById("mf-sector"),
+      table = null;
+
+  var cols = [
+    {key:"script", label:"Script", fmt:function(r){
+      return '<a href="/stock/'+encodeURIComponent(r.script)+'/">'+M.esc(r.script)+'</a>'; }},
+    {key:"company_name", label:"Name", fmt:function(r){ return M.esc(r.company_name||""); }},
+    {key:"sector", label:"Sector", fmt:function(r){
+      return '<span title="'+M.esc(r.sector_label)+'">'+M.esc(r.sector_label||r.sector)+'</span>'; }},
+    {key:"kitta", label:"Kitta", fmt:function(r){ return M.num(r.kitta, 0); }},
+    /* The fund's own published weight for this line. Exact here — unlike in the
+       sector aggregate, where re-summing 2dp figures loses precision. */
+    {key:"weight_pct", label:"Weight %",
+     title:"The fund's own published weight for this holding",
+     fmt:function(r){ return M.pct(r.weight_pct); }},
+    {key:"cost_value", label:"Cost Value", fmt:function(r){ return M.num(r.cost_value); }},
+    {key:"cost_price", label:"Cost Price", fmt:function(r){ return M.num(r.cost_price); }},
+    {key:"market_price", label:"Market Price", fmt:function(r){ return M.num(r.market_price); },
+     title:"Derived: market value divided by kitta — the feed carries no price field"},
+    {key:"market_value", label:"Market Value", fmt:function(r){ return M.num(r.market_value); }},
+    {key:"valuation_pl", label:"Valuation PL", fmt:function(r){
+      return '<span class="'+M.cls(r.valuation_pl)+'">'+M.num(r.valuation_pl)+'</span>'; }},
+    /* The fund reports no realised P/L per line — the published screen shows a
+       dash in every row of this column too. Kept so the layout matches, empty
+       because inventing a number would be worse than an honest blank. */
+    {key:"realised_pl", label:"Realised PL",
+     title:"Not reported per holding by the source",
+     fmt:function(){ return '<span class="mfd-muted">—</span>'; },
+     raw:function(){ return null; }}
+  ];
+
+  function facts(d) {
+    var pairs = [
+      ["Units Outstanding", unitsOutstanding(d)],
+      ["Fund Size (Rs.)", M.num(d.fund_size, 2)],
+      ["Maturity Date", d.maturity_date || "—"],
+      ["Daily Nav (Rs.)", M.num(d.daily_nav)],
+      ["Daily Nav Date", d.daily_nav_date || "—"],
+      ["Monthly Nav (Rs.)", M.num(d.monthly_nav)],
+      ["Monthly Nav Date", d.monthly_nav_period || "—"],
+      ["LTP (Rs.)", M.num(d.ltp)],
+      ["As of", d.as_of || "—"]
+    ];
+    document.getElementById("mf-facts").innerHTML =
+      "<thead><tr>" + pairs.map(function (p) { return "<th>"+M.esc(p[0])+"</th>"; }).join("") +
+      "</tr></thead><tbody><tr>" +
+      pairs.map(function (p) { return "<td>"+M.esc(p[1])+"</td>"; }).join("") + "</tr></tbody>";
+  }
+  function unitsOutstanding(d) {
+    var line = (d.statement.BS || []).filter(function (r) {
+      return r.name === "Number of Units Outstanding"; })[0];
+    // In thousands like the rest of the balance sheet, so scaled to real units.
+    return line && line.amount != null ? M.num(line.amount * 1000, 0) : "—";
+  }
+
+  function kv(el, lines) {
+    if (!lines || !lines.length) {
+      el.innerHTML = '<tbody><tr><td class="mfd-empty">Not filed for this month.</td></tr></tbody>';
+      return;
+    }
+    el.innerHTML = "<tbody>" + lines.map(function (r) {
+      /* Subtotal rows are emphasised but STILL show their figure. INVESTMENTS,
+         CURRENT ASSETS and CURRENT LIABILITIES are real numbers the fund
+         reports, not section captions. */
+      return '<tr'+(r.subtotal ? ' class="mfd-kvhead"' : "")+"><td>"+M.esc(r.name)+
+             "</td><td>"+(r.amount == null ? "—" : M.num(r.amount, 2))+"</td></tr>";
+    }).join("") + "</tbody>";
+  }
+
+  function load() {
+    M.getJSON(M.urls.financials, {symbol: fund.value, month: month.value,
+                                  sector: sector.value}).then(function (d) {
+      if (!d.ok) {
+        document.getElementById("mf-table").innerHTML =
+          '<tbody><tr><td class="mfd-empty">'+M.esc(d.error||"No data.")+"</td></tr></tbody>";
+        if (d.periods) M.fillPeriods(month, d.periods, "");
+        return;
+      }
+      M.fillPeriods(month, d.periods, d.period);
+      M.syncUrl({symbol: d.symbol, month: d.period, sector: sector.value || ""});
+
+      document.getElementById("mf-railhead").textContent =
+        d.symbol + (d.fund_name ? " (" + d.fund_name + ")" : "");
+
+      var keep = sector.value;
+      sector.innerHTML = '<option value="ALL">ALL</option>' + d.sectors_present.map(function (c) {
+        return '<option value="'+M.esc(c)+'">'+M.esc(d.sector_labels[c]||c)+"</option>";
+      }).join("");
+      if (keep && [].slice.call(sector.options).some(function(o){return o.value===keep;}))
+        sector.value = keep;
+      document.getElementById("mf-secpct").textContent = M.pct(d.sector_share_pct);
+
+      facts(d);
+      kv(document.getElementById("mf-bs"), d.statement.BS);
+      kv(document.getElementById("mf-is"), d.statement.IS);
+      document.getElementById("mf-units").innerHTML =
+        "Statement figures are printed <b>as the fund filed them</b> — money in " +
+        "<b>thousands of rupees</b>, except <b>NAV per Unit</b>. The holdings table " +
+        "to the right is in rupees.";
+
+      table = new M.Table(document.getElementById("mf-table"), cols,
+        {empty:"No scripts in this sector for this month."});
+      table.setRows(d.holdings);
+      document.getElementById("mf-note").innerHTML =
+        "<b>" + M.esc(d.symbol) + " · " + M.esc(d.period) + " · " +
+        d.holding_count + " scripts.</b> The sector percentage is this selection's " +
+        "share of the fund's <b>whole</b> cost book, so it reads 100% only on ALL. " +
+        "<b>Market Price is derived</b> as market value divided by kitta — the feed " +
+        "carries quantity, cost and market value but no price field; Valuation PL is " +
+        "market value less cost and reconciles exactly. <b>Units Outstanding</b> " +
+        "replaces the published \"Total Listed Shares\": that figure reconciles with " +
+        "nothing in the source, whereas units × NAV per unit gives the stated NAV " +
+        "exactly.";
+    }).catch(function(){});
+  }
+
+  fund.addEventListener("change", function(){ month.value=""; sector.value="ALL"; load(); });
+  month.addEventListener("change", load);
+  sector.addEventListener("change", load);
+  document.getElementById("mf-export").addEventListener("click", function () {
+    if (table) table.csv("financials-"+fund.value+"-"+(month.value||"latest").replace(/\s+/g,"-")+".csv");
+  });
+
+  var pre = M.urlParam("symbol");
+  if (pre) { var o=[].slice.call(fund.options).filter(function(x){return x.value===pre;})[0]; if(o) fund.value=pre; }
+  if (fund.options.length) load();
+  else document.getElementById("mf-table").innerHTML =
+    '<tbody><tr><td class="mfd-empty">No fund portfolios synced yet.</td></tr></tbody>';
+});
+</script>
+{% endblock %}

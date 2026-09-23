@@ -1,0 +1,272 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEPSE Market Cycle Stage Classification — SOP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    .sop-main { max-width: 980px; margin: 0 auto; padding: 18px 16px 56px; }
+    .sop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .sop-head h1 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--ink-1); }
+    .sop-head p { margin: 0; max-width: 70ch; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); opacity: .82; }
+    .sop-back {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px;
+      color: inherit; text-decoration: none; font-size: 13px; background: var(--surface);
+    }
+    .sop-back:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+    .sop-meta {
+      display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 18px;
+      padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+      font-size: 12.5px; color: var(--ink-2);
+    }
+    .sop-meta b { color: var(--ink-1); }
+    .sop-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; align-items: start; }
+    .sop-toc {
+      position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 13px 14px; background: var(--surface); font-size: 13px;
+    }
+    .sop-toc b { display: block; margin-bottom: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+    .sop-toc a { display: block; padding: 4px 0; color: inherit; text-decoration: none; opacity: .82; }
+    .sop-toc a:hover { opacity: 1; text-decoration: underline; }
+    .sop-doc { min-width: 0; }
+    .sop-sec {
+      border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px;
+      margin-bottom: 14px; background: var(--surface); scroll-margin-top: 16px;
+    }
+    .sop-sec:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .sop-sec h2 { margin: 0 0 7px; font-size: 17px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec h3 { margin: 14px 0 5px; font-size: 13.5px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec p, .sop-sec li { color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+    .sop-sec p { margin: 6px 0; }
+    .sop-sec ul { margin: 8px 0 0; padding-left: 20px; }
+    .sop-sec li { margin: 3px 0; }
+    .sop-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+    .sop-table th, .sop-table td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--ink-2); }
+    .sop-table th { color: var(--ink-1); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; opacity: .72; }
+    .sop-table code { color: var(--ink-1); }
+    .sop-note { margin-top: 10px; padding: 8px 11px; border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+    .sop-trigger { margin-top: 8px; padding: 8px 11px; border-left: 3px solid #eab308; background: var(--surface-2); color: var(--ink-1); font-size: 12.5px; font-weight: 600; }
+    .sop-pill { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .sop-pill.s1 { background: rgba(148,163,184,.16); color: #94a3b8; }
+    .sop-pill.s2 { background: rgba(34,197,94,.16); color: #22c55e; }
+    .sop-pill.s3 { background: rgba(234,179,8,.18); color: #eab308; }
+    .sop-pill.s4 { background: rgba(239,68,68,.16); color: #ef4444; }
+    .sop-check li { list-style: none; margin-left: -20px; }
+    .sop-check li::before { content: "\2610"; margin-right: 8px; color: var(--ink-3, #94a3b8); }
+    .sop-report { white-space: pre-wrap; font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+      font-size: 12.5px; line-height: 1.7; color: var(--ink-2); background: var(--surface-2);
+      border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-top: 8px; overflow-x: auto; }
+    @media (max-width: 820px) {
+      .sop-head { flex-direction: column; }
+      .sop-grid { grid-template-columns: 1fr; }
+      .sop-toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+<main class="sop-main">
+  <div class="sop-head">
+    <div>
+      <h1>NEPSE Market Cycle Stage Classification — SOP</h1>
+      <p>A repeatable weekly procedure to classify NEPSE's current market stage (1&ndash;4) and flag transitions early, replacing simple "bullish / bearish" labelling. It reads the <b>whole index</b> top-down — distinct from the per-symbol Stage Analysis desk.</p>
+    </div>
+    <a href="{% url 'crud_dashboard' %}?active_tab=rrg_seasonal" class="sop-back" title="Back to Seasonal Return desk">Back to desk</a>
+  </div>
+
+  <div class="sop-meta">
+    <span><b>Framework:</b> Weinstein 4-Stage Model, adapted for NEPSE</span>
+    <span><b>Owner:</b> Dashboard maintainer</span>
+    <span><b>Review:</b> Weekly (or after any 2%+ single-day index move)</span>
+  </div>
+
+  <div class="sop-grid">
+    <nav class="sop-toc" aria-label="SOP sections">
+      <b>Sections</b>
+      <a href="#objective">1. Objective</a>
+      <a href="#inputs">2. Required data inputs</a>
+      <a href="#procedure">3. Classification procedure</a>
+      <a href="#checklists">4. Transition checklists</a>
+      <a href="#report">5. Reporting template</a>
+      <a href="#snapshot">6. Current snapshot</a>
+      <a href="#automation">7. Dashboard automation</a>
+    </nav>
+
+    <section class="sop-doc">
+      <section class="sop-sec" id="objective">
+        <h2>1. Objective</h2>
+        <p>Determine, at any point in time, which of the four Weinstein stages NEPSE is in:</p>
+        <table class="sop-table">
+          <thead><tr><th>Stage</th><th>Name</th><th>Character</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sop-pill s1">Stage 1</span></td><td>Accumulation / Base</td><td>Sideways, low volatility; price crosses the 30-week MA back and forth.</td></tr>
+            <tr><td><span class="sop-pill s2">Stage 2</span></td><td>Advancing / Bull</td><td>Higher highs &amp; higher lows; price &gt; a rising MA; expanding breadth.</td></tr>
+            <tr><td><span class="sop-pill s3">Stage 3</span></td><td>Distribution / Top</td><td>Sideways after an uptrend; breadth narrows; volatility rises.</td></tr>
+            <tr><td><span class="sop-pill s4">Stage 4</span></td><td>Declining / Bear</td><td>Lower highs &amp; lower lows; price &lt; a falling MA; broad selling.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="sop-sec" id="inputs">
+        <h2>2. Required data inputs</h2>
+        <p>Collect weekly, ideally from the NEPSE official site, Merolagani, NepaliPaisa, or ShareSansaar:</p>
+        <ul>
+          <li><b>NEPSE Index</b> — daily close (last 52 weeks minimum).</li>
+          <li>30-week (or 150-day) and 50-day / 200-day moving averages.</li>
+          <li>Weekly trading turnover (NRs).</li>
+          <li>Market breadth: advancing vs. declining stocks per session.</li>
+          <li>Sectoral index performance (Banking, Hydropower, Finance, Microfinance, &hellip;).</li>
+          <li>New 52-week highs vs. new 52-week lows (count of stocks).</li>
+          <li>Monetary-policy / regulatory catalysts (NRB circulars, margin-lending rules, CD-ratio changes).</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="procedure">
+        <h2>3. Step-by-step classification procedure</h2>
+
+        <h3>Step 1 — Plot trend structure</h3>
+        <ul>
+          <li>Mark the last 3 major swing highs and swing lows on the NEPSE index.</li>
+          <li>Higher-Highs / Higher-Lows &rarr; <span class="sop-pill s2">Stage 2</span> candidate. Lower-Highs / Lower-Lows &rarr; <span class="sop-pill s4">Stage 4</span> candidate. Sideways / overlapping &rarr; Stage 1 or 3 candidate.</li>
+        </ul>
+
+        <h3>Step 2 — Check moving-average posture</h3>
+        <ul>
+          <li>Is price above or below the 30-week MA? Is the 30-week MA sloping up, flat, or down?</li>
+          <li>Golden Cross (50 &gt; 200) &rarr; supports Stage 2. Death Cross (50 &lt; 200) &rarr; supports Stage 4.</li>
+        </ul>
+
+        <h3>Step 3 — Score market breadth (last 10 sessions)</h3>
+        <ul>
+          <li>Advancers / decliners ratio averaged over 10 sessions.</li>
+          <li>Consistently &gt; 1.5 &rarr; healthy Stage 2. Near 1.0 or below despite a flat/rising index &rarr; Stage 3 warning. Consistently &lt; 0.7 &rarr; Stage 4.</li>
+        </ul>
+
+        <h3>Step 4 — Check volume / turnover behaviour</h3>
+        <ul>
+          <li>Rising price + rising turnover &rarr; confirms Stage 2.</li>
+          <li>Rising or flat price + falling turnover &rarr; Stage 3 warning (distribution).</li>
+          <li>Falling price + rising turnover &rarr; confirms Stage 4 (capitulation / panic).</li>
+          <li>Falling price + falling turnover &rarr; late Stage 4 / approaching Stage 1 (exhaustion).</li>
+        </ul>
+
+        <h3>Step 5 — Check sector leadership</h3>
+        <ul>
+          <li>Are Banking + large-cap sectors still leading, or lagging speculative sectors (Hydropower, Trading, Microfinance)?</li>
+          <li>Large-caps / banks weakening first while small-caps still rally &rarr; classic late-Stage-2 / Stage-3 signal.</li>
+        </ul>
+
+        <h3>Step 6 — Count new highs vs. new lows</h3>
+        <ul>
+          <li>Rising index but shrinking count of new 52-week highs &rarr; non-confirmation, Stage 3 warning.</li>
+          <li>Rising count of new 52-week lows even while the index is flat/up &rarr; Stage 3&rarr;4 warning.</li>
+        </ul>
+
+        <h3>Step 7 — Assign a stage score</h3>
+        <p>Score each of Steps 1&ndash;6 as <b>+1</b> (bullish / Stage 2), <b>0</b> (neutral / transition), or <b>&minus;1</b> (bearish / Stage 4). Sum the score:</p>
+        <table class="sop-table">
+          <thead><tr><th>Total score</th><th>Classification</th></tr></thead>
+          <tbody>
+            <tr><td>+4 to +6</td><td><span class="sop-pill s2">Stage 2</span> (confirmed)</td></tr>
+            <tr><td>+1 to +3</td><td><span class="sop-pill s2">Stage 2</span> (late / maturing) — watch closely</td></tr>
+            <tr><td>0</td><td><span class="sop-pill s3">Stage 3</span> (Distribution) — transition zone</td></tr>
+            <tr><td>&minus;1 to &minus;3</td><td><span class="sop-pill s4">Stage 4</span> (early / confirmed Bear)</td></tr>
+            <tr><td>&minus;4 to &minus;6</td><td><span class="sop-pill s4">Stage 4</span> (mature Bear)</td></tr>
+            <tr><td>Near 0, sideways after prolonged Stage 4, volatility compressing</td><td><span class="sop-pill s1">Stage 1</span> (Base building)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="sop-sec" id="checklists">
+        <h2>4. Stage transition checklists</h2>
+
+        <h3><span class="sop-pill s2">Stage 2</span> &rarr; <span class="sop-pill s3">Stage 3</span> (Distribution)</h3>
+        <ul class="sop-check">
+          <li>Index struggles to make new highs near prior resistance.</li>
+          <li>Turnover declining despite flat/rising price.</li>
+          <li>Banking / large-caps underperforming the broader index.</li>
+          <li>Advance / decline ratio deteriorating over 10+ sessions.</li>
+          <li>Fewer stocks hitting new 52-week highs.</li>
+          <li>Increased single-day volatility (&gt;1.5% swings becoming frequent).</li>
+        </ul>
+        <div class="sop-trigger">Trigger rule: if 4 of 6 boxes checked for 2+ consecutive weeks &rarr; reclassify as Stage 3.</div>
+
+        <h3><span class="sop-pill s3">Stage 3</span> &rarr; <span class="sop-pill s4">Stage 4</span> (Bear confirmed)</h3>
+        <ul class="sop-check">
+          <li>Index closes below the 30-week MA on rising volume.</li>
+          <li>50-day MA crosses below the 200-day MA (Death Cross).</li>
+          <li>Advance / decline ratio falls below 0.7 for 2+ weeks.</li>
+          <li>New 52-week lows outnumber new highs.</li>
+          <li>Broad-based selling (10+ of 13 sectoral sub-indices negative) on multiple sessions.</li>
+        </ul>
+        <div class="sop-trigger">Trigger rule: if 3 of 5 boxes checked &rarr; reclassify as Stage 4.</div>
+
+        <h3><span class="sop-pill s4">Stage 4</span> &rarr; <span class="sop-pill s1">Stage 1</span> (Base forming)</h3>
+        <ul class="sop-check">
+          <li>Rate of decline slows (smaller average daily point loss).</li>
+          <li>Turnover shrinks to multi-month lows (capitulation exhausted).</li>
+          <li>Index trades sideways in a defined range for 8+ weeks.</li>
+          <li>Advance / decline ratio stabilises near 1.0.</li>
+        </ul>
+
+        <h3><span class="sop-pill s1">Stage 1</span> &rarr; <span class="sop-pill s2">Stage 2</span> (New bull)</h3>
+        <ul class="sop-check">
+          <li>Index closes above the 30-week MA and holds for 3+ weeks.</li>
+          <li>50-day MA turns up and crosses above the 200-day MA.</li>
+          <li>Breadth expands — advancers durably outnumber decliners.</li>
+          <li>Volume expands on up-days relative to down-days.</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="report">
+        <h2>5. Reporting template (fill weekly)</h2>
+<div class="sop-report">Week of: __________
+NEPSE Close: ______   &Delta; vs prior week: ______
+30-wk MA: ______   Price vs MA: Above / Below
+50D / 200D: ______ / ______   Cross status: Golden / Death / None
+Avg 10-day Adv/Decl ratio: ______
+Turnover trend (4-wk): Rising / Flat / Falling
+New 52wk Highs: ______   New 52wk Lows: ______
+Sector leadership: ______
+Stage Score (Step 7): ______
+Classified Stage: ______
+Watchlist triggered: [ ] 2&rarr;3   [ ] 3&rarr;4   [ ] 4&rarr;1   [ ] 1&rarr;2
+Notes / catalysts: ______</div>
+      </section>
+
+      <section class="sop-sec" id="snapshot">
+        <h2>6. Current snapshot <span style="font-weight:600;font-size:12px;opacity:.7;">(as of mid-July 2026 — verify before relying on this)</span></h2>
+        <p>NEPSE peaked near <b>2,930&ndash;3,200</b> in early-to-mid 2026. Recent sessions show the index closing around <b>2,570&ndash;2,582</b>, an eight-month low, with several consecutive negative sessions, broad sector weakness, and weak breadth (losers outnumbering gainers by a wide margin in at least one recent session). Turnover has been mixed — rising on some down days, which is more consistent with <span class="sop-pill s3">Stage 3</span> (distribution) shading into early <span class="sop-pill s4">Stage 4</span> than with a healthy late-Stage-2 uptrend.</p>
+        <div class="sop-note"><b>Recommendation:</b> re-run Steps 1&ndash;7 against fresh data before finalising this week's classification. Don't rely on this snapshot beyond a few trading days — NEPSE has been volatile.</div>
+      </section>
+
+      <section class="sop-sec" id="automation">
+        <h2>7. Dashboard automation notes</h2>
+        <p>If building this into an automated dashboard:</p>
+        <ul>
+          <li>Pull daily close, turnover, and advance / decline counts via API or a scraped source.</li>
+          <li>Compute the 30-week and 50 / 200-day MAs programmatically.</li>
+          <li>Auto-calculate the Step 7 score and flag when a transition checklist crosses its trigger threshold.</li>
+          <li>Alert (email / notification) when the stage classification changes.</li>
+        </ul>
+        <div class="sop-note">This is a descriptive classification aid, not investment advice. It does not forecast price or replace risk management and position sizing.</div>
+      </section>
+    </section>
+  </div>
+</main>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+      {% if sop_backtest_metrics %}
+        {% if sop_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ sop_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div class="small text-muted">
+              Strategy: <strong class="text-light">{{ sop_backtest_metrics.indicator_label }}</strong>
+              · {{ sop_selected_symbol }}
+              · Cost {{ sop_backtest_metrics.cost_bps|floatformat:0 }} bps
+              {% if sop_backtest_metrics.regime_used %}· 200-SMA regime ON{% else %}· regime OFF{% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              {% if sop_backtest_metrics.regime_used %}
+                <span class="badge rounded-pill
+                  {% if sop_backtest_metrics.current_regime == 'Bull' %}bg-success{% elif sop_backtest_metrics.current_regime == 'Bear' %}bg-danger{% else %}bg-secondary{% endif %}">
+                  Current regime: {{ sop_backtest_metrics.current_regime }}</span>
+              {% endif %}
+              <span class="badge rounded-pill bg-dark border">Buy &amp; Hold: {{ sop_backtest_metrics.buyhold_return|floatformat:2 }}%</span>
+            </div>
+          </div>
+
+          {% comment %}Live action for today, above the historical metric cards.{% endcomment %}
+          {% with sig=sop_backtest_metrics.signal %}
+          {% if sig %}
+          <div class="card border-0 shadow-sm rounded-3 mb-3" style="border-left:6px solid {{ sig.pure_colour }} !important;">
+            <div class="card-body py-3">
+              <div class="d-flex flex-wrap align-items-center gap-3">
+                <span class="badge rounded-pill px-4 py-2"
+                      style="background:{{ sig.pure_colour }}; font-size:22px; font-weight:800; letter-spacing:.06em;">{{ sig.pure_action }}</span>
+                <div class="flex-grow-1" style="min-width:220px;">
+                  <div style="font-size:14px; font-weight:600; color:var(--ink-1,#e8eef7);">
+                    Indicator is {% if sig.indicators.0.long %}LONG{% else %}FLAT{% endif %}.
+                  </div>
+                  <div class="small text-muted mt-1">
+                    {{ sop_selected_symbol }} &middot; as of {{ sig.as_of }} &middot; close {{ sig.close }}
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3"
+                   style="border-top:1px solid rgba(128,128,128,.22);">
+                <span class="small text-muted">Risk context:</span>
+                <span class="badge rounded-pill" style="background:{{ sig.colour }};">{{ sig.action }}</span>
+                <span class="badge rounded-pill
+                  {% if sig.regime == 'Bull' %}bg-success{% elif sig.regime == 'Bear' %}bg-danger{% else %}bg-secondary{% endif %}">{{ sig.regime }} regime</span>
+                <span class="badge rounded-pill bg-dark border">{% if sig.in_position %}holding{% else %}flat{% endif %}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-2 col-6">
+              <div class="card p-3 border-0 text-white {% if sop_backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-white-50">Total Return</span>
+                <h4 class="mt-2 mb-0 fw-bold">{{ sop_backtest_metrics.total_return|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-2 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Sharpe (rf=0)</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if sop_backtest_metrics.sharpe >= 0 %}text-light{% else %}text-danger{% endif %}">{{ sop_backtest_metrics.sharpe|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-2 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Win Rate</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ sop_backtest_metrics.win_rate|floatformat:1 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-2 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Profit Factor</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ sop_backtest_metrics.profit_factor }}</h4>
+              </div>
+            </div>
+            <div class="col-md-2 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Max Drawdown</span>
+                <h4 class="mt-2 mb-0 fw-bold text-danger">{{ sop_backtest_metrics.max_drawdown|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-2 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Trades · Avg Hold</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ sop_backtest_metrics.total_trades }} · {{ sop_backtest_metrics.avg_holding_bars|floatformat:0 }}b</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-3 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Out-of-sample Sharpe <span class="text-muted" title="Sharpe over just the most recent 30% of the window (the unseen tail)">ⓘ</span></span>
+                <h4 class="mt-2 mb-0 fw-bold {% if sop_backtest_metrics.oos_sharpe >= 0 %}text-light{% else %}text-danger{% endif %}">{{ sop_backtest_metrics.oos_sharpe|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Time in Market</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ sop_backtest_metrics.time_in_market|floatformat:1 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-3 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Strategy vs Buy &amp; Hold</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if sop_backtest_metrics.excess_vs_buyhold >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ sop_backtest_metrics.excess_vs_buyhold|floatformat:2 }}%</h4>
+                {% if sop_backtest_metrics.beats_buyhold %}<span class="badge rounded-pill bg-success-subtle text-success mt-1" style="width:fit-content;">↑ beats B&amp;H</span>{% else %}<span class="badge rounded-pill bg-danger-subtle text-danger mt-1" style="width:fit-content;">↓ trails B&amp;H</span>{% endif %}
+              </div>
+            </div>
+            <div class="col-md-3 col-6">
+              <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Buy &amp; Hold Max DD</span>
+                <h4 class="mt-2 mb-0 fw-bold text-danger">{{ sop_backtest_metrics.buyhold_max_drawdown|floatformat:2 }}%</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="small text-muted mb-4" style="border-left:3px solid var(--accent, #4c8dff); padding:6px 11px; background: var(--bg-raised, rgba(128,128,128,.06)); border-radius:0 6px 6px 0;">
+            <strong>NEPSE rules applied:</strong> long-only (no short) · next-session-open (T+1) fills, no same-day round-trips · real NEPSE session calendar · bear regime → cash.
+          </div>
+
+          {% if sop_equity %}
+          <div class="panel-outer mb-3">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Equity Curve — Strategy vs Buy &amp; Hold</h6>
+            </div>
+            <div class="p-2">
+              <div id="sopEquityChart" style="min-height:360px;"></div>
+            </div>
+          </div>
+          {{ sop_equity|json_script:"sop-equity-data" }}
+          {% endif %}
+
+          <div class="panel-outer">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">SOP Trade Log: {{ sop_selected_symbol }} · {{ sop_backtest_metrics.indicator_label }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead>
+                <tr>
+                  <th>Entry Signal</th>
+                  <th>Exit Signal</th>
+                  <th>Entry Date</th>
+                  <th>Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">Shares</th>
+                  <th class="th-num">Hold (bars)</th>
+                  <th class="th-num">Net P&amp;L</th>
+                  <th class="th-num">P&amp;L %</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in sop_completed_trades %}
+                <tr>
+                  <td class="text-success-custom">{{ trade.entry_signal }}</td>
+                  <td class="text-danger-custom">{{ trade.exit_signal }}</td>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.shares }}</td>
+                  <td class="td-num text-muted">{{ trade.hold_bars }}</td>
+                  <td class="td-num {% if trade.pnl >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">NPR {{ trade.pnl|floatformat:2 }}</td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ trade.pnl_pct|floatformat:2 }}%</td>
+                  <td class="text-muted">{{ trade.exit_reason }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="11" class="text-center text-muted py-4">No SOP trades were generated in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}

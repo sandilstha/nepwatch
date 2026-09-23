@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAN SLIM — How It Works</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    .sop-wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px 80px; }
+    .sop-wrap h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    .sop-kicker { color: var(--ink-3); font-size: .8rem; margin-bottom: 26px; }
+    .sop-wrap h2 { font-size: 1.05rem; margin: 34px 0 10px; padding-top: 18px;
+                   border-top: 1px solid var(--line); }
+    .sop-wrap p, .sop-wrap li { font-size: .9rem; line-height: 1.65; color: var(--ink-1); }
+    .sop-wrap li { margin-bottom: 7px; }
+    .sop-note { background: var(--surface); border: 1px solid var(--line);
+                border-left: 4px solid var(--warn, #d9a63f); border-radius: 8px;
+                padding: 12px 16px; margin: 14px 0; }
+    .sop-tbl { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .85rem; }
+    .sop-tbl th, .sop-tbl td { text-align: left; padding: 8px 10px;
+                               border-bottom: 1px solid var(--line); vertical-align: top; }
+    .sop-tbl th { color: var(--ink-3); font-size: .7rem; text-transform: uppercase;
+                  letter-spacing: .06em; }
+    details.sop-tech { margin: 10px 0 0; border: 1px dashed var(--line);
+                       border-radius: 8px; padding: 8px 14px; }
+    details.sop-tech summary { cursor: pointer; font-size: .78rem; color: var(--ink-3); }
+    details.sop-tech p, details.sop-tech li { font-size: .8rem; color: var(--ink-2); }
+    .sop-back { display: inline-block; margin-bottom: 18px; font-size: .8rem; }
+    code { background: var(--surface-2); border: 1px solid var(--line);
+           border-radius: 4px; padding: 1px 5px; font-size: .8em; }
+  </style>
+</head>
+<body>
+<div class="sop-wrap">
+  <a class="sop-back" href="{% url 'canslim' %}">&larr; Back to the CAN SLIM screen</a>
+  <h1>CAN SLIM — how this screen works</h1>
+  <p class="sop-kicker">Written in plain language. Every rule the screen uses is on this page.</p>
+
+  <h2>1. What is CAN SLIM?</h2>
+  <p>CAN SLIM is a way of looking for strong growth stocks, made famous by the American
+     investor William O'Neil. Each letter is one question about a stock:</p>
+  <table class="sop-tbl">
+    <tr><th>Letter</th><th>Question</th><th>On this screen</th></tr>
+    <tr><td><b>C</b></td><td>Did the latest quarter's profit grow strongly?</td><td>Measured</td></tr>
+    <tr><td><b>A</b></td><td>Has profit grown year after year?</td><td>Measured</td></tr>
+    <tr><td><b>N</b></td><td>Is something new happening — a new high, new product?</td><td>Partly measured</td></tr>
+    <tr><td><b>S</b></td><td>Is the price rising with strong trading volume?</td><td>Measured</td></tr>
+    <tr><td><b>L</b></td><td>Is it a leader — beating the rest of the market?</td><td>Measured</td></tr>
+    <tr><td><b>I</b></td><td>Are big funds buying it?</td><td><b>Not available</b></td></tr>
+    <tr><td><b>M</b></td><td>Is the whole market going up?</td><td>Shown as a banner</td></tr>
+  </table>
+
+  <h2>2. Where each number comes from</h2>
+  <ul>
+    <li><b>C — Current earnings.</b> We take the company's latest reported quarter and
+        compare its profit with the <i>same quarter one year ago</i>. Same quarter, because
+        Nepali company profits are seasonal — comparing Q2 with Q1 would mistake the season
+        for growth. More than +25% earns a high score.</li>
+    <li><b>A — Annual earnings.</b> We look at up to five full years of profit and ask two
+        things: how fast did it grow on average, and <i>how often</i> did it grow? A company
+        that grew in 3 of 4 years beats one whose average is carried by a single huge
+        rebound year. The screen shows this as, for example, <code>(3/4)</code>.</li>
+    <li><b>N — New high.</b> How close is today's price to the highest price of the last
+        52 weeks? At or near the high scores well. Note: O'Neil's "N" also means new
+        products or new management — that information is not in our data, so our N covers
+        the <i>price</i> part only, and says so.</li>
+    <li><b>S — Supply and demand.</b> Is recent trading volume (last 25 sessions) bigger
+        than normal (last 100 sessions), and did the price <i>rise</i> on that volume? Heavy
+        trading while the price falls does not count — that is selling, not demand.</li>
+    <li><b>L — Leader or laggard.</b> The stock's price change over roughly 6 months,
+        minus NEPSE's change over the same period. Beating the market by a wide margin
+        makes a leader.</li>
+    <li><b>M — Market direction.</b> Is the NEPSE index above or below its own 50-session
+        and 150-session averages? This is the same for every stock, so it is shown
+        <b>once, as a banner above the table</b> — not mixed into each stock's score.
+        O'Neil's advice: in a downtrend, be very careful no matter how good a stock looks.</li>
+  </ul>
+
+  <h2>3. How the score out of 100 is built</h2>
+  <ul>
+    <li>Each measurable factor (C, A, N, S, L) gets 0–10 points from fixed rules —
+        for example C: over +100% = 10, over +25% = 8, over 0% = 4.</li>
+    <li>The total is shown out of 100: <code>points earned ÷ points possible</code>.</li>
+    <li><b>If a factor cannot be measured, it is left out of the calculation</b> — the stock
+        is not punished for data that does not exist. But if fewer than 3 of the 5 factors
+        can be measured, the stock gets <b>no score at all</b> (usually a new listing).</li>
+    <li>Rows where only 3 or 4 factors were measurable carry a small
+        <code>thin</code> / <code>partial</code> tag so you can see the score rests on less.</li>
+  </ul>
+
+  <h2>4. Honest labels you will see, and why</h2>
+  <ul>
+    <li><b>"Recovery"</b> — the company went from a loss last year to a profit now. That is
+        good news, but it is <i>not</i> a growth percentage: the maths of "percent growth
+        from a loss" gives a nonsense negative number, so we never print one.</li>
+    <li><b>"N/A — loss base"</b> — the company was loss-making in both periods. No
+        percentage is possible. It still receives a <i>low</i> C score (1/10), because two
+        losing quarters in a row is the worst C outcome, not a missing one.</li>
+    <li><b>"thin history"</b> — fewer than 3 measured years of profit growth, so the A
+        factor is not scored. One spectacular year should not pass for a track record.</li>
+    <li><b>"±" next to a ticker</b> — a bonus or rights share adjustment happened inside the
+        price window. On that day the price drops sharply for a reason that is not real
+        selling. We skip that day when computing the price factors, so N, S and L for this
+        stock are <i>approximate</i>.</li>
+  </ul>
+
+  <h2>5. What is missing, said plainly</h2>
+  <div class="sop-note">
+    <p><b>I — Institutional Sponsorship — cannot be measured in Nepal.</b> In the US, funds
+       must publish what they own; NEPSE has no such disclosure. We considered using
+       broker floorsheet flows as a substitute and decided against it: we tested that
+       signal ourselves and it did not predict returns, so dressing it up as
+       "institutional buying" would be misleading. The screen scores 5 factors and says
+       so, rather than faking a sixth.</p>
+  </div>
+
+  <h2>6. The most important warning</h2>
+  <div class="sop-note">
+    <p><b>This is a screen, not a prediction.</b> The scoring rules are O'Neil's published
+       rules; they have <b>not</b> been tested against NEPSE's history, and a high score is
+       not a promise the stock will rise. Use the screen to build a shortlist worth
+       researching — the research is still yours to do.</p>
+  </div>
+
+  <h2>7. Data quirks we handle for you</h2>
+  <p>Nepali company filings are messy. Three problems are corrected before anything is scored:</p>
+  <ul>
+    <li><b>Quarterly numbers are running totals.</b> A company's "Q4 profit" as filed is
+        actually the whole year. We subtract each quarter from the one before to get the
+        real three-month figure — otherwise Q4 would look about 3&times; too big.</li>
+    <li><b>The same fact is filed under different names</b> ("Net Income", "NET PROFIT",
+        two different spellings of "EPS (Annualized)"), and for some companies one of those
+        versions is junk — literal zeros or placeholder digits. For each company we pick
+        the one series whose numbers look like real accounts, and use only it. We never mix
+        two sources in one calculation: mixing once produced a fake "+112,254% growth".</li>
+    <li><b>Fiscal years are Nepali.</b> "2025/26 Q4" is the fourth quarter of the Nepali
+        fiscal year, compared against "2024/25 Q4" — never against a different quarter.</li>
+  </ul>
+
+  <details class="sop-tech">
+    <summary>Technical appendix — exact thresholds (for checking our work)</summary>
+    <ul>
+      <li>C ladder (discrete quarter YoY %): &ge;100&rarr;10, &ge;50&rarr;9, &ge;25&rarr;8,
+          &ge;10&rarr;6, &ge;0&rarr;4, &ge;&minus;25&rarr;2, below&rarr;0.
+          Recovery&rarr;6. Still loss-making&rarr;1.</li>
+      <li>A ladder (avg annual growth %): &ge;50&rarr;10, &ge;25&rarr;8, &ge;10&rarr;6,
+          &ge;0&rarr;4; then multiplied by <code>0.4 + 0.6 &times;
+          (positive years &divide; measured years)</code>. Needs &ge;3 measured
+          year-transitions and &ge;2 full years on file.</li>
+      <li>N (position in 52-week range %): &ge;95&rarr;10, &ge;85&rarr;8, &ge;70&rarr;6,
+          &ge;50&rarr;4, &ge;25&rarr;2. Range clamped to 0–100; a close above the stored
+          high counts as a new high.</li>
+      <li>S (25-session avg volume &divide; 100-session): &ge;2.0&rarr;10, &ge;1.5&rarr;8,
+          &ge;1.2&rarr;7, &ge;1.0&rarr;5, below&rarr;0; minus 4 if price did not rise
+          over the same 25 sessions.</li>
+      <li>L (126-session return minus index return, pp): &ge;50&rarr;10, &ge;25&rarr;9,
+          &ge;10&rarr;7, &ge;0&rarr;5, &ge;&minus;25&rarr;3, below&rarr;0.</li>
+      <li>M: index vs its 50/150-session simple averages; uptrend needs price &gt; rising
+          50-avg &gt; 150-avg.</li>
+      <li>Ex-date splice: any one-day raw return below &minus;12% (NEPSE's circuit is 10%)
+          is treated as a corporate action and contributes 0 to the compounded return;
+          the row is flagged &plusmn;.</li>
+      <li>Universe: ordinary equities traded in the last 60 days, minus debentures,
+          promoter shares, preference shares and funds (same exclusion list as the
+          A/D Radar). Scan cached 15 minutes.</li>
+    </ul>
+  </details>
+</div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+      {% if backtest_metrics %}
+        {% if backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card metrics-header-box p-4 shadow-sm">
+                <span class="metrics-card-label">Initial Capital Allocation</span>
+                <h4 class="mt-2 mb-0 fw-bold">NPR {{ backtest_metrics.initial_capital|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Terminal Liquidity Value</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">NPR {{ backtest_metrics.final_equity|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 text-white {% if backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3">
+                <span class="metrics-card-label text-white-50">Compounded Total Return</span>
+                <h4 class="mt-2 mb-0 fw-bold">{{ backtest_metrics.total_return|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border border-light metric-card shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Sim Completed Trades | Win Rate</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ backtest_metrics.total_trades }} Trades ({{ backtest_metrics.win_rate }}% WR)</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Simulation Performance Matrix Log: {{ selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="">
+                <tr>
+                  <th>Allocation Entry Date</th>
+                  <th>Liquidation Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">Shares Held</th>
+                  <th class="th-num">Net Capital Profit/Loss</th>
+                  <th class="th-num">P&amp;L %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in completed_trades %}
+                <tr>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.shares }}</td>
+                  <td class="td-num {% if trade.pnl >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    NPR {{ trade.pnl|floatformat:2 }}
+                  </td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    {{ trade.pnl_pct|floatformat:2 }}%
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">The structural model indicators generated zero signals over this date parameter frame.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}

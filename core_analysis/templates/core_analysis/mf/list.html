@@ -1,0 +1,79 @@
+{% extends "core_analysis/mf/_base.html" %}
+{% block title %}Mutual Fund List{% endblock %}
+{% block heading %}Mutual Fund List{% endblock %}
+{% block subheading %}Active funds with the latest published NAV and market price{% endblock %}
+
+{% block content %}
+<div class="mfd-bar">
+  <div class="mfd-field">
+    <label for="mf-q">Filter</label>
+    <input id="mf-q" class="mfd-input" type="search" placeholder="Symbol, fund or AMC">
+  </div>
+  <div class="mfd-spacer"></div>
+  <button type="button" class="mfd-btn" id="mf-export">Export CSV</button>
+</div>
+
+<div class="mfd-wrap"><table class="mfd-table" id="mf-table"></table></div>
+<div class="mfd-note" id="mf-note"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var M = window.MFD;
+  var cols = [
+    {key:"symbol", label:"Symbol",
+     fmt:function(r){ return '<a href="/stock/'+encodeURIComponent(r.symbol)+'/">'+M.esc(r.symbol)+'</a>'; }},
+    {key:"fund_name", label:"Mutual Fund Name", fmt:function(r){ return M.esc(r.fund_name||"—"); }},
+    {key:"amc", label:"Asset Management Company", fmt:function(r){ return M.esc(r.amc||"—"); }},
+    {key:"fund_size", label:"Fund Size", fmt:function(r){ return M.num(r.fund_size, 2); }},
+    {key:"maturity_date", label:"Maturity Date", fmt:function(r){ return M.esc(r.maturity_date||"—"); }},
+    {key:"maturity_period", label:"Maturity Period", fmt:function(r){ return M.esc(r.maturity_period||"—"); }},
+    {key:"daily_nav", label:"Daily NAV", fmt:function(r){ return M.num(r.daily_nav); }},
+    {key:"daily_nav_date", label:"Daily NAV Date", fmt:function(r){ return M.esc(r.daily_nav_date||"—"); }},
+    {key:"monthly_nav", label:"Monthly NAV", fmt:function(r){ return M.num(r.monthly_nav); }},
+    {key:"monthly_nav_period", label:"Monthly NAV Date", fmt:function(r){ return M.esc(r.monthly_nav_period||"—"); }},
+    {key:"ltp", label:"LTP", fmt:function(r){ return M.num(r.ltp); }},
+    {key:"as_of", label:"As of", fmt:function(r){ return M.esc(r.as_of||"—"); }},
+    /* Premium is against the DAILY NAV — the newest reading. Quoting it against
+       a month-end figure once overstated a discount by nine points. */
+    /* The published column is headed "%" but carries rupees. Both are shown,
+       each labelled for what it is. */
+    {key:"premium_rs", label:"Pre(+)/Dis(−) Rs.",
+     title:"Market price minus NAV, in rupees — the figure the published list shows",
+     fmt:function(r){ return '<span class="'+M.cls(r.premium_rs)+'">'+
+       (r.premium_rs==null?"—":(r.premium_rs>0?"+":"")+M.num(r.premium_rs))+'</span>'; }},
+    {key:"premium_pct", label:"Pre(+)/Dis(−) %",
+     title:"The same gap as a percentage of NAV",
+     fmt:function(r){ return '<span class="'+M.cls(r.premium_pct)+'">'+M.signed(r.premium_pct)+'</span>'; }}
+  ];
+  var table = new M.Table(document.getElementById("mf-table"), cols,
+    {empty:"No funds synced yet. Run the mutual fund sync."});
+  var all = [];
+
+  function apply() {
+    var q = (document.getElementById("mf-q").value || "").trim().toLowerCase();
+    table.setRows(!q ? all : all.filter(function (r) {
+      return (r.symbol+" "+(r.fund_name||"")+" "+(r.amc||"")).toLowerCase().indexOf(q) !== -1;
+    }));
+  }
+
+  M.getJSON(M.urls.fundList).then(function (d) {
+    all = d.funds || [];
+    apply();
+    document.getElementById("mf-note").innerHTML =
+      "<b>" + all.length + " funds.</b> Premium/discount compares the market price " +
+      "with the fund's newest published NAV — the daily reading where there is one, " +
+      "otherwise the month-end figure. Prices are last close as of " +
+      M.esc(d.as_of || "—") + ". Click any column to sort.";
+  }).catch(function () {
+    table.setRows([]);
+  });
+
+  document.getElementById("mf-q").addEventListener("input", apply);
+  document.getElementById("mf-export").addEventListener("click", function () {
+    table.csv("mutual-fund-list.csv");
+  });
+});
+</script>
+{% endblock %}

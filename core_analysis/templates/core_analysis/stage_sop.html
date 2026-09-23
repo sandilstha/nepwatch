@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stage Analysis Desk SOP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    .sop-main { max-width: 980px; margin: 0 auto; padding: 18px 16px 56px; }
+    .sop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .sop-head h1 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--ink-1); }
+    .sop-head p { margin: 0; max-width: 70ch; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); opacity: .82; }
+    .sop-back {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px;
+      color: inherit; text-decoration: none; font-size: 13px; background: var(--surface);
+    }
+    .sop-back:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+    .sop-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; align-items: start; }
+    .sop-toc {
+      position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 13px 14px; background: var(--surface); font-size: 13px;
+    }
+    .sop-toc b { display: block; margin-bottom: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+    .sop-toc a { display: block; padding: 4px 0; color: inherit; text-decoration: none; opacity: .82; }
+    .sop-toc a:hover { opacity: 1; text-decoration: underline; }
+    .sop-doc { min-width: 0; }
+    .sop-sec {
+      border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px;
+      margin-bottom: 14px; background: var(--surface); scroll-margin-top: 16px;
+    }
+    .sop-sec:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .sop-sec h2 { margin: 0 0 7px; font-size: 17px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec h3 { margin: 14px 0 5px; font-size: 13.5px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec p, .sop-sec li { color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+    .sop-sec p { margin: 6px 0; }
+    .sop-sec ul { margin: 8px 0 0; padding-left: 20px; }
+    .sop-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+    .sop-table th, .sop-table td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--ink-2); }
+    .sop-table th { color: var(--ink-1); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; opacity: .72; }
+    .sop-table code { color: var(--ink-1); }
+    .sop-note { margin-top: 10px; padding: 8px 11px; border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+    .sop-pill { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .sop-pill.s1 { background: rgba(148,163,184,.16); color: #94a3b8; }
+    .sop-pill.s2 { background: rgba(34,197,94,.16); color: #22c55e; }
+    .sop-pill.s3 { background: rgba(234,179,8,.18); color: #eab308; }
+    .sop-pill.s4 { background: rgba(239,68,68,.16); color: #ef4444; }
+    @media (max-width: 820px) {
+      .sop-head { flex-direction: column; }
+      .sop-grid { grid-template-columns: 1fr; }
+      .sop-toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+<main class="sop-main">
+  <div class="sop-head">
+    <div>
+      <h1>Stage Analysis Desk SOP</h1>
+      <p>Methodology note for the Stage Analysis desk (Technical Analysis tab). It adapts Stan Weinstein's four-stage cycle to daily NEPSE data to time short-term swing entries and exits: buy strength as it emerges from a base, avoid tops, and step aside in decline. It is a rules-based screen, not investment advice.</p>
+    </div>
+    <a href="{% url 'crud_dashboard' %}?active_tab=stage_backtest" class="sop-back" title="Back to Stage Analysis">Back to desk</a>
+  </div>
+
+  <div class="sop-grid">
+    <nav class="sop-toc" aria-label="SOP sections">
+      <b>Sections</b>
+      <a href="#overview">1. What the desk does</a>
+      <a href="#stages">2. The four stages</a>
+      <a href="#inputs">3. Inputs &amp; parameters</a>
+      <a href="#formulas">4. How stages are decided</a>
+      <a href="#shortterm">5. Short-term playbook</a>
+      <a href="#workflow">6. Operating steps</a>
+      <a href="#limits">7. Limits</a>
+    </nav>
+
+    <section class="sop-doc">
+      <section class="sop-sec" id="overview">
+        <h2>1. What the desk does</h2>
+        <p>The desk classifies a single symbol's current position in the Weinstein cycle from its own price and volume history, then reports the live stage, how long it has held, the confirmation score, and the last stage change. The read is anchored on two moving averages rescaled from Weinstein's weekly chart to daily bars:</p>
+        <ul>
+          <li><b>30-week baseline</b> — a 150-day EMA (<code>ema_30w</code>). Price above a <i>rising</i> baseline is the core requirement for an advance.</li>
+          <li><b>10-week trigger</b> — a 50-day EMA (<code>ema_10w</code>). The faster line that price rolls under first when a trend tops out.</li>
+        </ul>
+        <p>Adjusted prices are used first; missing dates fall back to unadjusted and are flagged in the Source column.</p>
+      </section>
+
+      <section class="sop-sec" id="stages">
+        <h2>2. The four stages</h2>
+        <table class="sop-table">
+          <thead><tr><th>Stage</th><th>Character</th><th>Short-term stance</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sop-pill s1">Stage 1</span> Base</td><td>Sideways after a decline; 30w MA flattening, no trend.</td><td>Watch. Build a watchlist; no position yet.</td></tr>
+            <tr><td><span class="sop-pill s2">Stage 2</span> Advance</td><td>Price above a rising 30w MA, breaking resistance on volume.</td><td>Buy / hold. This is the only stage the desk actively favours for longs.</td></tr>
+            <tr><td><span class="sop-pill s3">Stage 3</span> Top</td><td>30w MA has flattened; price has rolled below the 10w MA but not yet decisively below the 30w baseline.</td><td>Trim / tighten stops. New buys off the table.</td></tr>
+            <tr><td><span class="sop-pill s4">Stage 4</span> Decline</td><td>Price below a falling 30w MA.</td><td>Avoid / exit. No longs; wait for a fresh Stage 1 base.</td></tr>
+          </tbody>
+        </table>
+        <div class="sop-note">When more than one condition set matches, the desk resolves ties by priority: <b>Stage 2 &gt; Stage 3 &gt; Stage 4 &gt; Stage 1</b>. The MA slope is split into rising / flat / falling around a &plusmn;0.2% five-bar band so a top (flat) and a decline (falling) never both fire.</div>
+      </section>
+
+      <section class="sop-sec" id="inputs">
+        <h2>3. Inputs &amp; parameters</h2>
+        <table class="sop-table">
+          <thead><tr><th>Field</th><th>Default</th><th>Controls</th></tr></thead>
+          <tbody>
+            <tr><td>Vol Ratio Min</td><td><code>1.5</code></td><td>How much above average volume a breakout bar must trade to count as confirmed (<code>volume &gt; 1.5&times;</code> the rolling average).</td></tr>
+            <tr><td>Resistance Lookback</td><td><code>20</code></td><td>Bars used for the prior-high resistance line the breakout must clear.</td></tr>
+            <tr><td>Volume Avg Lookback</td><td><code>20</code></td><td>Window for the average-volume baseline behind the ratio.</td></tr>
+            <tr><td>Momentum Period</td><td><code>60</code></td><td>Bars for the return check; Stage 2 wants positive momentum over this window.</td></tr>
+            <tr><td>RSI Length / Min</td><td><code>14</code> / <code>55</code></td><td>Optional strength gate. Off by default; enable to require RSI &ge; the minimum for a Stage 2.</td></tr>
+            <tr><td>ADX Length / Min</td><td><code>14</code> / <code>20</code></td><td>Optional trend-quality gate. Off by default; enable to require ADX &ge; the minimum. Needs the low column.</td></tr>
+            <tr><td>Date range</td><td>&mdash;</td><td>A full read needs <b>&ge; 150 trading days</b> (~1 year). Use 1Y+.</td></tr>
+          </tbody>
+        </table>
+        <div class="sop-note">Below 150 rows but at least 30, the desk scales the 30w / 10w baselines down to the available history (keeping the ~3:1 ratio) and returns a <b>provisional</b> read, flagged as a new-listing warning. Below 30 rows it returns <i>Insufficient Data</i>.</div>
+      </section>
+
+      <section class="sop-sec" id="formulas">
+        <h2>4. How stages are decided</h2>
+        <table class="sop-table">
+          <thead><tr><th>Signal</th><th>Rule</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Above baseline</td><td><code>close &gt; ema_30w</code></td><td>Price is on the right side of the trend line.</td></tr>
+            <tr><td>MA rising</td><td><code>5-bar % slope of ema_30w &gt; +0.2%</code></td><td>Baseline is genuinely trending up, not drifting flat.</td></tr>
+            <tr><td>Breakout</td><td><code>close &gt; max(high, 20) shifted 1</code></td><td>Clears the recent resistance ceiling.</td></tr>
+            <tr><td>Volume confirm</td><td><code>volume / avg_volume &gt; 1.5</code></td><td>Real participation behind the move.</td></tr>
+            <tr><td>Momentum confirm</td><td><code>60-bar return &gt; 0</code></td><td>The medium-term drift is up.</td></tr>
+            <tr><td>Stage 2 score</td><td>Sum of the 7 booleans above + RSI + ADX</td><td>Reported as <code>score/7</code>; a full <b>7/7</b> is a textbook breakout.</td></tr>
+            <tr><td>Stage 3</td><td><code>close &lt; ema_10w &lt; ema_30w</code>, MA flat, close &ge; 0.85&times; the 30w MA</td><td>Rolling over but not yet broken down.</td></tr>
+            <tr><td>Stage 4</td><td><code>close &lt; ema_30w</code> and MA falling</td><td>Confirmed downtrend.</td></tr>
+          </tbody>
+        </table>
+        <p>Stage 2 requires <i>all</i> of: above baseline, MA rising, breakout, volume confirm, and momentum confirm (plus RSI/ADX if those gates are enabled). The score is informational — a 5/7 or 6/7 flags a near-miss worth watching even when the strict Stage 2 label has not yet triggered.</p>
+      </section>
+
+      <section class="sop-sec" id="shortterm">
+        <h2>5. Short-term playbook</h2>
+        <p>Weinstein is a medium-term framework; on daily bars this desk surfaces short-term swing timing. Trade the <i>transition</i>, not the label alone:</p>
+        <ul>
+          <li><b>Entry — fresh Stage 2.</b> Favour a <code>Stage 1 &rarr; Stage 2</code> transition with a low <b>bars-in-stage</b> count and a high score (6/7 or 7/7). A brand-new breakout has the most room; a Stage 2 that is 60+ bars old and far above the 30w EMA (large <code>% from 30w EMA</code>) is extended — a worse short-term entry.</li>
+          <li><b>Exit — Stage 3 or 3&rarr;4.</b> Treat the first <span class="sop-pill s3">Stage 3</span> print, or a <code>Stage 3 &rarr; Stage 4</code> transition, as the signal to trim and tighten stops. The desk deliberately marks the top when the baseline flattens rather than waiting for a full breakdown.</li>
+          <li><b>Stand aside — Stage 4 / Stage 1.</b> No longs. Add Stage 1 names to a watchlist and wait for the next Stage 2.</li>
+          <li><b>Confirm with volume.</b> A breakout with volume ratio below 1.5&times; is suspect; for short-term trades weight the volume-confirm flag heavily.</li>
+          <li><b>Respect provisional reads.</b> On a new listing the stage is based on a shortened baseline — size smaller and re-check once ~150 days exist.</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="workflow">
+        <h2>6. Operating steps</h2>
+        <ul>
+          <li>Open the Technical Analysis tab, search and select the exact symbol.</li>
+          <li>Set a 1Y+ range (use the 1Y / 2Y / 3Y quick-range buttons) so the 150-day baseline is real.</li>
+          <li>Leave parameters at defaults for a first pass; enable the RSI and/or ADX gate only when you want a stricter Stage 2.</li>
+          <li>Execute the Stage scan. Read the live stage, action, score/7, bars-in-stage, % from 30w EMA, and the last transition.</li>
+          <li>Cross-check the breakout bar's volume and the data-source note before acting.</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="limits">
+        <h2>7. Limits</h2>
+        <p>The read is only as good as the synced EOD history. Thin trading, flat/illiquid bars, gaps, and stale prices distort the moving averages and the volume ratio. Stages can whipsaw around the flat band in choppy markets, and a provisional new-listing read can change materially once a full baseline exists. Parameters are tunable, so two operators can get different labels on the same symbol.</p>
+        <div class="sop-note">This is a descriptive timing aid. It does not forecast price, guarantee a breakout follows through, or replace risk management and position sizing.</div>
+      </section>
+    </section>
+  </div>
+</main>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+</body>
+</html>

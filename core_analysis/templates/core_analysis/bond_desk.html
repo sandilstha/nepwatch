@@ -1,0 +1,111 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bond Desk — debentures by issuer</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('mi-theme');
+        if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/tokens.css' %}?v={{ asset_version|default:1 }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/stock360.css' %}?v={{ asset_version|default:1 }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <a class="brand" href="{% url 'market_insights' %}" title="Back to Market Insights"><span class="dot">B</span>Bond&nbsp;Desk</a>
+    <a class="icon-btn home-btn" href="{% url 'market_insights' %}">← Home</a>
+    <a class="icon-btn" href="{% url 'stock360' %}" style="margin-left:auto">Stock 360</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="col">
+    <section class="panel card">
+      <div class="phead card-header"><h2>Listed debentures &amp; bonds · by issuing company</h2>
+        <span class="desk-score sc-neu">{{ count }} of {{ total }}</span>
+        {% if as_of %}<span class="oc-note">valued {{ as_of|date:"Y-m-d" }}</span>{% endif %}
+      </div>
+      <form class="bond-filters" method="get">
+        <input type="text" name="issuer" value="{{ issuer }}" placeholder="Issuer symbol, e.g. NABIL" style="width:180px">
+        <select name="sector">
+          <option value="">All sectors</option>
+          {% for s in sectors %}<option value="{{ s }}" {% if s == sector %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+        <select name="call">
+          <option value="">Any valuation</option>
+          {% for c in calls %}<option value="{{ c }}" {% if c == call %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="icon-btn">Filter</button>
+        {% if issuer or sector or call %}<a class="link" href="{% url 'bond_desk' %}">Clear</a>{% endif %}
+      </form>
+      <div class="pbody">
+        <div class="oc-note">
+          Price is the last exchange trade. YTM is the yield to maturity at that price; Spread is YTM minus the
+          benchmark rate in basis points. Fair value discounts the cash flows at the benchmark plus tolerance;
+          Gap is price versus fair value. A bond is called Undervalued when its YTM beats the benchmark by more
+          than the tolerance, Overvalued when it falls short.
+        </div>
+
+        {% if not groups %}
+          <div class="mf-empty" style="padding:30px;text-align:center">No bonds match this filter.</div>
+        {% endif %}
+
+        {% for g in groups %}
+        <div class="bond-group">
+          <h3>
+            {% if g.symbol %}<a href="{% url 'stock360_symbol' g.symbol %}">{{ g.symbol }}</a> · {% endif %}{{ g.name }}
+          </h3>
+          <div class="sub">
+            {{ g.sector }} · {{ g.rows|length }} issue{{ g.rows|length|pluralize }} · Rs {{ g.size_bn|floatformat:2 }} bn outstanding
+            {% for n in g.notes %} · {{ n }}{% endfor %}
+          </div>
+          <div class="bond-wrap" style="margin-top:6px">
+            <table class="bond-table">
+              <thead><tr>
+                <th>Bond</th><th class="num">Coupon</th><th>Maturity</th><th class="num">Yrs</th>
+                <th class="num">Size (Rs bn)</th><th class="num">Price</th><th class="num">YTM</th>
+                <th class="num">Spread</th><th class="num">Fair</th><th class="num">Gap</th><th>Call</th>
+                <th class="num">Macaulay</th><th class="num">Modified</th>
+              </tr></thead>
+              <tbody>
+              {% for b in g.rows %}
+                <tr>
+                  <td><b>{{ b.symbol }}</b><div class="bond-name">{{ b.security_name }}</div></td>
+                  <td class="num">{{ b.coupon_pct|floatformat:2 }}%</td>
+                  <td>{{ b.maturity_date|date:"Y-m-d" }}</td>
+                  <td class="num">{{ b.years_to_maturity|floatformat:2 }}</td>
+                  <td class="num">{{ b.issue_size_bn|floatformat:2|default:"—" }}</td>
+                  <td class="num">{{ b.price|floatformat:2|default:"—" }}
+                    {% if b.price_quality and b.price_quality != "Adequate" %}<div class="bond-name">{{ b.price_quality }}</div>{% endif %}</td>
+                  <td class="num">{% if b.ytm_pct is not None %}{{ b.ytm_pct|floatformat:3 }}%{% else %}—{% endif %}</td>
+                  <td class="num">{% if b.spread_bp is not None %}{{ b.spread_bp }}{% else %}—{% endif %}</td>
+                  <td class="num">{{ b.fair_value|floatformat:2|default:"—" }}</td>
+                  <td class="num {{ b.valuation_tone }}">{% if b.variance_pct is not None %}{% if b.variance_pct >= 0 %}+{% endif %}{{ b.variance_pct|floatformat:2 }}%{% else %}—{% endif %}</td>
+                  <td><span class="desk-score sc-{{ b.valuation_tone }}">{{ b.valuation|default:"—" }}</span></td>
+                  <td class="num">{{ b.macaulay_duration|floatformat:2|default:"—" }}</td>
+                  <td class="num">{{ b.modified_duration|floatformat:2|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

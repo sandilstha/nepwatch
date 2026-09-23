@@ -1,0 +1,179 @@
+{% extends "core_analysis/base.html" %}
+{% load static %}
+
+{% block content %}
+<ul class="nav nav-tabs mb-4 {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' or active_tab == 'sop_backtest' or active_tab == 'sop_combined' %}nav-section-strategy{% elif active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}nav-section-advanced{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}nav-section-rrg{% else %}nav-section-inventory{% endif %}" id="workspaceTabs" role="tablist">
+
+    <li class="nav-item primary-menu-item">
+      <button type="button"
+              class="primary-menu-tab {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' or active_tab == 'sop_backtest' or active_tab == 'sop_combined' %}active{% endif %}"
+              id="strategyMenuToggle"
+              data-primary-section="strategy"
+              aria-expanded="{% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' or active_tab == 'sop_backtest' or active_tab == 'sop_combined' %}true{% else %}false{% endif %}">
+        <span class="primary-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/><path d="M16 4h5v5"/></svg></span>Trading Strategy Simulator
+      </button>
+    </li>
+    <li class="nav-item primary-menu-item">
+      <button type="button"
+              class="primary-menu-tab {% if active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}active{% endif %}"
+              id="advancedMenuToggle"
+              data-primary-section="advanced"
+              aria-expanded="{% if active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}true{% else %}false{% endif %}">
+        <span class="primary-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l3 8 4-16 3 8h5"/></svg></span>Advanced Market Analysis Desks
+      </button>
+    </li>
+    {% if user.is_staff %}
+    <li class="nav-item primary-menu-item">
+      <button class="nav-link primary-menu-tab {% if active_tab == 'inventory' %}active{% endif %}"
+              data-primary-section="inventory"
+              data-bs-target="#inventory-pane"
+              type="button" role="tab"
+              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}"><span class="primary-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></span>Raw Inventory Manager</button>
+    </li>
+    {% endif %}
+    <li class="nav-row-break" aria-hidden="true"></li>
+    {# Workbench / Data section sub-tabs — Raw Inventory Manager + Seasonal Return. #}
+    {% if user.is_staff %}
+    <li class="nav-item workspace-subtab-item data-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'inventory' %}active{% endif %}"
+              data-section="inventory"
+              data-bs-toggle="tab" data-bs-target="#inventory-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
+    </li>
+    {% endif %}
+    {% if user.is_staff %}
+    {# rrg_seasonal is not in PUBLIC_WORKBENCH_TABS: the server refuses it to anonymous users, so the button would only offer a dead pane. #}
+    <li class="nav-item workspace-subtab-item data-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'rrg_seasonal' %}active{% endif %}"
+              data-section="inventory"
+              data-bs-toggle="tab" data-bs-target="#rrg-seasonal-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_seasonal' %}true{% else %}false{% endif %}">Seasonal Return</button>
+    </li>
+    {% endif %}
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'backtest' %}true{% else %}false{% endif %}">T3MA Ribbon Simulation Desk</button>
+    </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'ema_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#ema-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'ema_backtest' %}true{% else %}false{% endif %}">EMA 50/200 Crossover Desk</button>
+    </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'cci_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#cci-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'cci_backtest' %}true{% else %}false{% endif %}">CCI +100 Long-Only Desk</button>
+    </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'rsi_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#rsi-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rsi_backtest' %}true{% else %}false{% endif %}">RSI/SMA Long-Only Desk</button>
+    </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'sop_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#sop-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'sop_backtest' %}true{% else %}false{% endif %}">SOP Strategy Simulator</button>
+    </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'sop_combined' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#sop-combined-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'sop_combined' %}true{% else %}false{% endif %}">SOP Combined (Confluence)</button>
+    </li>
+    <li class="nav-item workspace-subtab-item advanced-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'msv_backtest' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#msv-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'msv_backtest' %}true{% else %}false{% endif %}">Momentum Scan Desk</button>
+    </li>
+    <li class="nav-item workspace-subtab-item advanced-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'imm_backtest' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#imm-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'imm_backtest' %}true{% else %}false{% endif %}">IMM Technical Scoring Console</button>
+    </li>
+    <li class="nav-item workspace-subtab-item advanced-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'stage_backtest' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#stage-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'stage_backtest' %}true{% else %}false{% endif %}">Stage Analysis Desk</button>
+    </li>
+    <li class="nav-item workspace-subtab-item advanced-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'support_resistance' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#support-resistance-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'support_resistance' %}true{% else %}false{% endif %}">Support &amp; Resistance</button>
+    </li>
+    <li class="nav-item workspace-subtab-item rrg-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}active{% endif %}"
+              data-section="rrg"
+              data-bs-toggle="tab" data-bs-target="#rrg-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">RRG vs NEPSE</button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="workspaceTabsContent">
+    {% comment %}
+      STAFF ONLY. This pane carries the daily/floorsheet sync triggers, the CRUD
+      edit forms and per-row delete buttons, plus 100 rows of StockPriceAdjustment.
+      The views behind it are all @staff_member_required + @require_POST, so a
+      visitor could never actually fire one — but rendering the controls to an
+      anonymous user advertises them and leaks the inventory rows. With the
+      analysis desks now public (PUBLIC_WORKBENCH_TABS), this include must be
+      gated or opening one read-only tab exposes the whole data-admin surface.
+    {% endcomment %}
+    {% if user.is_staff %}
+    {% include "core_analysis/includes/_inventory_tab.html" %}
+    {% endif %}
+    {% include "core_analysis/includes/_t3ma_tab.html" %}
+    {% include "core_analysis/includes/_ema_tab.html" %}
+    {% include "core_analysis/includes/_cci_tab.html" %}
+    {% include "core_analysis/includes/_rsi_tab.html" %}
+    {% include "core_analysis/includes/_sop_tab.html" %}
+    {% include "core_analysis/includes/_sop_combined_tab.html" %}
+    {% include "core_analysis/includes/_msv_tab.html" %}
+    {% include "core_analysis/includes/_imm_tab.html" %}
+    {% include "core_analysis/includes/_stage_tab.html" %}
+    {% include "core_analysis/includes/_support_resistance_tab.html" %}
+    {% comment %}
+      One RRG tab holding TWO independent desks, stacked: individual companies /
+      scripts on top, market indices below. They share nothing but the page —
+      separate forms, GET params, results containers, charts and toolbars — so
+      running one never disturbs the other.
+    {% endcomment %}
+    <div class="tab-pane fade {% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}show active{% endif %}" id="rrg-pane" role="tabpanel">
+      {% include "core_analysis/includes/_rrg_tab.html" %}
+      {% include "core_analysis/includes/_rrg_indices_tab.html" %}
+    </div>
+    {% if user.is_staff %}{% include "core_analysis/includes/_rrg_seasonal_tab.html" %}{% endif %}
+  </div>{# /tab-content #}
+
+  {% include "core_analysis/includes/_fundamentals_panel.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- TradingView Lightweight Charts (Open Source) -->
+<!--
+  Pinned to v4.2.3. The chart code below uses the v4 series API
+  (addCandlestickSeries / addLineSeries / addHistogramSeries / setMarkers),
+  all of which were REMOVED in v5. Loading the unpinned "latest" build served
+  v5 and broke the chart with "addCandlestickSeries is not a function".
+-->
+<script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+
+<script>window.NEPSE_URLS = {
+  symbolAutocomplete: "{% url 'symbol_autocomplete' %}",
+  dashboardCalc: "{% url 'dashboard_tab_calc' %}",
+  fundamentalApi: "{% url 'fundamental_data_api' %}",
+  fundamentalPage: "{% url 'fundamental_analysis' %}"
+};</script>
+<script src="{% static 'core_analysis/js/dashboard.js' %}?v={{ dashboard_asset_version }}"></script>
+<script src="{% static 'core_analysis/js/workbench-ajax.js' %}?v={{ dashboard_asset_version }}"></script>
+<script src="{% static 'core_analysis/js/fundamentals-panel.js' %}?v={{ dashboard_asset_version }}"></script>
+{% endblock %}

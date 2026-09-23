@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mutual Fund Desk{% endblock %} — NEPSE</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/mf-desk.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">MF</span>
+      <div>
+        <h1 class="mi-title">{% block heading %}Mutual Fund Desk{% endblock %}</h1>
+        <p class="mi-subtitle">{% block subheading %}{% endblock %}</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn">Sign in</a>
+      {% endif %}
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='mutualfund' %}
+
+  {% comment %}
+    Report switcher. Every screen carries it so a reader can move between the
+    five reports without going back to the landing page each time — the
+    published site makes you, and it is the main friction in using it.
+  {% endcomment %}
+  <nav class="mfd-switch">
+    <a href="{% url 'mf_home' %}" class="mfd-chip {% if mf_screen == 'home' %}on{% endif %}">Overview</a>
+    <a href="{% url 'mf_list_page' %}" class="mfd-chip {% if mf_screen == 'list' %}on{% endif %}">Fund List</a>
+    <a href="{% url 'mf_financials_page' %}" class="mfd-chip {% if mf_screen == 'financials' %}on{% endif %}">Financials</a>
+    <a href="{% url 'mf_holdings_page' %}" class="mfd-chip {% if mf_screen == 'holdings' %}on{% endif %}">Holdings</a>
+    <a href="{% url 'mf_sector_page' %}" class="mfd-chip {% if mf_screen == 'sector' %}on{% endif %}">Sector Allocation</a>
+    <a href="{% url 'mf_assets_page' %}" class="mfd-chip {% if mf_screen == 'assets' %}on{% endif %}">Assets Allocation</a>
+    <a href="{% url 'mutual_fund' %}" class="mfd-chip">NAV &amp; Discount</a>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+</div>
+
+<script>
+  window.MFD = {
+    urls: {
+      fundList:  "{% url 'mf_fund_list_api' %}",
+      assets:    "{% url 'mf_assets_api' %}",
+      sector:    "{% url 'mf_sector_api' %}",
+      holdings:  "{% url 'mf_company_holdings_api' %}",
+      financials:"{% url 'mf_financials_api' %}"
+    },
+    latestPeriod: "{{ overview.latest_period|escapejs }}",
+    periods: [{% for p in overview.periods %}"{{ p|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/mf-desk.js' %}?v={{ asset_version }}"></script>
+{% block scripts %}{% endblock %}
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version }}"></script>
+<script>
+  /* Theme toggle only. insights.js drives the Market Insights dashboard and
+     throws on these pages because none of its elements exist here. */
+  (function () {
+    var KEY = "mi-theme";
+    function apply(th) {
+      document.documentElement.setAttribute("data-theme", th);
+      var b = document.getElementById("mi-theme-btn");
+      if (b) b.textContent = th === "dark" ? "Light" : "Dark";
+    }
+    var saved = "dark";
+    try { saved = localStorage.getItem(KEY) || "dark"; } catch (e) {}
+    apply(saved);
+    document.addEventListener("DOMContentLoaded", function () {
+      var b = document.getElementById("mi-theme-btn");
+      if (!b) return;
+      b.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        apply(next);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

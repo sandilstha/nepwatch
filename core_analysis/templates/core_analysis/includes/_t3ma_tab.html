@@ -1,0 +1,47 @@
+    <div class="tab-pane fade {% if active_tab == 'backtest' %}show active{% endif %}" id="backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Adjust Strategy Simulation Scope</h5>
+        <form method="GET" action="." id="t3Form">
+          <input type="hidden" name="active_tab" value="backtest">
+          <input type="hidden" name="backtest_symbol" id="t3SymbolHidden" value="{{ selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label text-muted small fw-medium">Select Target Asset <span style="color: #9ca3af;">(Start typing to search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="t3SearchInput"
+                       placeholder="Type to search symbols..."
+                       value="{{ selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="t3Dropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="t3FromDate" name="t3_from_date" class="form-control form-control-sm" value="{{ t3_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="t3ToDate" name="t3_to_date" class="form-control form-control-sm" value="{{ t3_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Strategy Model</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="t3FromDate" to_id="t3ToDate" %}
+        </form>
+        <div class="mt-3 small text-muted">
+          <strong>SOP:</strong> Stage 2 Buy Logic = Close &gt; Resistance AND Close &gt; 30W EMA AND Volume Ratio &gt; 1.5.
+        </div>
+      </div>
+
+      <div class="tab-ajax-results" id="backtestResults" data-tab-key="backtest">
+        {% include "core_analysis/includes/_t3ma_results.html" %}
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 3 — EMA 50/200
+    ══════════════════════════════════════════════════════════════════ -->

@@ -1,0 +1,1407 @@
+/* ============================================================================
+   Risk & Portfolio Desk — auth screens + holdings/risk dashboard.
+   Reuses the Market Insights theme tokens (insights.css) for colours.
+   ========================================================================== */
+
+.mi-shell {
+  max-width: 100%;
+  padding-left: clamp(16px, 2.4vw, 36px);
+  padding-right: clamp(16px, 2.4vw, 36px);
+  padding-top: 1rem;
+  padding-bottom: 1.8rem;
+}
+.mi-topbar {
+  gap: .7rem;
+  padding: .75rem 1rem;
+  margin-bottom: .65rem;
+  border-top-width: 3px;
+}
+.mi-brand { gap: .65rem; }
+.mi-title { font-size: 1.05rem; }
+.mi-subtitle { font-size: .74rem; }
+.mi-controls { gap: .4rem; }
+.mi-icon-btn { padding: .42rem .58rem; }
+.mi-primary-nav {
+  gap: .25rem;
+  padding: .3rem;
+  margin-bottom: .6rem;
+}
+.mi-nav-link {
+  gap: .3rem;
+  padding: .5rem .7rem;
+  font-size: .76rem;
+}
+
+/* ── Auth (login / register) ─────────────────────────────────────────────── */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; padding: 24px;
+  font-family: 'Manrope', system-ui, sans-serif;
+  background: var(--bg, #0a0e17);
+}
+.auth-card {
+  width: 100%; max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 26px;
+  display: flex; flex-direction: column; gap: 13px;
+}
+.auth-logo {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff;
+  font: 800 1.125rem/1 'Manrope', sans-serif; letter-spacing: .04em;
+}
+.auth-title { font: 800 1.375rem/1.1 'Manrope', sans-serif; color: var(--ink-1); margin: 6px 0 0; }
+.auth-sub { font: 500 0.8125rem/1.4 'Manrope', sans-serif; color: var(--ink-3); margin: 0 0 4px; }
+.auth-field { display: flex; flex-direction: column; gap: 5px; }
+.auth-label { font: 600 0.75rem/1 'Manrope', sans-serif; color: var(--ink-3); }
+.auth-card input[type=text],
+.auth-card input[type=email],
+.auth-card input[type=password] {
+  width: 100%;
+  background: var(--surface-2); color: var(--ink-1);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 10px 12px; font: 500 0.875rem/1 'Manrope', sans-serif;
+}
+.auth-card input:focus { outline: none; border-color: var(--accent); }
+.auth-btn {
+  margin-top: 6px;
+  appearance: none; background: var(--accent); color: #fff;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  padding: 11px; font: 700 0.875rem/1 'Manrope', sans-serif; cursor: pointer;
+  transition: filter .15s;
+}
+.auth-btn:hover { filter: brightness(1.08); }
+.auth-error {
+  background: var(--down-soft); color: var(--down);
+  border: 1px solid var(--down); border-radius: var(--radius-sm);
+  padding: 9px 12px; font: 500 0.7812rem/1.35 'Manrope', sans-serif;
+}
+.auth-message {
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 9px 12px; font: 600 0.7812rem/1.35 'Manrope', sans-serif;
+}
+.auth-message.success { background: var(--up-soft); color: var(--up); border-color: var(--up); }
+.auth-message.error { background: var(--down-soft); color: var(--down); border-color: var(--down); }
+.auth-resend { display: flex; justify-content: center; margin: 0; }
+.auth-fielderr { font: 500 0.7188rem/1.35 'Manrope', sans-serif; color: var(--down); }
+.auth-help { font: 500 0.6875rem/1.4 'Manrope', sans-serif; color: var(--ink-3); letter-spacing: 0; text-transform: none; }
+.auth-alt { font: 500 0.8125rem/1 'Manrope', sans-serif; color: var(--ink-2); text-align: center; margin: 6px 0 0; }
+.auth-alt a, .auth-foot a { color: var(--accent); text-decoration: none; }
+.auth-foot { font: 500 0.75rem/1 'Manrope', sans-serif; color: var(--ink-3); }
+
+/* ── Topbar extras ───────────────────────────────────────────────────────── */
+.pf-user {
+  font: 600 0.7812rem/1 'Manrope', sans-serif; color: var(--ink-2);
+  padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface-2);
+}
+.pf-logout { display: inline; margin: 0; }
+
+/* Multi-portfolio selector and manager. */
+.pf-portfolio-board {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px 10px;
+  margin: 8px 0 6px;
+}
+.pf-portfolio-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-width: 0;
+  padding: 0;
+}
+.pf-eyebrow {
+  font: 800 0.625rem/1 'Manrope', sans-serif;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pf-current-portfolio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pf-current-portfolio strong {
+  color: var(--ink-1);
+  font: 800 0.875rem/1.2 'Manrope', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-portfolio-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pf-portfolio-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font: 700 0.6562rem/1 'Manrope', sans-serif;
+}
+.pf-selector-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.pf-selector-form label {
+  margin: 0;
+  color: var(--ink-3);
+  font: 800 0.625rem/1 'Manrope', sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pf-selector-form select,
+.pf-manager-form input,
+.pf-manager-form select {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  padding: 7px 10px;
+  font: 700 0.75rem/1 'Manrope', sans-serif;
+}
+.pf-selector-form select {
+  width: min(320px, 70vw);
+}
+.pf-selector-form select:focus,
+.pf-manager-form input:focus,
+.pf-manager-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.pf-portfolio-manager {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+  margin-top: 7px;
+}
+.pf-portfolio-manager > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  cursor: pointer;
+  color: var(--accent);
+  font: 800 0.75rem/1 'Manrope', sans-serif;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  list-style: none;
+}
+.pf-portfolio-manager > summary::-webkit-details-marker {
+  display: none;
+}
+.pf-portfolio-manager > summary::before {
+  content: "›";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  font: 900 1.0625rem/1 'Manrope', sans-serif;
+  transition: transform .15s ease, background .15s ease;
+}
+.pf-portfolio-manager[open] > summary::before {
+  transform: rotate(90deg);
+  background: var(--accent-soft);
+}
+.pf-manager-stack {
+  display: grid;
+  gap: 7px;
+  margin-top: 6px;
+}
+.pf-active-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0; padding: 8px;
+}
+.pf-active-actions > span {
+  color: var(--ink-3); font: 600 0.6875rem/1.35 'Manrope', sans-serif;
+}
+.pf-active-actions .pf-btn { min-height: 32px; flex: 0 0 auto; }
+.pf-create-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(11, 24, 50, .42);
+  overflow: hidden;
+}
+.pf-create-panel > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 8px;
+  cursor: pointer;
+  color: var(--ink-2);
+  font: 800 0.6875rem/1 'Manrope', sans-serif;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  list-style: none;
+}
+.pf-create-panel > summary::-webkit-details-marker {
+  display: none;
+}
+.pf-create-panel > summary::before {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--accent);
+  font: 900 0.875rem/1 'Manrope', sans-serif;
+}
+.pf-create-panel[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+}
+.pf-create-panel[open] > summary::before {
+  content: "-";
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.pf-manager-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, .7fr) auto;
+  gap: 6px;
+  align-items: end;
+  margin: 0;
+}
+.pf-create-series {
+  grid-template-columns:
+    minmax(150px, 1fr)
+    minmax(160px, 1fr)
+    minmax(150px, .95fr)
+    minmax(130px, .7fr);
+  gap: 6px;
+  padding: 8px;
+}
+.pf-manager-form > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.pf-manager-form > label > span {
+  color: var(--ink-3);
+  font: 800 0.5938rem/1 'Manrope', sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pf-manager-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.pf-manager-upload > span:first-child {
+  color: var(--ink-3);
+  font: 800 0.5938rem/1 'Manrope', sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pf-manager-upload > span:first-child small {
+  font: inherit;
+  opacity: .65;
+}
+.pf-manager-upload .pf-upload {
+  min-height: 34px;
+}
+.pf-create-series .pf-manager-upload .pf-upload {
+  display: block;
+}
+.pf-create-series .pf-file-picker {
+  min-height: 34px;
+  width: 100%;
+}
+.pf-manager-upload .pf-file-name {
+  max-width: 150px;
+}
+.pf-create-series .pf-file-name {
+  max-width: none;
+  min-width: 0;
+}
+.pf-create-action {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.pf-create-action > span {
+  color: var(--ink-3);
+  font: 800 0.5938rem/1 'Manrope', sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pf-create-action .pf-btn {
+  min-height: 34px;
+  width: 100%;
+}
+.pf-archived-row .pf-btn {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.7188rem;
+}
+.pf-portfolio-board .pf-btn-ghost:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.pf-archived-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.pf-archived-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(120px, auto) auto auto auto auto;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.pf-archived-name {
+  min-width: 0;
+  color: var(--ink-1);
+  font: 800 0.7812rem/1.2 'Manrope', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-archived-meta {
+  color: var(--ink-3);
+  font: 700 0.6562rem/1 'Manrope', sans-serif;
+  white-space: nowrap;
+}
+@media (max-width: 1180px) {
+  .pf-selector-form {
+    justify-content: flex-start;
+  }
+  .pf-create-series {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .pf-portfolio-board {
+    padding: 8px;
+  }
+  .pf-selector-form,
+  .pf-manager-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .pf-create-series {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pf-selector-form label {
+    white-space: normal;
+  }
+  .pf-selector-form select,
+  .pf-manager-form .pf-btn {
+    width: 100%;
+  }
+  .pf-archived-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .pf-active-actions { align-items: stretch; flex-direction: column; }
+  .pf-active-actions .pf-btn { width: 100%; }
+}
+
+/* ── Flash messages ──────────────────────────────────────────────────────── */
+.pf-flash { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.pf-flash-item {
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  font: 600 0.8125rem/1.35 'Manrope', sans-serif;
+  background: var(--surface-2); color: var(--ink-1); border: 1px solid var(--line);
+}
+.pf-flash-item.success { background: var(--up-soft); color: var(--up); border-color: var(--up); }
+.pf-flash-item.error   { background: var(--down-soft); color: var(--down); border-color: var(--down); }
+
+/* ── Section dividers (labelled rules between groups) ────────────────────── */
+.pf-section { display: flex; align-items: center; gap: 10px; margin: 16px 0 7px; }
+.pf-section span {
+  font: 700 0.7188rem/1 'Manrope', sans-serif; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
+}
+.pf-section::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.pf-broker-section { gap: 9px; margin-top: 18px; }
+.pf-broker-section::before {
+  content: ""; width: 4px; height: 24px; border-radius: 3px; background: var(--accent);
+}
+.pf-broker-section span {
+  color: var(--ink-1); font-size: 1.0625rem; font-weight: 700;
+  letter-spacing: 0; text-transform: none;
+}
+.pf-broker-section::after {
+  background: repeating-linear-gradient(
+    to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent 3px
+  );
+}
+.pf-section-meta {
+  color: var(--ink-3); font: 600 0.6562rem/1 'Manrope', sans-serif; white-space: nowrap;
+}
+.pf-btn-danger { background: var(--down-soft); color: var(--down); border: 1px solid var(--down); }
+.pf-btn-danger:hover { background: var(--down); color: #fff; }
+.pf-btn-danger:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ── Import card ─────────────────────────────────────────────────────────── */
+.pf-upload { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.pf-file-input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.pf-file-picker {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 28px; padding: 0 10px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--line);
+  color: var(--ink-2); font: 700 0.7188rem/1 'Manrope', sans-serif;
+  cursor: pointer; white-space: nowrap;
+}
+.pf-file-picker:hover { color: var(--accent); border-color: var(--accent); }
+.pf-file-picker-combined {
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.pf-file-picker-combined .pf-file-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  text-align: center;
+}
+.pf-file-name {
+  display: inline-block; max-width: 132px; min-width: 92px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 600 0.7188rem/1 'Manrope', sans-serif; color: var(--ink-3);
+}
+.pf-btn {
+  appearance: none; border-radius: var(--radius-sm); cursor: pointer;
+  padding: 9px 18px; font: 700 0.8125rem/1 'Manrope', sans-serif; transition: filter .15s;
+}
+.pf-btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+.pf-btn-primary:hover { filter: brightness(1.08); }
+.pf-btn-ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line); }
+.pf-btn-ghost:hover { color: var(--down); border-color: var(--down); }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.pf-empty {
+  text-align: center; padding: 36px 16px; color: var(--ink-3);
+  background: var(--surface); border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.pf-empty-icon { font-size: 2rem; margin-bottom: 6px; }
+.pf-empty h3 { font: 700 1.125rem/1 'Manrope', sans-serif; color: var(--ink-1); margin: 0 0 6px; }
+.pf-empty p { font: 500 0.8125rem/1.4 'Manrope', sans-serif; margin: 0; }
+
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.pf-kpis {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 0;
+}
+@media (max-width: 1100px) { .pf-kpis { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); } }
+@media (max-width: 560px)  { .pf-kpis { grid-template-columns: 1fr; } }
+.pf-kpi:first-child { border-left: 3px solid var(--accent); }
+.pf-kpi {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
+}
+.pf-kpi-label { font: 600 0.6562rem/1 'Manrope', sans-serif; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+.pf-kpi-val { font: 700 1.25rem/1.1 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-kpi-sub { font: 500 0.6875rem/1.2 'Manrope', sans-serif; color: var(--ink-3); }
+.pf-kpi-val.risk-low { color: var(--up); }
+.pf-kpi-val.risk-moderate { color: #d8941f; }
+.pf-kpi-val.risk-high { color: var(--down); }
+.pf-overview-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0;
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.pf-overview-strip .pf-kpi {
+  min-width: 0; border: 0; border-right: 1px solid var(--line-soft);
+  border-radius: 0; box-shadow: none; padding: 13px 14px;
+}
+.pf-overview-strip .pf-kpi:first-child { border-left: 0; }
+.pf-overview-strip .pf-kpi:last-child { border-right: 0; }
+.pf-overview-strip .pf-kpi-label {
+  font-size: 0.6875rem; letter-spacing: 0; text-transform: none;
+}
+.pf-overview-strip .pf-kpi-val { font-size: 1.0625rem; }
+@media (max-width: 1100px) {
+  .pf-overview-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pf-overview-strip .pf-kpi:nth-child(3n) { border-right: 0; }
+  .pf-overview-strip .pf-kpi:nth-child(-n+3) { border-bottom: 1px solid var(--line-soft); }
+}
+@media (max-width: 620px) {
+  .pf-overview-strip { grid-template-columns: 1fr 1fr; }
+  .pf-overview-strip .pf-kpi:nth-child(3n) { border-right: 1px solid var(--line-soft); }
+  .pf-overview-strip .pf-kpi:nth-child(2n) { border-right: 0; }
+  .pf-overview-strip .pf-kpi:nth-child(-n+4) { border-bottom: 1px solid var(--line-soft); }
+}
+
+/* Scenario-only tiles: valuation/P&L already live in Portfolio Overview. */
+.pf-sum-controls {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+  margin-bottom: 6px; padding: 8px 10px 0;
+}
+.pf-sum-idx { display: flex; flex-direction: column; gap: 4px; }
+.pf-sum-idx label {
+  color: var(--ink-3); font: 700 0.625rem/1 'Manrope', sans-serif;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.pf-sum-idx input {
+  width: 116px; min-height: 30px; padding: 6px 8px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-1); font: 600 0.6875rem/1 'Manrope', sans-serif;
+}
+.pf-sum-idx input:focus { outline: none; border-color: var(--accent); }
+.pf-sum-idx input[readonly] { opacity: .7; }
+.pf-idx-change { min-width: 64px; padding: 4px 2px; font-weight: 700; }
+.pf-sum-tiles {
+  grid-template-columns: none;
+  grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px;
+  margin-bottom: 7px; padding: 0 10px;
+}
+.pf-sum-tiles .pf-kpi { padding: 8px 9px; gap: 2px; }
+.pf-sum-tiles .pf-kpi-label { font-size: 0.5625rem; letter-spacing: .04em; }
+.pf-sum-tiles .pf-kpi-val { font-size: 0.9375rem; line-height: 1.1; white-space: nowrap; }
+.pf-sum-tiles .pf-kpi-sub { font-size: 0.5938rem; line-height: 1.2; }
+@media (max-width: 1100px) { .pf-sum-tiles { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { .pf-sum-tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── Cards / grid ────────────────────────────────────────────────────────── */
+/* align-items:start — grid items stretch to the tallest sibling by default, so
+   a short card sitting beside a long one was padded out with dead space (the
+   VaR & Drawdown card carried ~170px of it, and the row above ~150px). Each
+   card is now only as tall as its own content; rows end ragged rather than
+   padded, which is the honest read of "this card has less to say". */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+  align-items: start; }
+@media (max-width: 1000px) { .pf-grid { grid-template-columns: 1fr; } }
+.pf-risk-attribution-grid { grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr); }
+@media (max-width: 1180px) { .pf-risk-attribution-grid { grid-template-columns: 1fr; } }
+.pf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;
+  align-items: start; }
+@media (max-width: 1100px) { .pf-grid-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 720px)  { .pf-grid-3 { grid-template-columns: 1fr; } }
+.pf-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+}
+/* Standalone cards (not inside a grid) still need their own bottom rhythm. */
+.pf-summary-card { margin-bottom: 0; }
+.pf-holdings-tabs {
+  display: flex; align-items: flex-end; gap: 16px; min-height: 44px;
+  padding: 0 14px; border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.pf-holdings-tab {
+  position: relative; align-self: stretch; appearance: none; border: 0;
+  background: transparent; color: var(--ink-2); padding: 0 1px;
+  font: 800 0.75rem/1 'Manrope', sans-serif; cursor: pointer;
+}
+.pf-holdings-tab::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  border-radius: 2px; background: transparent;
+}
+.pf-holdings-tab:hover,
+.pf-holdings-tab.active { color: var(--accent); }
+.pf-holdings-tab.active::after { background: var(--accent); }
+.pf-summary-tools { border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.pf-summary-tools > summary {
+  cursor: pointer; list-style: none; padding: 8px 12px;
+  color: var(--ink-3); font: 700 0.6562rem/1 'Manrope', sans-serif;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.pf-summary-tools > summary::-webkit-details-marker { display: none; }
+.pf-summary-tools > summary::before { content: "+"; color: var(--accent); margin-right: 6px; }
+.pf-summary-tools[open] > summary::before { content: "−"; }
+.pf-summary-tools[open] > summary { border-bottom: 1px solid var(--line); }
+/* The last content row shouldn't hug the viewport bottom. */
+.mi-shell > .pf-grid:last-child,
+.mi-shell > .pf-grid-3:last-child { margin-bottom: 18px; }
+.pf-summary-card .pf-table-wrap {
+  max-height: 430px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+  border-top: 0;
+}
+.pf-summary-card .pf-note { background: var(--surface); }
+.pf-sum-filterbar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+  padding: 0 10px 8px; margin-top: -2px;
+}
+.pf-filter-field {
+  display: flex; flex-direction: column; gap: 4px; flex: 0 1 128px; min-width: 112px;
+}
+.pf-filter-field span {
+  font: 700 0.5938rem/1 'Manrope', sans-serif; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.pf-filter-field input,
+.pf-filter-field select {
+  width: 100%; min-height: 30px; box-sizing: border-box;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-1);
+  padding: 6px 8px; font: 600 0.6875rem/1 'Manrope', sans-serif;
+}
+.pf-filter-field input:focus,
+.pf-filter-field select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.pf-sort-dir { min-width: 56px; }
+.pf-sum-filterbar .pf-btn {
+  min-height: 30px; padding: 0 10px; font-size: 0.6875rem;
+}
+.pf-sum-filterbar .pf-btn-ghost:hover {
+  color: var(--accent); border-color: var(--accent);
+}
+.pf-filter-count {
+  margin-left: auto; min-height: 30px; display: inline-flex; align-items: center;
+  font: 700 0.6562rem/1 'Manrope', sans-serif; color: var(--ink-3); white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .pf-sum-filterbar { align-items: stretch; }
+  .pf-filter-field { flex: 1 1 46%; min-width: 140px; }
+  .pf-filter-count { width: 100%; margin-left: 0; }
+}
+.pf-card-head {
+  padding: 9px 12px; font: 700 0.8125rem/1 'Manrope', sans-serif; letter-spacing: .03em;
+  color: var(--ink-1); background: var(--surface-2); border-bottom: 1px solid var(--line);
+}
+/* Broker ledger, FY accounting and reconciliation. */
+.pf-ledger-card { margin-bottom: 4px; }
+.pf-ledger-toolbar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line);
+}
+.pf-manager-ledger-tools { padding: 8px; border-bottom: 0; }
+.pf-ledger-import { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 0; }
+.pf-ledger-import .pf-upload { min-height: 34px; }
+.pf-ledger-import .pf-file-picker { min-height: 34px; min-width: 220px; }
+.pf-ledger-import .pf-file-name { max-width: 240px; }
+.pf-ledger-import .pf-btn { min-height: 34px; padding: 0 14px; }
+.pf-fy-filter { display: flex; align-items: center; gap: 7px; margin: 0; }
+.pf-fy-filter label {
+  color: var(--ink-3); font: 800 0.5938rem/1 'Manrope', sans-serif;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.pf-fy-filter select {
+  min-height: 34px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-1); padding: 6px 9px;
+  font: 700 0.7188rem/1 'Manrope', sans-serif;
+}
+.pf-ledger-status {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  font: 600 0.6562rem/1.25 'Manrope', sans-serif;
+}
+.pf-ledger-status strong { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .04em; }
+.pf-ledger-status span { color: var(--ink-2); }
+.pf-ledger-status.is-ok { background: var(--up-soft); color: var(--up); }
+.pf-ledger-status.has-warning { background: rgba(216,148,31,.12); color: #d8941f; }
+.pf-ledger-kpis { padding: 10px 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pf-ledger-kpis .pf-kpi { box-shadow: none; padding: 8px 10px; }
+.pf-ledger-kpis .pf-kpi-val { font-size: 1rem; }
+.pf-ledger-transactions > summary {
+  cursor: pointer; list-style: none; user-select: none;
+}
+.pf-ledger-transactions > summary::-webkit-details-marker { display: none; }
+.pf-ledger-table-head { display: flex; justify-content: space-between; align-items: center; }
+.pf-ledger-table-head span:last-child { color: var(--ink-3); font-size: 0.6562rem; }
+.pf-ledger-table-meta { display: inline-flex; align-items: center; gap: 8px; }
+.pf-ledger-table-meta b {
+  min-width: 42px; border: 1px solid var(--line); border-radius: 999px;
+  padding: 3px 8px; color: var(--accent); text-align: center;
+  font: 800 0.5938rem/1 'Manrope', sans-serif; text-transform: uppercase;
+}
+.pf-ledger-toggle-show { display: none; }
+.pf-ledger-collapse:not([open]) .pf-ledger-toggle-hide { display: none; }
+.pf-ledger-collapse:not([open]) .pf-ledger-toggle-show { display: inline-block; }
+.pf-holdings-collapse > summary { cursor: pointer; list-style: none; user-select: none; }
+.pf-holdings-collapse > summary::-webkit-details-marker { display: none; }
+.pf-holdings-collapse-head { padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.pf-holdings-collapse:not([open]) > .pf-holdings-collapse-head { border-bottom: none; }
+.pf-ledger-table-wrap { max-height: 390px; border-top: 1px solid var(--line); }
+.pf-ledger-table { min-width: 1050px; font-size: 0.6875rem; }
+.pf-ledger-table td small { display: block; margin-top: 2px; color: var(--ink-3); font-size: 0.5938rem; }
+.pf-ledger-table td:nth-child(4) { white-space: normal; min-width: 260px; line-height: 1.35; }
+.pf-ledger-particulars { max-width: 420px; }
+.pf-ledger-row-warning { background: rgba(216,148,31,.1); }
+.pf-ledger-type,
+.pf-ledger-flag {
+  display: inline-block; border-radius: 999px; padding: 2px 7px;
+  background: var(--surface-2); color: var(--ink-2);
+  font: 700 0.5625rem/1.35 'Manrope', sans-serif; white-space: nowrap;
+}
+.pf-ledger-type.type-buy,
+.pf-ledger-type.type-payment,
+.pf-ledger-type.type-charge,
+.pf-ledger-type.type-tax { color: var(--down); background: var(--down-soft); }
+.pf-ledger-type.type-sell,
+.pf-ledger-type.type-deposit,
+.pf-ledger-type.type-dividend { color: var(--up); background: var(--up-soft); }
+.pf-ledger-flag { color: #d8941f; background: rgba(216,148,31,.14); }
+.pf-reconciliation { border-top: 1px solid var(--line); }
+.pf-reconciliation > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  cursor: pointer; padding: 9px 12px; color: #d8941f;
+  font: 700 0.6875rem/1 'Manrope', sans-serif;
+}
+.pf-reconciliation-table-wrap { max-height: 340px; border-top: 1px solid var(--line); }
+.pf-reconciliation-table { min-width: 760px; font-size: 0.6875rem; }
+.pf-reconciliation-table th,
+.pf-reconciliation-table td { white-space: nowrap; }
+.pf-reconciliation-table th:last-child,
+.pf-reconciliation-table td:last-child { min-width: 180px; white-space: normal; }
+.pf-ledger-pagination {
+  display: flex; align-items: center; justify-content: flex-end; gap: 9px;
+  padding: 8px 12px; border-top: 1px solid var(--line);
+  font: 700 0.6562rem/1 'Manrope', sans-serif;
+}
+.pf-ledger-pagination a,
+.pf-ledger-pagination span {
+  min-width: 62px; padding: 5px 8px; border: 1px solid var(--line);
+  border-radius: 999px; color: var(--accent); text-align: center; text-decoration: none;
+}
+.pf-ledger-pagination a:hover { border-color: var(--accent); background: var(--accent-soft); }
+.pf-ledger-pagination .is-disabled { color: var(--ink-3); opacity: .55; }
+.pf-ledger-pagination strong { color: var(--ink-2); }
+.pf-ledger-empty { display: flex; flex-direction: column; gap: 5px; padding: 18px 14px; }
+.pf-ledger-empty strong { color: var(--ink-1); font: 700 0.875rem/1.2 'Manrope', sans-serif; }
+.pf-ledger-empty span { color: var(--ink-3); font: 500 0.75rem/1.45 'Manrope', sans-serif; }
+@media (max-width: 900px) {
+  .pf-ledger-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .pf-ledger-toolbar, .pf-ledger-import { align-items: stretch; }
+  .pf-ledger-import, .pf-ledger-import .pf-upload, .pf-ledger-import .pf-file-picker,
+  .pf-ledger-import .pf-btn, .pf-fy-filter { width: 100%; }
+  .pf-fy-filter select { flex: 1; }
+  .pf-ledger-kpis { grid-template-columns: 1fr; }
+}
+
+/* ── Sector exposure ─────────────────────────────────────────────────────── */
+.pf-risk-sector-subhead {
+  display: flex; align-items: center; gap: 5px; padding: 8px 12px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: var(--surface-2); color: var(--ink-2);
+  font: 800 0.625rem/1 'Manrope', sans-serif; letter-spacing: .05em; text-transform: uppercase;
+}
+.pf-card-head + .pf-risk-sector-subhead { border-top: 0; }
+.pf-sectors { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+.pf-sec-row { display: grid; grid-template-columns: 130px 1fr 58px 78px; align-items: center; gap: 8px; }
+.pf-sec-name { font: 600 0.75rem/1.2 'Manrope', sans-serif; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-sec-bar { height: 9px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
+.pf-sec-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent)); border-radius: 5px; }
+.pf-sec-pct { font: 700 0.75rem/1 'Manrope', sans-serif; color: var(--ink-1); text-align: right; }
+.pf-sec-val { font: 500 0.6875rem/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; }
+
+/* ── Capital donut ‖ risk bars ───────────────────────────────────────────────
+   Two halves of the same question: where the money is vs where the risk is.
+   Collapses to one column on narrow screens — a 250px-wide donut beside a
+   250px-wide bar list is unreadable. */
+.pf-sec-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: start; }
+.pf-sec-split .pf-sec-col { min-width: 0; }
+.pf-sec-split .pf-sec-col + .pf-sec-col { border-left: 1px solid var(--line); }
+@media (max-width: 1180px) {
+  .pf-sec-split { grid-template-columns: 1fr; }
+  .pf-sec-split .pf-sec-col + .pf-sec-col { border-left: 0; }
+}
+.pf-sec-donut { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.pf-donut-svg { width: 100%; max-width: 168px; height: auto; display: block; }
+.pf-donut-svg circle { transition: opacity .15s ease; }
+.pf-donut-svg:hover circle { opacity: .55; }
+.pf-donut-svg circle:hover { opacity: 1; }
+.pf-donut-v { font: 800 0.875rem/1 'Manrope', sans-serif; fill: var(--ink-1); }
+.pf-donut-k {
+  font: 700 0.5rem/1 'Manrope', sans-serif; fill: var(--ink-3);
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.pf-donut-legend { width: 100%; display: flex; flex-direction: column; gap: 5px; }
+.pf-donut-li { display: grid; grid-template-columns: 9px 1fr auto auto; align-items: center; gap: 7px; }
+.pf-donut-li i { width: 9px; height: 9px; border-radius: 2px; display: block; }
+.pf-donut-name {
+  font: 600 0.6875rem/1.2 'Manrope', sans-serif; color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-donut-pct { font: 700 0.6875rem/1 'Manrope', sans-serif; color: var(--ink-1); text-align: right; }
+.pf-donut-val { font: 500 0.625rem/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; min-width: 52px; }
+.pf-sec-bars { padding: 12px; display: flex; flex-direction: column; gap: 7px; }
+/* Narrower name column than the full-width list it replaced — the bars now
+   live in half a card, so the label has to give up room to stay legible. */
+.pf-sec-bars .pf-fac-srow { grid-template-columns: 92px 1fr 46px; }
+
+/* ── Concentration card ──────────────────────────────────────────────────── */
+.pf-conc { padding: 10px 12px; }
+.pf-conc-summary { display: flex; gap: 18px; margin-bottom: 10px; }
+.pf-conc-summary > div { display: flex; flex-direction: column; gap: 3px; }
+.pf-conc-num { font: 800 1.5rem/1 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-conc-num.risk-low { color: var(--up); }
+.pf-conc-num.risk-moderate { color: #d8941f; }
+.pf-conc-num.risk-high { color: var(--down); }
+.pf-conc-cap { font: 500 0.6875rem/1.2 'Manrope', sans-serif; color: var(--ink-3); }
+.pf-conc-label { font: 600 0.6562rem/1 'Manrope', sans-serif; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 7px; }
+.pf-conc-row { display: grid; grid-template-columns: 70px 1fr 56px; align-items: center; gap: 8px; padding: 2px 0; }
+.pf-conc-bar { height: 8px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
+.pf-conc-bar i { display: block; height: 100%; background: var(--accent); }
+.pf-conc-w { font: 700 0.75rem/1 'Manrope', sans-serif; color: var(--ink-1); text-align: right; }
+.pf-tkr { font: 700 0.7812rem/1 'Manrope', sans-serif; color: var(--accent); }
+
+/* ── Compliance & risk limits ────────────────────────────────────────────── */
+.pf-compliance-head { display: flex; align-items: center; justify-content: space-between; }
+.pf-compliance-summary { display: inline-flex; gap: 6px; }
+.pf-cpill {
+  font: 700 0.6562rem/1.5 'Manrope', sans-serif; padding: 2px 9px; border-radius: 999px; letter-spacing: .02em;
+}
+.pf-cpill.ok { color: var(--up); background: var(--up-soft); }
+.pf-cpill.warn { color: #d8941f; background: rgba(216,148,31,.16); }
+.pf-cpill.breach { color: var(--down); background: var(--down-soft); }
+.pf-compliance { padding: 4px 8px 8px; }
+.pf-chk {
+  display: grid; grid-template-columns: 78px 1fr auto auto; align-items: center; gap: 10px;
+  padding: 8px 8px; border-bottom: 1px solid var(--line-soft);
+}
+.pf-chk:last-child { border-bottom: none; }
+.pf-chk-status {
+  font: 800 0.5938rem/1 'Manrope', sans-serif; letter-spacing: .04em; text-align: center;
+  padding: 5px 0; border-radius: 5px;
+}
+.pf-chk-status.ok { color: var(--up); background: var(--up-soft); }
+.pf-chk-status.warn { color: #d8941f; background: rgba(216,148,31,.16); }
+.pf-chk-status.breach { color: #fff; background: var(--down); }
+.pf-chk-label { font: 600 0.8125rem/1.3 'Manrope', sans-serif; color: var(--ink-1); display: flex; flex-direction: column; gap: 2px; }
+.pf-chk-detail { font: 500 0.6875rem/1.3 'Manrope', sans-serif; color: var(--ink-3); }
+.pf-chk-cur { font: 700 0.875rem/1 'Manrope', system-ui, sans-serif; color: var(--ink-1); text-align: right; min-width: 64px; }
+.pf-chk-lim { font: 500 0.7188rem/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; min-width: 64px; }
+.pf-chk-breach { background: var(--down-soft); border-radius: var(--radius-sm); }
+.pf-chk-breach .pf-chk-cur { color: var(--down); }
+.pf-chk-warn .pf-chk-cur { color: #d8941f; }
+@media (max-width: 620px) {
+  .pf-chk { grid-template-columns: 64px 1fr auto; }
+  .pf-chk-lim { display: none; }
+}
+
+/* ── Value at Risk card ──────────────────────────────────────────────────── */
+.pf-var { padding: 10px 12px; }
+.pf-var-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 10px;
+  padding: 5px 0; border-bottom: 1px solid var(--line-soft);
+}
+.pf-var-row.big .pf-var-val { font-size: 1.125rem; }
+.pf-var-label { font: 600 0.7812rem/1.2 'Manrope', sans-serif; color: var(--ink-2); }
+.pf-var-val { font: 700 0.875rem/1 'Manrope', system-ui, sans-serif; text-align: right; }
+.num-pos { color: var(--up); }
+.num-neg { color: var(--down); }
+
+/* ── Profit & Loss snapshot ──────────────────────────────────────────────── */
+.pf-snapshot { padding: 0 0 10px; }
+.pf-snap-tops {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 12px; background: var(--surface-2); border-bottom: 1px solid var(--line);
+}
+.pf-snap-side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Hollow ring, matching the broker convention the layout came from. */
+.pf-snap-ring {
+  width: 16px; height: 16px; border-radius: 50%; flex: 0 0 16px;
+  border: 3px solid currentColor;
+}
+.pf-snap-head { font: 700 0.8125rem/1.2 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-snap-sum { display: flex; gap: 12px; margin-top: 3px; font: 700 0.75rem/1 'Manrope', sans-serif; }
+.pf-snap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 12px; }
+@media (max-width: 900px) {
+  .pf-snap-tops, .pf-snap-grid { grid-template-columns: 1fr; }
+}
+.pf-snap-col { min-width: 0; }
+.pf-snap-col-h {
+  font: 700 0.6875rem/1 'Manrope', sans-serif; color: var(--ink-2);
+  letter-spacing: .04em; margin-bottom: 8px;
+}
+/* One holding per line, stacked vertically. Side-by-side cards were only
+   ~148px wide, so "Rs -92,670" and "-Rs 2.44 L" wrapped onto two lines and the
+   two columns never lined up. A vertical list gives each number the width it
+   needs and keeps both columns on the same baseline. */
+.pf-snap-cards { display: flex; flex-direction: column; gap: 6px; }
+.pf-snap-card {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface); padding: 7px 10px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center;
+  column-gap: 14px;
+}
+.pf-snap-r1 {
+  display: flex; align-items: baseline; gap: 8px;
+  font: 700 0.75rem/1.2 'Manrope', sans-serif; color: var(--ink-1); min-width: 0;
+}
+.pf-snap-r1 span { font-weight: 600; color: var(--ink-3); }
+.pf-snap-r2, .pf-snap-r4 {
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 8px;
+  font: 700 0.75rem/1 'Manrope', sans-serif; white-space: nowrap;
+}
+/* The "Gain/Loss" caption is redundant once each row reads left-to-right, but
+   it is the only thing labelling the last pair of numbers — so clip it out of
+   the visual line rather than display:none, which would drop it from the
+   accessibility tree as well. Absolute takes it out of the grid flow. */
+.pf-snap-r3 {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.pf-snap-r2 { color: var(--ink-2); }
+.pf-snap-r4 { min-width: 168px; }
+.pf-snap-empty { padding: 10px 0; }
+.pf-snapshot .pf-var-note { padding: 0 12px; }
+
+/* Sector P/L: diverging bars around a centre zero line. */
+.pf-plbars { display: flex; flex-direction: column; gap: 6px; }
+.pf-plbar-row {
+  display: grid; grid-template-columns: minmax(0, 118px) 1fr 84px 62px;
+  align-items: center; gap: 10px;
+}
+.pf-plbar-name {
+  font: 600 0.75rem/1.2 'Manrope', sans-serif; color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-plbar-track {
+  position: relative; height: 14px; border-radius: 4px;
+  background: var(--surface-2); overflow: hidden;
+}
+.pf-plbar-track i { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; }
+.pf-plbar-track i.pos { background: var(--up); }
+.pf-plbar-track i.neg { background: var(--down); }
+/* Zero axis sits above the bars so the split point stays visible even when a
+   bar runs right up to it. */
+.pf-plbar-zero {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: var(--ink-3); opacity: .55;
+}
+.pf-plbar-val, .pf-plbar-pct {
+  font: 700 0.75rem/1 'Manrope', sans-serif; text-align: right; white-space: nowrap;
+}
+.pf-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0 2px; }
+.pf-stat {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+}
+.pf-stat-label { font: 600 0.625rem/1 'Manrope', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.pf-stat-val { font: 700 0.9375rem/1.1 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-stat-sub { font: 500 0.6562rem/1 'Manrope', sans-serif; color: var(--ink-3); }
+.pf-var-note, .pf-stress .pf-var-note {
+  font: 500 0.6875rem/1.45 'Manrope', sans-serif; color: var(--ink-3); margin-top: 7px;
+}
+/* Caveat that changes how a number should be read (e.g. Sharpe below the
+   risk-free rate), so it must not look like ordinary footnote text. */
+.pf-warn-note {
+  color: var(--ink-2); background: var(--warn-soft, rgba(230, 176, 74, .12));
+  border-left: 3px solid var(--warn, #e6b04a);
+  border-radius: 0 6px 6px 0; padding: 7px 10px;
+}
+/* Correlation card: keep the pair bars readable when many rows stack up. */
+.pf-corr .pf-fac-srow .pf-sec-name { font-variant-numeric: tabular-nums; }
+
+/* ── Stress scenarios card ───────────────────────────────────────────────── */
+.pf-stress { padding: 10px 12px; }
+.pf-stress-chart {
+  width: 100%; overflow-x: auto; margin: 0 0 8px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-1);
+}
+.pf-stress-svg { display: block; width: 100%; min-width: 620px; height: auto; }
+.pf-stress-grid { stroke: var(--line-soft); stroke-width: 1; }
+.pf-stress-axis { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; opacity: .75; }
+.pf-stress-axis-label,
+.pf-stress-xlabel,
+.pf-stress-value {
+  font-family: 'Manrope', system-ui, sans-serif; fill: var(--ink-3);
+}
+.pf-stress-axis-label { font-size: 0.625rem; font-weight: 700; }
+.pf-stress-xlabel { font-size: 0.625rem; font-weight: 700; }
+.pf-stress-value { font-size: 0.625rem; font-weight: 800; fill: var(--ink-1); }
+.pf-stress-bar-rect { transition: opacity .15s ease, filter .15s ease; }
+.pf-stress-bar-rect.up { fill: #1fae7e; }
+.pf-stress-bar-rect.down { fill: #e0575b; }
+.pf-stress-bar-rect.flat { fill: var(--ink-3); }
+.pf-stress-bar-g:hover .pf-stress-bar-rect { filter: brightness(1.12); opacity: .92; }
+
+/* ── Risk decomposition (factor model) ───────────────────────────────────── */
+.pf-factors { padding: 10px 12px; }
+.pf-stat-grid.pf-stat-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 560px) { .pf-stat-grid.pf-stat-3 { grid-template-columns: 1fr; } }
+.pf-split { margin-bottom: 8px; }
+.pf-split-bar {
+  display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.pf-split-bar i { display: block; height: 100%; }
+.pf-split-bar i.sys { background: var(--accent); }
+.pf-split-bar i.idio { background: #d8941f; }
+.pf-split-legend { display: flex; gap: 14px; margin-top: 6px; }
+.pf-split-legend span { font: 600 0.7188rem/1 'Manrope', sans-serif; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+.pf-split-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.pf-split-legend i.sys { background: var(--accent); }
+.pf-split-legend i.idio { background: #d8941f; }
+.pf-fac-srow { display: grid; grid-template-columns: 130px 1fr 52px; align-items: center; gap: 8px; padding: 3px 0; }
+
+/* ── Liquidity card ──────────────────────────────────────────────────────── */
+.pf-liq { padding: 10px 12px; }
+.pf-liq-kpis { grid-template-columns: repeat(2, 1fr); }
+.pf-liq-label { font: 600 0.6562rem/1 'Manrope', sans-serif; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); margin: 10px 0 6px; }
+.pf-liq-list { display: flex; flex-direction: column; gap: 6px; }
+.pf-liq-row {
+  display: grid; grid-template-columns: 58px 88px minmax(72px, 1fr) minmax(82px, auto);
+  align-items: center; gap: 8px;
+}
+.pf-liq-row > * { min-width: 0; }
+.pf-liq-adv { font: 500 0.7188rem/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; }
+.pf-liq-dtl {
+  font: 700 0.7812rem/1 'Manrope', system-ui, sans-serif; color: var(--ink-1);
+  text-align: right; white-space: nowrap;
+}
+/* days-to-liquidate tier badge (shared by the card + the holdings table) */
+.pf-liq-tier {
+  display: inline-block; text-align: center; padding: 2px 7px; border-radius: 5px;
+  font: 700 0.625rem/1.4 'Manrope', sans-serif; text-transform: capitalize;
+}
+.pf-liq-tier.tier-liquid { color: var(--up); background: var(--up-soft); }
+.pf-liq-tier.tier-moderate { color: #d8941f; background: rgba(216,148,31,.14); }
+.pf-liq-tier.tier-illiquid { color: var(--down); background: var(--down-soft); }
+.pf-liq-tier.tier-untradeable { color: var(--ink-3); background: var(--surface-2); border: 1px solid var(--line); }
+
+/* Stress-test controls and compact analytical tables */
+.pf-liq-controls {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+  padding: 8px 12px 0;
+}
+.pf-liq-controls label {
+  display: flex; flex-direction: column; gap: 4px;
+  font: 700 0.5938rem/1 'Manrope', sans-serif; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--ink-3);
+}
+.pf-liq-controls select,
+.pf-liq-controls input {
+  box-sizing: border-box; min-height: 30px; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink-1);
+  padding: 5px 8px; font: 600 0.6875rem/1 'Manrope', sans-serif;
+}
+.pf-liq-controls input { width: 78px; }
+.pf-liq-controls label > span { display: inline-flex; align-items: center; gap: 4px; }
+.pf-liq-controls .pf-btn { min-height: 30px; padding: 0 12px; }
+.pf-mini-table-wrap {
+  width: 100%; overflow-x: auto; margin: 8px 0;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.pf-mini-table {
+  width: 100%; min-width: 520px; border-collapse: collapse;
+  font: 500 0.6875rem/1.25 'Manrope', sans-serif; color: var(--ink-1);
+}
+.pf-mini-table th {
+  padding: 6px 8px; text-align: right; white-space: nowrap;
+  font: 700 0.5938rem/1.2 'Manrope', sans-serif; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--ink-3); background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.pf-mini-table td {
+  padding: 6px 8px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--line-soft);
+}
+.pf-mini-table tr:last-child td { border-bottom: 0; }
+.pf-mini-table th:first-child,
+.pf-mini-table td:first-child { text-align: left; }
+.pf-top10-table th:nth-child(2),
+.pf-top10-table td:nth-child(2) { text-align: left; }
+.pf-var-matrix { min-width: 560px; }
+.pf-scenario-table { min-width: 620px; }
+.pf-scenario-ref {
+  display: block; margin-top: 2px; color: var(--ink-3);
+  font: 500 0.5938rem/1.2 'Manrope', sans-serif;
+}
+.pf-top10-table { min-width: 760px; }
+.pf-cum-value { display: block; }
+.pf-cum-bar {
+  display: block; width: 82px; height: 4px; margin-top: 2px; margin-left: auto;
+  overflow: hidden; border-radius: 3px; background: var(--surface-2);
+}
+.pf-cum-bar i { display: block; height: 100%; background: var(--accent); }
+.pf-risk-badge {
+  display: inline-block; min-width: 54px; padding: 2px 6px; text-align: center;
+  border-radius: 999px; font: 700 0.5938rem/1.2 'Manrope', sans-serif;
+  text-transform: uppercase;
+}
+.pf-risk-badge.risk-low { color: var(--up); background: var(--up-soft); }
+.pf-risk-badge.risk-moderate { color: #d8941f; background: rgba(216,148,31,.14); }
+.pf-risk-badge.risk-high { color: var(--down); background: var(--down-soft); }
+.pf-liq-table { min-width: 380px; }
+.pf-liq-table tr.is-custom td { background: var(--accent-soft); }
+@media (max-width: 620px) {
+  .pf-liq-controls { align-items: stretch; }
+  .pf-liq-controls label { flex: 1 1 42%; }
+  .pf-liq-controls select,
+  .pf-liq-controls label > span,
+  .pf-liq-controls input { width: 100%; }
+  .pf-liq-controls .pf-btn { flex: 1 1 100%; }
+  .pf-conc-summary { flex-wrap: wrap; gap: 10px 16px; }
+}
+
+/* ── Holdings table ──────────────────────────────────────────────────────── */
+.pf-table-wrap { max-height: 600px; overflow: auto; }
+.pf-table { width: 100%; border-collapse: collapse; font: 500 0.8125rem/1.2 'Manrope', system-ui, sans-serif; }
+.pf-table thead th {
+  position: sticky; top: 0; background: var(--surface-2); color: var(--ink-3);
+  font: 600 0.6875rem/1.3 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: .03em;
+  padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.pf-table thead th.l, .pf-table thead th:first-child { text-align: left; }
+.pf-table tbody td {
+  padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-1); white-space: nowrap;
+}
+.pf-table tbody td.l, .pf-table tbody td:first-child { text-align: left; }
+.pf-table tbody tr:hover { background: var(--surface-2); }
+.pf-table .pf-tkr { color: var(--accent); font-weight: 700; }
+.pf-table .num-pos { color: var(--up); }
+.pf-table .num-neg { color: var(--down); }
+.pf-sort-head {
+  appearance: none; border: 0; background: transparent; color: inherit;
+  width: 100%; padding: 0; display: inline-flex; align-items: center;
+  justify-content: flex-end; gap: 2px; cursor: pointer; min-width: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+}
+.pf-sort-head span:first-child {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-sum-table th.l .pf-sort-head { justify-content: flex-start; }
+.pf-sort-head:hover,
+.pf-sort-head.active { color: var(--accent); }
+.pf-sort-mark {
+  display: inline-block; min-width: 6px; text-align: center;
+  color: var(--accent); font-weight: 800;
+}
+/* Broker-style holdings matrix: primary value and a compact secondary metric. */
+.pf-sum-table {
+  width: 100%; min-width: 1180px; table-layout: auto;
+  font-size: 0.7188rem; line-height: 1.25;
+}
+.pf-sum-table col.pf-col-symbol { width: 9%; }
+.pf-sum-table col.pf-col-kitta { width: 8%; }
+.pf-sum-table col.pf-col-wacc { width: 8%; }
+.pf-sum-table col.pf-col-investment { width: 11%; }
+.pf-sum-table col.pf-col-ltp { width: 11%; }
+.pf-sum-table col.pf-col-market { width: 11%; }
+.pf-sum-table col.pf-col-day { width: 11%; }
+.pf-sum-table col.pf-col-unrealized { width: 12%; }
+.pf-sum-table col.pf-col-scenario { width: 10%; }
+.pf-sum-table col.pf-col-maxloss { width: 9%; }
+.pf-sum-table thead th {
+  padding: 8px 10px; border-left: 0 !important;
+  height: 48px; background: var(--surface); color: var(--ink-1);
+  font-size: 0.625rem; vertical-align: bottom;
+}
+.pf-sum-table thead th small {
+  display: block; min-height: 14px; margin-top: 5px;
+  color: var(--ink-3); font: 700 0.5938rem/1.15 'Manrope', sans-serif;
+  letter-spacing: 0; text-transform: none;
+}
+.pf-sum-table tbody tr { height: 48px; }
+.pf-sum-table tbody tr:nth-child(odd) { background: var(--surface-2); }
+.pf-sum-table tbody td {
+  padding: 8px 10px; border-left: 0 !important; vertical-align: middle;
+}
+.pf-sum-table tbody td small {
+  display: block; min-height: 13px; margin-top: 3px;
+  color: var(--ink-3); font-size: 0.5938rem; line-height: 1.15;
+}
+.pf-sum-table tbody td small.num-pos { color: var(--up); }
+.pf-sum-table tbody td small.num-neg { color: var(--down); }
+.pf-sum-table .pf-tkr { color: var(--accent); font-size: 0.75rem; }
+.pf-sum-table .pf-tkr small { color: var(--ink-3); font-weight: 500; }
+.pf-sum-table .pf-liq-tier { display: inline-block; padding: 1px 4px; font-size: 0.5625rem; }
+.pf-sum-table .pf-snap { padding: 1px 3px; margin-left: 2px; font-size: 0.5312rem; }
+.pf-sum-table .pf-sort-head { min-height: 16px; }
+@media (max-width: 720px) {
+  .pf-holdings-tabs { gap: 13px; overflow-x: auto; }
+  .pf-holdings-tab { min-width: max-content; }
+}
+.pf-snap {
+  font: 600 0.5938rem/1 'Manrope', sans-serif; color: #d8941f; background: rgba(216,148,31,.14);
+  padding: 1px 5px; border-radius: 4px; margin-left: 4px;
+}
+.pf-note { padding: 8px 12px; font: 500 0.7188rem/1.45 'Manrope', sans-serif; color: var(--ink-3); border-top: 1px solid var(--line); }
+.pf-muted { padding: 14px; text-align: center; color: var(--ink-3); }
+.pf-error { padding: 12px; color: var(--down); font: 600 0.8125rem/1 'Manrope', sans-serif; }
+
+/* ── (?) methodology help icons — deep-link into /portfolio/sop/ ────────── */
+.pf-help {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; margin-left: 5px; border-radius: 50%;
+  font: 700 0.5938rem/1 'Manrope', sans-serif; text-decoration: none;
+  color: var(--ink-3); border: 1px solid var(--line);
+  background: transparent; vertical-align: middle; flex: 0 0 auto;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.pf-help:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); text-decoration: none; }
+.pf-kpi-label .pf-help { width: 13px; height: 13px; font-size: 0.5312rem; margin-left: 4px; }
+.pf-card-head .pf-help, .pf-section span .pf-help { position: relative; top: -1px; }
+
+/* ── Admin notification bell — account requests ────────────────────────── */
+.pf-bell-wrap { position: relative; display: inline-flex; }
+.pf-bell { position: relative; }
+.pf-bell-ico { font-size: 0.9375rem; line-height: 1; filter: grayscale(.15); }
+.pf-bell.has-pending .pf-bell-ico { animation: pf-bell-swing 1.6s ease-in-out 1; transform-origin: 50% 2px; }
+@keyframes pf-bell-swing {
+  0%,100% { transform: rotate(0); } 20% { transform: rotate(14deg); }
+  40% { transform: rotate(-11deg); } 60% { transform: rotate(7deg); } 80% { transform: rotate(-4deg); }
+}
+.pf-bell-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--down); color: #fff; border-radius: 9px;
+  font: 800 0.5938rem/1 'Manrope', sans-serif; box-shadow: 0 0 0 2px var(--surface);
+}
+.pf-bell-badge.hidden { display: none; }
+
+.pf-notif {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
+  width: min(380px, 92vw);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.pf-notif[hidden] { display: none; }
+.pf-notif::before {
+  content: ""; position: absolute; top: -6px; right: 16px; width: 11px; height: 11px;
+  background: var(--surface); border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+.pf-notif-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+  font: 800 0.7812rem/1 'Manrope', sans-serif; color: var(--ink-1);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.pf-notif-count { font: 700 0.6875rem/1 'Manrope', sans-serif; color: var(--accent); text-transform: none; letter-spacing: 0; }
+.pf-notif-list { max-height: min(60vh, 440px); overflow-y: auto; }
+.pf-notif-empty { padding: 26px 14px; text-align: center; color: var(--ink-3); font: 500 0.8125rem/1.4 'Manrope', sans-serif; }
+.pf-notif-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 14px; border-bottom: 1px solid var(--line); transition: opacity .15s;
+}
+.pf-notif-item:last-child { border-bottom: 0; }
+.pf-notif-item.pf-notif-busy { opacity: .45; pointer-events: none; }
+.pf-notif-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-notif-user { font: 700 0.8125rem/1.2 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-notif-email {
+  font: 500 0.7188rem/1.2 'Manrope', sans-serif; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px;
+}
+.pf-notif-when { font: 500 0.625rem/1 'Manrope', sans-serif; color: var(--ink-3); opacity: .8; }
+.pf-notif-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+.pf-notif-actions .pf-btn { padding: 6px 10px; font-size: 0.7188rem; }
+.pf-btn-approve { background: var(--up-soft); color: var(--up); border: 1px solid var(--up); }
+.pf-btn-approve:hover { background: var(--up); color: #fff; }
+.pf-btn-reject { background: transparent; color: var(--ink-3); border: 1px solid var(--line); }
+.pf-btn-reject:hover { background: var(--down); color: #fff; border-color: var(--down); }
+.pf-notif-foot { padding: 9px 14px; border-top: 1px solid var(--line); text-align: right; }
+.pf-notif-foot a { font: 600 0.75rem/1 'Manrope', sans-serif; color: var(--accent); text-decoration: none; }
+.pf-notif-foot a:hover { text-decoration: underline; }
+
+/* ── Data reliability card ────────────────────────────────────────────── */
+.pf-reliability-card { margin-bottom: 16px; }
+.pf-rel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pf-rel-summary { display: flex; gap: 6px; }
+.pf-rel-pill {
+  padding: 2px 9px; border-radius: 999px;
+  font: 700 0.6875rem/1.5 'Manrope', sans-serif;
+}
+.pf-rel-pill.green { color: var(--up);   background: var(--up-soft); }
+.pf-rel-pill.amber { color: #f59e0b;     background: rgba(245,158,11,.14); }
+.pf-rel-pill.red   { color: var(--down); background: var(--down-soft); }
+.pf-reliability { padding: 4px 0 6px; }
+.pf-rel-stale {
+  margin: 0 16px 12px; padding: 10px 13px; border-radius: 8px;
+  border-left: 3px solid var(--down); background: var(--down-soft);
+  font: 400 0.78rem/1.5 'Manrope', sans-serif; color: var(--ink-1);
+}
+.pf-rel-row {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 9px 16px; border-top: 1px solid var(--line);
+}
+.pf-rel-row:first-child { border-top: 0; }
+.pf-rel-dot {
+  width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto;
+}
+.pf-rel-row.green .pf-rel-dot { background: var(--up); }
+.pf-rel-row.amber .pf-rel-dot { background: #f59e0b; }
+.pf-rel-row.red   .pf-rel-dot { background: var(--down); }
+.pf-rel-body { min-width: 0; }
+.pf-rel-label {
+  font: 700 0.8125rem/1.35 'Manrope', sans-serif; color: var(--ink-1);
+  display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+}
+.pf-rel-grade {
+  font: 600 0.6562rem/1.4 'Manrope', sans-serif; text-transform: uppercase;
+  letter-spacing: .04em; opacity: .75;
+}
+.pf-rel-row.green .pf-rel-grade { color: var(--up); }
+.pf-rel-row.amber .pf-rel-grade { color: #f59e0b; }
+.pf-rel-row.red   .pf-rel-grade { color: var(--down); }
+.pf-rel-why {
+  margin-top: 2px; font: 400 0.75rem/1.5 'Manrope', sans-serif;
+  color: var(--ink-2); max-width: 96ch;
+}
+.pf-rel-note {
+  padding: 10px 16px 2px; border-top: 1px solid var(--line);
+  font: 400 0.71rem/1.45 'Manrope', sans-serif; color: var(--ink-3);
+}
+
+/* Compact chip row — the collapsed state of the reliability card. */
+.pf-rel-chips {
+  display: flex; flex-wrap: wrap; gap: 7px; padding: 12px 16px 4px;
+}
+.pf-rel-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px; cursor: default;
+  border: 1px solid var(--line); background: var(--surface-2);
+  font: 600 0.71rem/1.45 'Manrope', sans-serif; color: var(--ink-2);
+}
+.pf-rel-chip i { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+.pf-rel-chip.green i { background: var(--up); }
+.pf-rel-chip.amber i { background: #f59e0b; }
+.pf-rel-chip.red   i { background: var(--down); }
+.pf-rel-chip.red { color: var(--down); border-color: var(--down-soft); }
+.pf-rel-toggle {
+  margin: 6px 16px 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--ink-3);
+  font: 600 0.6875rem/1.5 'Manrope', sans-serif;
+}
+.pf-rel-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.pf-rel-details { border-top: 1px solid var(--line); }

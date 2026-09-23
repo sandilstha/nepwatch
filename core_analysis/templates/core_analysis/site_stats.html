@@ -1,0 +1,177 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Visit Analytics</title>
+  <style>
+    /* Fully self-contained — no CDN — so this page works on an offline LAN. */
+    :root {
+      --bg: #0b1220; --surface: #131c2e; --surface2: #1a2740; --line: #26344f;
+      --ink1: #e7eefc; --ink2: #a9b8d4; --ink3: #6f82a6; --accent: #4c8dff;
+      --up: #35c46b; --down: #ff5d6c; --warn: #d8941f;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink1);
+      font-family: 'Manrope', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .wrap { max-width: var(--shell-max); margin: 0 auto; padding: 28px var(--shell-pad) 60px; }
+    a { color: var(--accent); text-decoration: none; }
+    .top { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3);
+      margin: 30px 0 12px; }
+    .muted { color: var(--ink3); font-size: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+    @media (max-width: 900px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+      padding: 15px 16px; }
+    .card .label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink3); }
+    .card .val { font-size: 26px; font-weight: 800; margin-top: 4px; }
+    .card .sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+    /* Daily bar chart (pure CSS). */
+    .chart { display: flex; align-items: flex-end; gap: 3px; height: 180px; padding-top: 8px; }
+    .chart .bar { flex: 1; background: linear-gradient(180deg, var(--accent), #2c62c9);
+      border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+    .chart .bar:hover { background: var(--up); }
+    .chart .bar[data-c="0"] { background: var(--surface2); }
+    .chart .bar span { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      font-size: 10px; color: var(--ink1); background: var(--surface2); border: 1px solid var(--line);
+      padding: 2px 6px; border-radius: 5px; white-space: nowrap; opacity: 0; pointer-events: none;
+      transition: opacity .1s; margin-bottom: 4px; z-index: 2; }
+    .chart .bar:hover span { opacity: 1; }
+    .axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--ink3); }
+
+    /* Ranked bar rows (top pages, browsers, devices). */
+    .rows { display: flex; flex-direction: column; gap: 9px; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    .row .name { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .n { font-size: 12.5px; font-weight: 700; color: var(--ink2); }
+    .track { grid-column: 1 / -1; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .track > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--ink3); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .04em; }
+    td.mono { font-variant-numeric: tabular-nums; color: var(--ink2); }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px;
+      background: var(--surface2); color: var(--ink2); border: 1px solid var(--line); }
+    .empty { color: var(--ink3); font-size: 13px; padding: 24px 0; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Site Visit Analytics</h1>
+      <div class="muted">Self-hosted — counts every page opened on your site. Works fully offline.</div>
+    </div>
+    <div class="muted">As of {{ generated_at|date:"d M Y, H:i" }} · <a href="{% url 'market_insights' %}">← Back to site</a></div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="label">Total visits</div><div class="val">{{ totals.all_time }}</div><div class="sub">all pages, all time</div></div>
+    <div class="card"><div class="label">Unique visitors</div><div class="val">{{ totals.unique_ips }}</div><div class="sub">distinct IP addresses</div></div>
+    <div class="card"><div class="label">Visits today</div><div class="val">{{ totals.today }}</div><div class="sub">since midnight</div></div>
+    <div class="card"><div class="label">Last 7 days</div><div class="val">{{ totals.last_7 }}</div><div class="sub">{{ totals.last_30 }} in last 30 days</div></div>
+  </div>
+
+  <h2>Daily visits — last 30 days</h2>
+  <div class="panel">
+    {% if daily %}
+      <div class="chart">
+        {% for d in daily %}
+          <div class="bar" data-c="{{ d.count }}" style="height: {{ d.pct }}%;"><span>{{ d.label }}: {{ d.count }}</span></div>
+        {% endfor %}
+      </div>
+      <div class="axis"><span>{{ daily.0.label }}</span><span>{{ daily.last.label }}</span></div>
+    {% else %}
+      <div class="empty">No visits recorded yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="grid2" style="margin-top: 16px;">
+    <div>
+      <h2>Top pages (30 days)</h2>
+      <div class="panel">
+        {% if top_pages %}
+          <div class="rows">
+            {% for p in top_pages %}
+              <div class="row"><div class="name" title="{{ p.path }}">{{ p.path }}</div><div class="n">{{ p.n }}</div>
+                <div class="track"><i style="width: {{ p.pct }}%;"></i></div></div>
+            {% endfor %}
+          </div>
+        {% else %}<div class="empty">No data yet.</div>{% endif %}
+      </div>
+    </div>
+    <div>
+      <h2>Top visitors by IP (30 days)</h2>
+      <div class="panel">
+        {% if top_ips %}
+          <table>
+            <thead><tr><th>IP address</th><th>Visits</th></tr></thead>
+            <tbody>
+              {% for v in top_ips %}
+                <tr><td class="mono">{{ v.ip_address|default:"unknown" }}</td><td class="mono">{{ v.n }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}<div class="empty">No data yet.</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top: 16px;">
+    <div>
+      <h2>Browsers (30 days)</h2>
+      <div class="panel">
+        {% if browser_rows %}
+          <div class="rows">
+            {% for b in browser_rows %}
+              <div class="row"><div class="name">{{ b.name }}</div><div class="n">{{ b.n }}</div></div>
+            {% endfor %}
+          </div>
+        {% else %}<div class="empty">No data yet.</div>{% endif %}
+      </div>
+    </div>
+    <div>
+      <h2>Devices (30 days)</h2>
+      <div class="panel">
+        {% if device_rows %}
+          <div class="rows">
+            {% for dv in device_rows %}
+              <div class="row"><div class="name">{{ dv.name }}</div><div class="n">{{ dv.n }}</div></div>
+            {% endfor %}
+          </div>
+        {% else %}<div class="empty">No data yet.</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <h2>Recent visits</h2>
+  <div class="panel">
+    {% if recent %}
+      <table>
+        <thead><tr><th>When</th><th>Page</th><th>IP</th><th>User</th><th>Browser</th></tr></thead>
+        <tbody>
+          {% for v in recent %}
+            <tr>
+              <td class="mono">{{ v.created_at|date:"d M H:i" }}</td>
+              <td>{{ v.path }}</td>
+              <td class="mono">{{ v.ip_address|default:"—" }}</td>
+              <td>{% if v.user %}<span class="pill">{{ v.user.username }}</span>{% else %}<span class="muted">guest</span>{% endif %}</td>
+              <td class="muted" title="{{ v.user_agent }}">{{ v.user_agent|truncatechars:38 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">No visits recorded yet — open a few pages, then refresh this dashboard.</div>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>

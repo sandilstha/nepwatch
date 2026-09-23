@@ -1,0 +1,69 @@
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# ── Virtual environments ───────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Secrets & environment ──────────────────────────────────────────────────
+# NEVER commit real credentials. .env.example (a template) is the only one tracked.
+.env
+.env.*
+!.env.example
+
+# ── Django ─────────────────────────────────────────────────────────────────
+*.log
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+media/
+
+# collectstatic OUTPUT — regenerated on every deploy from each app's static/.
+# The SOURCE assets under core_analysis/static/ stay tracked.
+staticfiles/
+
+# ── Runtime logs / data written by the app or sync jobs ────────────────────
+logs/
+*.jsonl
+
+# ── Database dumps / backups ───────────────────────────────────────────────
+*.sql
+*.sql.gz
+*.dump
+*.bak.sql
+nepse_backup/
+
+# ── Generated documents (rebuilt from the make_*.py scripts) ───────────────
+docs/*.pdf
+*.zip
+NEPSE_Platform_Setup_Guide.pdf
+
+# ── Knowledge-graph / AI-assistant tooling output ──────────────────────────
+graphify-out/
+.claude/settings.local.json
+.claude/.session*
+
+# ── Editor / IDE / OS ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Scratch / temp ─────────────────────────────────────────────────────────
+*.tmp
+*.orig
+*.rej
+.tmp-*
+node_modules/

@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — Risk &amp; Portfolio Desk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+</head>
+<body>
+  <div class="auth-wrap">
+    <form class="auth-card" method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <div class="auth-logo">RP</div>
+      <h1 class="auth-title">Risk &amp; Portfolio Desk</h1>
+      <p class="auth-sub">Sign in to view your private holdings &amp; risk analytics.</p>
+      {% if form.errors %}
+      <div class="auth-error">Incorrect username or password. Please try again.</div>
+      {% endif %}
+      <label class="auth-field"><span class="auth-label">Username</span>{{ form.username }}</label>
+      <label class="auth-field"><span class="auth-label">Password</span>{{ form.password }}</label>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="auth-btn">Sign in</button>
+      <p class="auth-alt">New here? <a href="{% url 'register' %}">Create an account</a></p>
+    </form>
+    <p class="auth-foot">Your holdings are private and visible only to you.</p>
+  </div>
+</body>
+</html>

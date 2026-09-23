@@ -1,0 +1,42 @@
+# NEPSE Analytics Platform - runtime dependencies.
+#
+# Direct dependencies only. Everything these pull in (scipy, numba, pillow,
+# pdfminer.six, urllib3, typing_extensions, ...) is resolved by pip and is
+# deliberately not repeated here. This file was previously a raw `pip freeze`,
+# which mixed the app's own needs with dev tooling.
+#
+# Dev-only tooling (the graphify code-graph CLI) lives in requirements-dev.txt.
+#
+# Keep this file UTF-8 without a BOM. It was corrupted once by a UTF-16 BOM
+# being prepended to UTF-8 bytes, which made pip reject the whole file with
+# "Invalid requirement" on line 1. Edit it with a plain-text editor, never by
+# round-tripping through PowerShell Get-Content/Set-Content.
+
+# --- Django stack ----------------------------------------------------------
+Django==6.0.5
+djangorestframework==3.17.1
+whitenoise==6.12.0          # static serving; wired into MIDDLEWARE + STORAGES
+python-dotenv==1.2.2        # settings.py reads the .env
+
+# --- Database --------------------------------------------------------------
+mysqlclient==2.2.8          # driver behind ENGINE 'django.db.backends.mysql'
+PyMySQL==1.2.0              # standalone connection in whole_history_backtest.py
+tzdata==2026.2              # zoneinfo data - Django needs it on Windows
+
+# --- Upstream feeds --------------------------------------------------------
+requests==2.34.2            # NEPSE relay + the ShareSansar dividend scrape
+
+# --- Analytics / indicators ------------------------------------------------
+pandas==3.0.3
+numpy==2.2.6
+pandas-ta==0.4.71b0
+TA-Lib==0.6.8               # needs the native TA-Lib C library installed first
+scikit-learn==1.9.0         # services/advanced_market_structure.py
+
+# --- Portfolio holdings import (CSV / Excel / PDF) -------------------------
+openpyxl==3.1.5
+pdfplumber==0.11.10
+
+# --- Docs: CFA practice-companion PDF generator (docs/make_cfa_pc_pdf.py) ---
+fpdf2==2.8.7
+matplotlib==3.10.9

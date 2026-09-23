@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create account — Risk &amp; Portfolio Desk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+</head>
+<body>
+  <div class="auth-wrap">
+    <form class="auth-card" method="post" action="{% url 'register' %}">
+      {% csrf_token %}
+      <div class="auth-logo">RP</div>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-sub">Track your NEPSE holdings &amp; risk — privately.</p>
+      {% if messages %}
+        {% for message in messages %}
+        <div class="auth-message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if form.non_field_errors %}
+      <div class="auth-error">{{ form.non_field_errors|striptags }}</div>
+      {% endif %}
+      {% for field in form %}
+      <label class="auth-field"><span class="auth-label">{{ field.label }}</span>{{ field }}
+        {% if field.errors %}<span class="auth-fielderr">{{ field.errors|striptags }}</span>{% endif %}
+        {% if field.help_text %}<span class="auth-help">{{ field.help_text|safe }}</span>{% endif %}
+      </label>
+      {% endfor %}
+      <button type="submit" class="auth-btn">Create account</button>
+      <p class="auth-alt">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
+    </form>
+    <p class="auth-foot">Your holdings are private and visible only to you.</p>
+  </div>
+</body>
+</html>

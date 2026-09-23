@@ -1,0 +1,230 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seasonal Strategy Desk SOP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    .sop-main { max-width: 980px; margin: 0 auto; padding: 18px 16px 56px; }
+    .sop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .sop-head h1 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--ink-1); }
+    .sop-head p { margin: 0; max-width: 70ch; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); opacity: .82; }
+    .sop-back {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px;
+      color: inherit; text-decoration: none; font-size: 13px; background: var(--surface);
+    }
+    .sop-back:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+    .sop-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; align-items: start; }
+    .sop-toc {
+      position: sticky; top: 16px; border: 1px solid var(--line); border-radius: 8px;
+      padding: 13px 14px; background: var(--surface); font-size: 13px;
+    }
+    .sop-toc b { display: block; margin-bottom: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+    .sop-toc a { display: block; padding: 4px 0; color: inherit; text-decoration: none; opacity: .82; }
+    .sop-toc a:hover { opacity: 1; text-decoration: underline; }
+    .sop-doc { min-width: 0; }
+    .sop-sec {
+      border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px;
+      margin-bottom: 14px; background: var(--surface); scroll-margin-top: 16px;
+    }
+    .sop-sec:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .sop-sec h2 { margin: 0 0 7px; font-size: 17px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec h3 { margin: 14px 0 5px; font-size: 13.5px; font-weight: 800; color: var(--ink-1); }
+    .sop-sec p, .sop-sec li { color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+    .sop-sec p { margin: 6px 0; }
+    .sop-sec ul { margin: 8px 0 0; padding-left: 20px; }
+    .sop-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+    .sop-table th, .sop-table td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--ink-2); }
+    .sop-table th { color: var(--ink-1); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; opacity: .72; }
+    .sop-table code { color: var(--ink-1); }
+    .sop-note { margin-top: 10px; padding: 8px 11px; border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+    .sop-pill { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .sop-pill.acc { background: rgba(34,197,94,.16); color: #22c55e; }
+    .sop-pill.hold { background: rgba(59,130,246,.16); color: #3b82f6; }
+    .sop-pill.dist { background: rgba(239,68,68,.16); color: #ef4444; }
+    .sop-pill.wait { background: rgba(148,163,184,.16); color: #94a3b8; }
+    @media (max-width: 820px) {
+      .sop-head { flex-direction: column; }
+      .sop-grid { grid-template-columns: 1fr; }
+      .sop-toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+<main class="sop-main">
+  <div class="sop-head">
+    <div>
+      <h1>Seasonal Strategy Desk SOP</h1>
+      <p>Methodology note for the <b>Seasonal Strategy — Accumulation / Distribution</b> card on the Seasonal Return desk (Workbench → Seasonal Return tab). For every NEPSE index it searches the historical calendar for the single seasonal buy-and-hold window that has paid best, then reports where to accumulate, where to distribute, and how much confidence the pattern earns. It is a rules-based, in-sample seasonal screen — not investment advice, and not a forecast.</p>
+    </div>
+    <a href="{% url 'crud_dashboard' %}?active_tab=rrg_seasonal" class="sop-back" title="Back to Seasonal Return desk">Back to desk</a>
+  </div>
+
+  <div class="sop-grid">
+    <nav class="sop-toc" aria-label="SOP sections">
+      <b>Sections</b>
+      <a href="#overview">1. What the desk does</a>
+      <a href="#data">2. Data &amp; inputs</a>
+      <a href="#signals">3. The three signals</a>
+      <a href="#window">4. How the window is chosen</a>
+      <a href="#columns">5. Reading the table</a>
+      <a href="#timing">6. Entry, exit &amp; week timing</a>
+      <a href="#outlook">7. Market outlook &amp; phase</a>
+      <a href="#workflow">8. Operating steps</a>
+      <a href="#limits">9. Limits</a>
+    </nav>
+
+    <section class="sop-doc">
+      <section class="sop-sec" id="overview">
+        <h2>1. What the desk does</h2>
+        <p>The strategy engine turns the raw seasonality matrix into one actionable call per index. For each index it:</p>
+        <ul>
+          <li>Builds a <b>per-month signal</b> from history (see &sect;3).</li>
+          <li>Searches every possible seasonal holding window and keeps the single <b>optimal</b> one (see &sect;4).</li>
+          <li>Reports that window as an <b>Accumulate</b> leg and an <b>Exit</b> leg, with the realistic Expected Return, the hindsight Opp ceiling, a hit rate, and a Confidence grade.</li>
+          <li>Ranks all indices by the <b>Blend</b> metric and writes a plain-English <b>Market Outlook</b> plus a phase chip (Accumulation / Hold / Distribution / Wait).</li>
+        </ul>
+        <div class="sop-note">"Seasonal" here means a few months, not buy-and-hold: the search is capped at a <b>7-month</b> maximum window (<code>_MAX_HOLD</code>).</div>
+      </section>
+
+      <section class="sop-sec" id="data">
+        <h2>2. Data &amp; inputs</h2>
+        <ul>
+          <li><b>Source:</b> the locally-synced NEPSE index history (<code>NepseMarketIndex</code>) — the NEPSE Index and its sub-indices. No external calls.</li>
+          <li><b>Unit of return:</b> month-over-month change of each index's <b>month-end close</b>, grouped by calendar month across all available years.</li>
+          <li><b>Calendar:</b> the maths are Gregorian; rows are displayed in Nepali fiscal-year order (Shrawan → Ashadh), and Bikram Sambat labels map each Gregorian month to the BS month that begins within it (approximate).</li>
+          <li><b>Current month excluded:</b> the in-progress month is never counted, so a one-day partial print can't skew a season.</li>
+          <li><b>Gaps skipped:</b> a year missing any month inside a candidate window is dropped for that window — you can't trade through a gap you don't have data for.</li>
+        </ul>
+        <table class="sop-table">
+          <thead><tr><th>Constant</th><th>Value</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Max hold</td><td><code>7</code></td><td>Longest seasonal window the search will recommend (months).</td></tr>
+            <tr><td>Min window years</td><td><code>5</code></td><td>A candidate window must have occurred in &ge; 5 years to be eligible.</td></tr>
+            <tr><td>Trim threshold</td><td><code>6</code></td><td>At &ge; 6 yearly observations the average drops its single best <i>and</i> single worst year (symmetric trim).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="sop-sec" id="signals">
+        <h2>3. The three signals</h2>
+        <p>Every calculation runs on three per-month series:</p>
+        <table class="sop-table">
+          <thead><tr><th>Signal</th><th>What it is</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><b>Return %</b> (realistic)</td><td>The actual, bookable month-over-month close return.</td><td>The number you can actually earn — reported as <b>Expected Return %</b>.</td></tr>
+            <tr><td><b>Opp %</b> (hindsight)</td><td>The best-case directional intra-month swing: from the first trading day's High down to the month Low when the high printed first, else from that day's Low up to the month High. <code>opp = (target &minus; ref) / ref &times; 100</code>.</td><td>A ceiling that assumes perfect timing — <i>not</i> repeatable.</td></tr>
+            <tr><td><b>Blend</b></td><td>The per-month average of the two: <code>blend = (Return% + Opp%) / 2</code>.</td><td>The signal the window search optimises and the table ranks by.</td></tr>
+          </tbody>
+        </table>
+        <div class="sop-note">If an index has no Opp history the blend falls back to the pure Return signal, so young/thin indices still get a call where they can support one.</div>
+      </section>
+
+      <section class="sop-sec" id="window">
+        <h2>4. How the window is chosen</h2>
+        <p>For each index the engine tries every <b>start month</b> <code>s</code> (Jan…Dec) and every <b>length</b> <code>L</code> from 1 to 7 months. For each (s, L):</p>
+        <ul>
+          <li><b>Compound it year by year.</b> For every year that has month <code>s</code>, multiply the blend returns of the <code>L</code> consecutive months: <code>&prod;(1 + rₖ/100) &minus; 1</code>. Skip any year missing a month in that window.</li>
+          <li><b>Score it.</b> The score is the <b>outlier-trimmed mean</b> of those yearly compounded returns (drop the best and worst year once &ge; 6 years exist).</li>
+          <li><b>Rank candidates</b> by <code>(score, hit-rate, shorter hold)</code> — highest trimmed return first, ties broken by how often it paid, then by the shorter hold (more capital-efficient).</li>
+        </ul>
+        <p>The winning (s, L) becomes the recommendation, provided it cleared <b>&ge; 5 years</b> of history. The engine then re-computes each leg <i>on that same window</i>: Expected Return % from the <b>real</b> returns, Opp % from the <b>opp</b> returns, and the Blend used to rank.</p>
+        <h3>Stability guard (split-half)</h3>
+        <p>With &ge; 6 years, the window's realised <b>real</b> returns are split into two chronological halves. If the average wasn't positive in <i>both</i> halves, the pattern only worked in one era of the history (a winner's-curse risk from the wide search) and its Confidence grade is downgraded one notch.</p>
+        <div class="sop-note">If the best window's <b>Expected Return % is ≤ 0</b> — i.e. the blend was carried by the Opp ceiling, not a real edge — the desk refuses a seasonal long and marks the row <i>"range only (see Opp %); avoid a seasonal long."</i></div>
+      </section>
+
+      <section class="sop-sec" id="columns">
+        <h2>5. Reading the table</h2>
+        <table class="sop-table">
+          <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><b>Accumulate</b></td><td>The buy window, shown as <code>entry / first-strong</code> month — buy at the entry month's close.</td></tr>
+            <tr><td><b>Exit</b></td><td>The sell window, shown as <code>last-captured / first-skipped</code> month — sell at the last captured month's close.</td></tr>
+            <tr><td><b>Holding Period</b></td><td>Entry &rarr; exit month and the <code>~L</code>-month hold length.</td></tr>
+            <tr><td><b>Expected Return %</b></td><td>Realistic, bookable: trimmed mean of the window's real compounded returns (in-sample).</td></tr>
+            <tr><td><b>Opp %</b></td><td>Hindsight ceiling: trimmed mean of the window's best-case intra-month swings. Not repeatable.</td></tr>
+            <tr><td><b>Blend %</b></td><td>The ranking metric — per-month average of Expected and Opp, compounded over the window.</td></tr>
+            <tr><td><b>/Mo %</b></td><td>Monthly-equivalent (geometric) return: <code>(1 + Expected/100)^(1/L) &minus; 1</code>. Compares different-length windows on capital-efficiency.</td></tr>
+            <tr><td><b>Hit Rate</b></td><td>Share of years the window's <b>real</b> return finished positive.</td></tr>
+            <tr><td><b>Yrs</b></td><td>Years of history behind the window.</td></tr>
+            <tr><td><b>Confidence</b></td><td>See grades below; downgraded if the split-half test failed.</td></tr>
+          </tbody>
+        </table>
+        <h3>Confidence grades</h3>
+        <table class="sop-table">
+          <thead><tr><th>Grade</th><th>Requires</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sop-pill acc">High</span></td><td>&ge; 8 years <b>and</b> hit rate &ge; 70%.</td></tr>
+            <tr><td><span class="sop-pill hold">Medium</span></td><td>&ge; 5 years <b>and</b> hit rate &ge; 60%.</td></tr>
+            <tr><td><span class="sop-pill wait">Low</span></td><td>Anything below Medium — thin history or an inconsistent pattern.</td></tr>
+          </tbody>
+        </table>
+        <p>A window that fails the split-half stability test is knocked down one grade (High&rarr;Medium, Medium&rarr;Low).</p>
+      </section>
+
+      <section class="sop-sec" id="timing">
+        <h2>6. Entry, exit &amp; week timing</h2>
+        <p>From the chosen (s, L) the engine derives the legs:</p>
+        <ul>
+          <li><b>Entry month</b> = the month <i>before</i> the first strong month <code>s</code> — you buy into weakness at its close.</li>
+          <li><b>Exit month</b> = the last captured month of the window — you sell into strength at its close.</li>
+        </ul>
+        <p>Where enough history exists (&ge; 3 sessions/month), the desk also reports <b>where in the month</b> the entry month's low and the exit month's high have historically printed, as <b>early / mid / late</b>:</p>
+        <ul>
+          <li>Position 0&ndash;0.35 of the month's sessions &rarr; <b>early</b>; 0.35&ndash;0.65 &rarr; <b>mid</b>; &gt; 0.65 &rarr; <b>late</b>.</li>
+          <li>This refines "Accumulate Mar" into "buy around <i>mid-Mar</i>", and "Exit Jul" into "sell around <i>early-Jul</i>". A tendency, not a rule.</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="outlook">
+        <h2>7. Market outlook &amp; phase</h2>
+        <p>The phase chip and the outlook paragraph are anchored on the <b>NEPSE Index</b> window versus the current month:</p>
+        <table class="sop-table">
+          <thead><tr><th>Phase</th><th>When</th><th>Stance</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sop-pill acc">Accumulation</span></td><td>The NEPSE strong window opens within ~2 months.</td><td>Start building positions into the entry month.</td></tr>
+            <tr><td><span class="sop-pill hold">Hold</span></td><td>The current month is inside the strong window.</td><td>Hold; plan to distribute into strength at the exit.</td></tr>
+            <tr><td><span class="sop-pill dist">Distribution</span></td><td>Current month is the exit month or the one after.</td><td>Reduce / exit as the strong window closes.</td></tr>
+            <tr><td><span class="sop-pill wait">Wait</span></td><td>Between the exit and the next entry.</td><td>Seasonally soft — stay patient until the next window.</td></tr>
+          </tbody>
+        </table>
+        <p>The <b>Top sectors</b> line quotes the highest-<b>Blend</b> investable sectors for the upcoming <b>horizon</b> — the envelope (earliest upcoming entry &rarr; latest exit) of the top-3 windows, so every named sector actually falls inside the stated date range. NEPSE Index and Mutual Fund are kept in the table but excluded from the "top sectors" ranking (they aren't investable sectors). Rows with no positive real edge, or too little history, sink to the bottom and are marked non-rankable.</p>
+      </section>
+
+      <section class="sop-sec" id="workflow">
+        <h2>8. Operating steps</h2>
+        <ul>
+          <li>Open Workbench &rarr; <b>Seasonal Return</b>; expand the <b>Seasonal Strategy — Accumulation / Distribution</b> card with its <b>?</b> toggle.</li>
+          <li>Read the <b>phase chip</b> and <b>Market Outlook</b> for the top-down seasonal stance and horizon.</li>
+          <li>Scan the table top-down (it's ranked by Blend). For each candidate, check that <b>Expected Return %</b> is meaningfully positive — don't trade a row carried only by <b>Opp %</b>.</li>
+          <li>Prefer <span class="sop-pill acc">High</span> / <span class="sop-pill hold">Medium</span> confidence with a strong <b>Hit Rate</b> and several <b>Yrs</b> of history.</li>
+          <li>Use the <b>Accumulate</b> / <b>Exit</b> months and the early/mid/late timing to place the legs; size to the confidence, not the headline number.</li>
+        </ul>
+      </section>
+
+      <section class="sop-sec" id="limits">
+        <h2>9. Limits</h2>
+        <p>This is an <b>in-sample</b> seasonal screen: the optimal window is found by searching the same history it is scored on, so real out-of-sample returns are typically lower than the headline. Expected Return % is a trimmed historical average, not a promise; <b>Opp %</b> is a perfect-timing ceiling you cannot book in advance. Seasonality can and does break — regime shifts, thin/illiquid history, and structural changes all erode it. Nepali (BS) month labels are approximate because BS months straddle two Gregorian months, while the averages themselves stay Gregorian.</p>
+        <div class="sop-note">A descriptive timing aid, not investment advice. It does not forecast price or replace risk management and position sizing.</div>
+      </section>
+    </section>
+  </div>
+</main>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+</body>
+</html>

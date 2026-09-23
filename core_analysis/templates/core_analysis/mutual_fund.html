@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mutual Fund Desk — NEPSE</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version }}">
+  <style>
+    /* Discount is the headline number on this desk, so it gets the emphasis a
+       price change gets elsewhere. Negative = below NAV = the normal state. */
+    .mf-disc { font-weight: 800; }
+    .mf-disc.neg { color: var(--down, #ef4444); }
+    .mf-disc.pos { color: var(--up, #22c55e); }
+    .mf-chip { display:inline-block; padding:1px 7px; border-radius:999px; font-size:10.5px;
+               font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+               background:var(--surface-2); border:1px solid var(--line); color:var(--ink-3); }
+    .mf-bar { position:relative; height:6px; border-radius:4px; background:var(--surface-2);
+              min-width:90px; overflow:hidden; }
+    .mf-bar span { position:absolute; top:0; bottom:0; border-radius:4px; }
+    .mf-sub { color: var(--ink-3); font-size: 11px; }
+    .mf-empty { padding: 34px 20px; text-align: center; color: var(--ink-2); line-height: 1.7; }
+    .mf-empty b { color: var(--ink-1); }
+  </style>
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">MF</span>
+      <div>
+        <h1 class="mi-title">Mutual Fund Desk</h1>
+        <p class="mi-subtitle">NAV, discount to NAV and portfolio allocation for every listed fund</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn">Sign in</a>
+      {% endif %}
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='mutualfund' %}
+
+  {% comment %}
+    Funds file no quarterly statements, so none of the fundamentals desks can
+    ever show them. This desk is their equivalent: NAV instead of earnings, and
+    discount to NAV instead of P/B.
+  {% endcomment %}
+  {% comment %}
+    This page is the NAV and discount view and nothing else. It used to carry
+    Assets and Sector tabs of its own, computed by the upload-era service, which
+    answered the same question differently from the desk — HLICF's Commercial
+    Banks share came out 9.16 here against 9.35 there. Rather than keep two
+    implementations in step, the tabs are links to the one that reconciles with
+    the published tables.
+  {% endcomment %}
+  <nav class="dsx-tabs" aria-label="Mutual fund sections">
+    <span class="dsx-tab active" aria-current="page">NAV &amp; Discount</span>
+    <a class="dsx-tab" href="{% url 'mf_assets_page' %}">Assets Allocation &rsaquo;</a>
+    <a class="dsx-tab" href="{% url 'mf_sector_page' %}">Sector Allocation &rsaquo;</a>
+    <a class="dsx-tab" href="{% url 'mf_home' %}">Fund Desk &rsaquo;</a>
+  </nav>
+
+  <!-- ── NAV & discount ───────────────────────────────────────────────── -->
+  <section class="dsx-panel active" id="panel-nav">
+    <div class="dsx-kpis" id="mf-kpis"></div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>LISTED FUNDS · NAV vs MARKET PRICE</span>
+        <span class="dsx-ad-sub">
+          <span id="mf-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'stock360_sop' %}" target="_blank" rel="noopener"
+             title="Where every number comes from">Methodology</a>
+        </span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="mf-table"></table></div>
+      <div class="dsx-ad-note">
+        A negative figure means the fund trades <b>below</b> NAV — the normal state for Nepal's
+        mostly closed-end schemes. The discount uses the newest NAV each fund published (the
+        weekly reading where it exists, otherwise the month-end one) against our own latest
+        close. NAV is a reported figure, not a live one.
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  window.MF_CONFIG = {
+    navUrl:   "{% url 'mf_nav_api' %}",
+    coverage: {listed: {{ coverage.listed }}, withNav: {{ coverage.with_nav }}}
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/mutual-fund.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version }}"></script>
+<script>
+  /* Theme toggle only — insights.js wires the Market Insights dashboard and
+     throws here because none of its elements exist on this page. */
+  (function () {
+    var KEY = "mi-theme";
+    function apply(th) {
+      document.documentElement.setAttribute("data-theme", th);
+      var b = document.getElementById("mi-theme-btn");
+      if (b) b.textContent = th === "dark" ? "Light" : "Dark";
+    }
+    var saved = "dark";
+    try { saved = localStorage.getItem(KEY) || "dark"; } catch (e) {}
+    apply(saved);
+    document.addEventListener("DOMContentLoaded", function () {
+      var b = document.getElementById("mi-theme-btn");
+      if (!b) return;
+      b.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        apply(next);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

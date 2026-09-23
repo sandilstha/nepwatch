@@ -1,0 +1,113 @@
+{% comment %}
+Compact stock-search box for the header control clusters — sits beside the
+Home button on every desk. Enter (or pick) routes to /stock/<SYMBOL>/.
+Self-contained: markup + style + submit handler in one include.
+{% endcomment %}
+<form class="hdr-stock-search" role="search" onsubmit="return hdrStockSearch(event)" aria-label="Open a stock in Stock 360">
+  <span class="hdr-stock-search-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+  </span>
+  <input type="text" name="symbol" autocomplete="off" placeholder="Search a stock…" aria-label="Stock symbol"
+         role="combobox" aria-expanded="false" aria-autocomplete="list">
+  <div class="hdr-stock-ac" role="listbox" aria-label="Suggestions"></div>
+</form>
+<style>
+  .hdr-stock-search{position:relative;display:inline-flex;align-items:center;gap:7px;
+    background:var(--bg-raised,rgba(128,128,128,.08));border:1px solid var(--line,rgba(128,128,128,.25));
+    border-radius:9px;padding:6px 11px;min-width:170px}
+  .hdr-stock-search:focus-within{border-color:var(--accent,#4c8dff)}
+  .hdr-stock-search-icon{display:inline-flex;color:var(--ink-2,#8b96a3);flex:0 0 auto}
+  .hdr-stock-search-icon svg{width:15px;height:15px;stroke:currentColor}
+  .hdr-stock-search input{border:0;outline:0;background:transparent;color:inherit;
+    font:inherit;font-size:13px;width:100%;min-width:0}
+  .hdr-stock-search input::placeholder{color:var(--ink-2,#8b96a3);opacity:.8}
+  /* Suggestion dropdown.
+     The surface and the text MUST come from the same token set, or they stop
+     agreeing when the theme flips. This previously asked for --panel /
+     --bg-raised / --ink / --line-2, none of which exist in tokens.css, so the
+     panel fell back to hard-coded #fff while the text still resolved --ink-1
+     (#edf4ff in dark theme) — white on white, measured at 1.11:1 contrast and
+     effectively invisible. --surface / --ink-1 / --ink-2 / --line are the real
+     tokens and flip together; the literal fallbacks are a matched light pair
+     for any page that does not load tokens.css. */
+  .hdr-stock-ac{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:1200;
+    background:var(--surface,#ffffff);color:var(--ink-1,#0e1b33);
+    border:1px solid var(--line,#d7e0ee);
+    border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden auto;
+    max-height:300px;display:none;min-width:230px}
+  .hdr-stock-ac.open{display:block}
+  .hdr-stock-ac .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;
+    padding:8px 12px;cursor:pointer;font-size:13px;color:var(--ink-1,#0e1b33)}
+  .hdr-stock-ac .row:hover,.hdr-stock-ac .row.hi{background:var(--accent-weak,rgba(76,141,255,.14))}
+  /* Ticker code carries the emphasis, so it takes the strongest ink. */
+  .hdr-stock-ac .row .t{font-weight:700;flex:0 0 auto;color:var(--ink-1,#0e1b33)}
+  .hdr-stock-ac .row .n{color:var(--ink-2,#41587c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdr-stock-ac .empty{padding:9px 12px;font-size:12px;color:var(--ink-2,#41587c)}
+</style>
+<script>
+  function hdrStockSearch(ev){
+    ev.preventDefault();
+    var input = ev.currentTarget.querySelector('input[name="symbol"]');
+    var v = (input && input.value || '').trim().toUpperCase();
+    if (v) window.location.href = '/stock/' + encodeURIComponent(v) + '/';
+    return false;
+  }
+
+  /* Live company suggestions below the box. Reuses the platform symbol feed
+     (/dashboard/symbols/) so it stays in sync with every other search. Runs
+     once per rendered box (the include may appear on many pages). */
+  (function(){
+    var forms = document.querySelectorAll('.hdr-stock-search');
+    [].forEach.call(forms, function(form){
+      if (form.dataset.acReady) return;
+      form.dataset.acReady = '1';
+      var input = form.querySelector('input[name="symbol"]');
+      var box = form.querySelector('.hdr-stock-ac');
+      if (!input || !box) return;
+
+      var t = null, hi = -1, items = [];
+      function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+      function go(v){ window.location.href = '/stock/' + encodeURIComponent(v) + '/'; }
+      function close(){ box.classList.remove('open'); box.innerHTML = ''; hi = -1; items = [];
+        input.setAttribute('aria-expanded','false'); }
+
+      input.addEventListener('input', function(){
+        var q = input.value.trim();
+        clearTimeout(t);
+        if (q.length < 1){ close(); return; }
+        t = setTimeout(function(){
+          fetch('/dashboard/symbols/?q=' + encodeURIComponent(q), { headers:{ 'X-Requested-With':'XMLHttpRequest' } })
+            .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+            .then(function(d){
+              items = (d.results || []).filter(function(r){ return r.type !== 'index'; }).slice(0, 12);
+              box.innerHTML = ''; hi = -1;
+              if (!items.length){ box.innerHTML = '<div class="empty">No matches.</div>'; box.classList.add('open'); input.setAttribute('aria-expanded','true'); return; }
+              items.forEach(function(r){
+                var parts = (r.label || r.value).split(' - ');
+                var row = document.createElement('div');
+                row.className = 'row'; row.setAttribute('role','option');
+                row.innerHTML = '<span class="t">' + esc(r.value) + '</span><span class="n">' + esc(parts[1] || parts[0] || '') + '</span>';
+                row.addEventListener('mousedown', function(e){ e.preventDefault(); go(r.value); });
+                box.appendChild(row);
+              });
+              box.classList.add('open'); input.setAttribute('aria-expanded','true');
+            }).catch(close);
+        }, 140);
+      });
+
+      input.addEventListener('keydown', function(e){
+        var rows = box.querySelectorAll('.row');
+        if (!rows.length) return;
+        if (e.key === 'ArrowDown'){ e.preventDefault(); hi = Math.min(hi + 1, rows.length - 1); }
+        else if (e.key === 'ArrowUp'){ e.preventDefault(); hi = Math.max(hi - 1, 0); }
+        else if (e.key === 'Enter' && hi >= 0){ e.preventDefault(); go(items[hi].value); return; }
+        else if (e.key === 'Escape'){ close(); return; }
+        else return;
+        [].forEach.call(rows, function(r, i){ r.classList.toggle('hi', i === hi); });
+      });
+
+      document.addEventListener('click', function(e){ if (!form.contains(e.target)) close(); });
+    });
+  })();
+</script>

@@ -1,0 +1,94 @@
+    <div class="tab-pane fade {% if active_tab == 'stage_backtest' %}show active{% endif %}" id="stage-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2 d-flex align-items-center gap-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">
+          <span>NEPSE Stage Analysis Parameters</span>
+          <a href="{% url 'stage_sop' %}" target="_blank" rel="noopener" title="Stage Analysis methodology (SOP)" style="text-decoration:none; font-size:12px; font-weight:600; color: var(--accent, #4c8dff);">SOP &#9432;</a>
+        </h5>
+        <div class="sop-note"><strong>SOP:</strong> Search and select the exact symbol, use a 1Y+ range when possible, then execute Stage scan. Adjusted prices are used first; missing dates are filled from unadjusted fallback and shown in the Source column. <a href="{% url 'stage_sop' %}" target="_blank" rel="noopener" style="color: var(--accent, #4c8dff); font-weight:600;">Full methodology &rarr;</a></div>
+        <form method="GET" action="." id="stageForm">
+          <input type="hidden" name="active_tab" value="stage_backtest">
+          <input type="hidden" name="stage_backtest_symbol" id="stageSymbolHidden" value="{{ stage_selected_symbol }}">
+          <div class="stage-primary-grid">
+            <div class="stage-field stage-symbol-field">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="stageSearchInput" placeholder="Type to search..." value="{{ stage_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="stageDropdown"></div>
+              </div>
+            </div>
+            <div class="stage-field">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="stageFromDate" name="stage_from_date" class="form-control form-control-sm" value="{{ stage_from_date }}" required>
+            </div>
+            <div class="stage-field">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="stageToDate" name="stage_to_date" class="form-control form-control-sm" value="{{ stage_to_date }}" required>
+            </div>
+            <div class="stage-field stage-quickrange-field">
+              <label class="form-label text-muted small fw-medium">Quick Range</label>
+              <div class="stage-quick-range-row">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="6m">6M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="1y">1Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="2y">2Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="3y">3Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="ytd">YTD</button>
+              </div>
+            </div>
+            <div class="stage-field stage-submit-field">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Stage Scan</button>
+            </div>
+          </div>
+          <div class="stage-parameter-grid">
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">Vol Ratio Min</label>
+              <input type="number" min="0.1" step="0.1" name="stage_volume_multiplier" class="form-control form-control-sm" value="{{ stage_volume_multiplier }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">Resistance Lookback</label>
+              <input type="number" min="2" step="1" name="stage_resistance_lookback" class="form-control form-control-sm" value="{{ stage_resistance_lookback }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">Volume Avg Lookback</label>
+              <input type="number" min="2" step="1" name="stage_volume_lookback" class="form-control form-control-sm" value="{{ stage_volume_lookback }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">Momentum Period</label>
+              <input type="number" min="2" step="1" name="stage_momentum_period" class="form-control form-control-sm" value="{{ stage_momentum_period }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">RSI Length</label>
+              <input type="number" min="2" step="1" name="stage_rsi_length" class="form-control form-control-sm" value="{{ stage_rsi_length }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">RSI Min</label>
+              <input type="number" min="0" step="0.1" name="stage_rsi_threshold" class="form-control form-control-sm" value="{{ stage_rsi_threshold }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">ADX Length</label>
+              <input type="number" min="2" step="1" name="stage_adx_length" class="form-control form-control-sm" value="{{ stage_adx_length }}" required>
+            </div>
+            <div class="stage-param-field">
+              <label class="form-label text-muted small fw-medium">ADX Min</label>
+              <input type="number" min="0" step="0.1" name="stage_adx_threshold" class="form-control form-control-sm" value="{{ stage_adx_threshold }}" required>
+            </div>
+          </div>
+          <div class="stage-footer-row">
+            <div class="stage-range-note">&#9888; Stage needs &ge;150 trading days &mdash; use 1Y or longer</div>
+            <div class="stage-filter-group" aria-label="Optional Stage filters">
+              <label class="stage-filter-option" for="stageUseRsi">
+                <input class="form-check-input" type="checkbox" id="stageUseRsi" name="stage_use_rsi" value="1" {% if stage_use_rsi %}checked{% endif %}>
+                <span>Enable RSI Filter</span>
+              </label>
+              <label class="stage-filter-option" for="stageUseAdx">
+                <input class="form-check-input" type="checkbox" id="stageUseAdx" name="stage_use_adx" value="1" {% if stage_use_adx %}checked{% endif %}>
+                <span>Enable ADX Filter</span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="stage_backtestResults" data-tab-key="stage_backtest">
+        {% include "core_analysis/includes/_stage_results.html" %}
+      </div>
+    </div>

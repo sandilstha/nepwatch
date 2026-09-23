@@ -1,0 +1,171 @@
+{% comment %}
+Home dashboard primary navigation. Include with an active_section of
+insights | technical | rrg | floorsheet, e.g.:
+  {% include "core_analysis/includes/_primary_nav.html" with active_section="insights" %}
+
+This include ships its OWN dropdown CSS and JS below. That is deliberate: the
+pages using this nav do not share a base template (market_insights.html is
+standalone, the workbench extends base.html), so anything placed in one global
+stylesheet or in base.html silently fails to reach the others. Keeping it here
+means the menu works wherever the nav is included, with no per-page wiring.
+{% endcomment %}
+
+<style>
+  /* Scoped to .mi-nav-drop, so it cannot disturb the nav styling that each
+     page's own stylesheet already applies to .mi-nav-link. */
+  .mi-nav-drop { position: relative; flex: 0 1 auto; min-width: 0; display: flex; }
+  /* font-FAMILY only, never the `font` shorthand. The shorthand also resets
+     font-size, weight and line-height to the parent's, which overrode
+     .mi-nav-link and rendered "NEPSE DATA" larger and lighter than every other
+     nav item. Buttons need the family restated (the UA stylesheet forces its
+     own); size and weight must be left to .mi-nav-link so this works on every
+     page, including those that do not define the design tokens. */
+  .mi-nav-drop-btn { width: 100%; background: none; cursor: pointer; font-family: inherit; }
+  .mi-nav-caret { flex: 0 0 auto; font-size: .7em; opacity: .8; }
+  .mi-nav-menu {
+    display: none;
+    position: absolute;
+    z-index: 300;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 250px;
+    padding: 5px;
+    /* Opaque — this floats over tables and charts. */
+    background: var(--bg-raised, var(--surface, #10202f));
+    border: 1px solid var(--line, rgba(255,255,255,.14));
+    border-radius: var(--radius-md, 10px);
+    box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .55);
+  }
+  .mi-nav-drop.open .mi-nav-menu { display: block; }
+  .mi-nav-menu a {
+    display: block;
+    padding: 8px 11px;
+    border-radius: var(--radius-sm, 6px);
+    /* system-ui fallback so the menu matches the rest of the app when
+       Manrope has not loaded; 12.5px was a one-off between the 12px and
+       14px steps of the type scale. */
+    font: 600 12px/1.2 'Manrope', system-ui, sans-serif;
+    letter-spacing: .02em;
+    text-transform: none;
+    text-decoration: none;
+    white-space: nowrap;
+    color: var(--ink-1, #e8eef7);
+  }
+  .mi-nav-menu a:hover { background: var(--bg-surface, rgba(255,255,255,.07)); }
+  @media (max-width: 900px) { .mi-nav-menu { left: auto; right: 0; } }
+</style>
+<nav class="mi-primary-nav" aria-label="Primary sections">
+  <a href="{% url 'market_insights' %}"
+     class="mi-nav-link {% if active_section == 'insights' %}active{% endif %}"
+     {% if active_section == 'insights' %}aria-current="page"{% endif %}>
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
+    </span>Market Insights</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=backtest"
+     class="mi-nav-link {% if active_section == 'strategy' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/><path d="M16 4h5v5"/></svg>
+    </span>Strategy Simulator</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=stage_backtest"
+     class="mi-nav-link {% if active_section == 'technical' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l3 8 4-16 3 8h5"/></svg>
+    </span>Technical Analysis</a>
+  {# Was "Fundamental Analysis" — that desk is now a section of Stock 360, so the nav points at the page that owns it. #}
+  <a href="{% url 'stock360' %}"
+     class="mi-nav-link {% if active_section == 'fundamental' %}active{% endif %}"
+     {% if active_section == 'fundamental' %}aria-current="page"{% endif %}>
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11M14 4v16"/></svg>
+    </span>Stock 360</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=rrg_backtest"
+     class="mi-nav-link {% if active_section == 'rrg' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><circle cx="16.5" cy="7.5" r="2"/><circle cx="7.5" cy="16" r="2"/></svg>
+    </span>RRG Analytics</a>
+  <a href="{% url 'fundamental_analysis' %}"
+     class="mi-nav-link {% if active_section == 'fundamentals' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><rect x="5" y="12" width="3" height="6"/><rect x="10.5" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/></svg>
+    </span>Fundamentals</a>
+  {% comment %}
+    Funds file no statements, so they can never appear on the fundamentals
+    desks. This is their equivalent: NAV and discount to NAV.
+  {% endcomment %}
+  <a href="{% url 'mf_home' %}"
+     class="mi-nav-link {% if active_section == 'mutualfund' %}active{% endif %}"
+     {% if active_section == 'mutualfund' %}aria-current="page"{% endif %}>
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg>
+    </span>Mutual Funds</a>
+  <a href="{% url 'floorsheet' %}"
+     class="mi-nav-link {% if active_section == 'floorsheet' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>
+    </span>Floor sheet</a>
+  {# Raw exchange reports, grouped like nepalstock.com's own "NEPSE Data" menu. #}
+  <div class="mi-nav-drop {% if active_section == 'nepsedata' %}active{% endif %}">
+    <button type="button" class="mi-nav-link mi-nav-drop-btn" aria-haspopup="true" aria-expanded="false">
+      <span class="mi-nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+      </span>NEPSE Data
+      <span class="mi-nav-caret" aria-hidden="true">▾</span>
+    </button>
+    <div class="mi-nav-menu" role="menu">
+      {% for s, title in nepse_data_menu %}
+        <a role="menuitem" href="{% url 'nepse_data_report' s %}">{{ title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <a href="{% url 'portfolio' %}"
+     class="mi-nav-link {% if active_section == 'portfolio' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+    </span>My Portfolio</a>
+</nav>
+
+<script>
+  /* Click to toggle (not hover — a hover menu is unusable on touch); close on
+     outside click or Escape. Guarded so a second include on the same page
+     cannot bind the handlers twice. */
+  (function () {
+    if (window.__miNavDropInit) return;
+    window.__miNavDropInit = true;
+    function boot() {
+      var drops = document.querySelectorAll('.mi-nav-drop');
+      if (!drops.length) return;
+      function closeAll() {
+        drops.forEach(function (d) {
+          d.classList.remove('open');
+          var b = d.querySelector('.mi-nav-drop-btn');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+      drops.forEach(function (d) {
+        var btn = d.querySelector('.mi-nav-drop-btn');
+        if (!btn) return;
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          e.preventDefault();
+          var wasOpen = d.classList.contains('open');
+          closeAll();
+          if (!wasOpen) {
+            d.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.mi-nav-drop')) closeAll();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAll();
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();   // include may render after DOMContentLoaded has already fired
+    }
+  })();
+</script>

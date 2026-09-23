@@ -1,0 +1,31 @@
+{% comment %}
+Reusable date-range control for the Floorsheet tabs: a preset dropdown mapped to
+the NEPSE trading calendar (Sun–Fri sessions; Saturdays and holidays excluded
+server-side) plus Start/End date inputs that appear only for "Custom Range". Pass
+`prefix` (e.g. "fav", "sw", "hot", "nh", "conc") to namespace the element IDs per
+tab; the frontend (floorsheet-brokers.js) wires each prefix with the shared
+`dateRange()` controller. Presets apply on change; Custom applies on Analyze.
+
+Optional `hide_today` / `hide_week` drop the two shortest presets. A/D Radar uses
+them because a window that short cannot answer its question: one session is
+refused outright by the service, and five is below the 15-session minimum the
+model was ever tested on. Better to not offer a choice than to offer one that
+always returns a warning.
+{% endcomment %}
+<div class="dsx-field">Date Range
+  <select id="{{ prefix }}-preset" class="dsx-select dsx-dr-preset">
+    {% if not hide_today %}<option value="today">Current Day</option>{% endif %}
+    {% if not hide_week %}<option value="1w">Last 1 Week</option>{% endif %}
+    <option value="1m">Last 1 Month</option>
+    <option value="3m">Last 3 Months</option>
+    <option value="1y">Last 1 Year</option>
+    <option value="fy">Fiscal Year (Shrawan–Ashad)</option>
+    <option value="custom">Custom Range</option>
+  </select>
+</div>
+<div class="dsx-field dsx-dr-custom" id="{{ prefix }}-custom" hidden>Start Date
+  <input type="date" id="{{ prefix }}-start" class="dsx-date-input dsx-dr-date">
+</div>
+<div class="dsx-field dsx-dr-custom" id="{{ prefix }}-custom-end" hidden>End Date
+  <input type="date" id="{{ prefix }}-end" class="dsx-date-input dsx-dr-date">
+</div>

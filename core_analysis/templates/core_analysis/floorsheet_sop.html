@@ -1,0 +1,460 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floorsheet Desk — Methodology SOP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+  <style>
+    /* SOP document (scoped to this page; theme tokens come from insights.css). */
+    .sop-wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:start;padding:8px 4px 60px}
+    @media (max-width: 900px){.sop-wrap{grid-template-columns:1fr}.sop-toc{position:static}}
+    .sop-toc{position:sticky;top:16px;border:1px solid var(--line);border-radius:14px;
+      padding:14px 16px;font-size:13px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--surface)}
+    .sop-toc h6{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin:12px 0 4px}
+    .sop-toc h6:first-child{margin-top:0}
+    .sop-toc a{display:block;padding:3px 0;color:inherit;text-decoration:none;opacity:.85}
+    .sop-toc a:hover{opacity:1;text-decoration:underline}
+    .sop-doc{min-width:0}
+    .sop-doc h2{font-size:22px;font-weight:800;margin:0 0 4px;color:var(--ink-1)}
+    .sop-doc .sop-lede{opacity:.75;font-size:14px;max-width:74ch;color:var(--ink-2)}
+    .sop-sec{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:18px;
+      scroll-margin-top:16px;background:var(--surface)}
+    .sop-sec h3{font-size:17px;font-weight:800;margin:0 0 2px;color:var(--ink-1)}
+    .sop-sec h4{font-size:13.5px;font-weight:700;margin:16px 0 4px;color:var(--ink-1);scroll-margin-top:16px}
+    .sop-sec p, .sop-sec li{font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+    .sop-sec p{margin:6px 0}
+    .sop-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.6;margin:0 0 8px}
+    .sop-tab-name{color:var(--accent)}
+    .sop-formula{display:block;background:var(--surface-2);border:1px solid var(--line);
+      border-radius:10px;padding:10px 14px;margin:8px 0;font-size:13px;overflow-x:auto;white-space:pre;color:var(--ink-1)}
+    .sop-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:10px 0}
+    .sop-fact{background:var(--surface-2);border-radius:10px;padding:8px 12px}
+    .sop-fact b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.6;font-weight:700}
+    .sop-fact span{font-size:13px;font-weight:600;color:var(--ink-1)}
+    .sop-table{width:100%;font-size:12.5px;border-collapse:collapse;margin:8px 0}
+    .sop-table th,.sop-table td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;color:var(--ink-2)}
+    .sop-table th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+    .sop-table td b{color:var(--ink-1)}
+    .sop-note{font-size:12.5px;opacity:.85;border-left:3px solid var(--line);padding:4px 12px;margin:10px 0;color:var(--ink-2)}
+    .sop-sec:target{outline:2px solid var(--accent);outline-offset:4px}
+    .sop-back{font-size:13px}
+    .tag-buy{color:var(--up);font-weight:700}
+    .tag-sell{color:var(--down);font-weight:700}
+  </style>
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">FS</span>
+      <div>
+        <h1 class="mi-title">Floorsheet Desk — Methodology SOP</h1>
+        <p class="mi-subtitle">Standard Operating Procedure: every broker-flow metric, formula, source &amp; interpretation</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      <a href="{% url 'floorsheet' %}" class="mi-icon-btn sop-back" title="Back to the desk">← Floorsheet</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  <div class="sop-wrap">
+
+    <!-- ── Table of contents ─────────────────────────────────────────── -->
+    <nav class="sop-toc">
+      <h6>Foundations</h6>
+      <a href="#scope">1. Purpose &amp; scope</a>
+      <a href="#data">2. Data source &amp; update frequency</a>
+      <a href="#aggregation">3. How a session is aggregated</a>
+      <a href="#ranges">4. Date ranges &amp; the Shares/Turnover lens</a>
+      <a href="#concepts">5. Core concepts (net, HHI, matching, churn)</a>
+      <h6>The tabs</h6>
+      <a href="#flowradar">6. Broker Flow Radar</a>
+      <a href="#adradar">6.1 A/D Radar (backtested)</a>
+      <a href="#analysis">7. Broker Analysis</a>
+      <a href="#analysis-kpis">7.1 KPI strip</a>
+      <a href="#analysis-topbuysell">7.2 Top Buy / Top Sell</a>
+      <a href="#analysis-persistence">7.3 Persistent Accumulation / Distribution</a>
+      <a href="#signals">8. Signal Desk</a>
+      <a href="#stockwise">9. Script Deep Dive</a>
+      <a href="#heatmap">10. Market Heatmap (Hot Stocks)</a>
+      <a href="#netposition">11. Net Position Analytics</a>
+      <a href="#exposure">12. Broker Exposure Monitor</a>
+      <h6>Appendix</h6>
+      <a href="#limitations">13. Interpretation guide &amp; limitations</a>
+    </nav>
+
+    <!-- ── Document ──────────────────────────────────────────────────── -->
+    <main class="sop-doc">
+      <h2>Standard Operating Procedure</h2>
+      <p class="sop-lede">The single source of truth for how every number on the Floorsheet (Dalal Street X)
+        broker desk is computed — the formula, the inputs, the data source, the update frequency, the
+        assumptions, and how to read it. Everything here is a <b>factual roll-up of NEPSE's broker-tagged
+        floorsheet</b>; nothing is a prediction, a “smart-money” label, or investment advice.</p>
+
+      <!-- 1 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="scope">
+        <p class="sop-kicker">Section 1</p>
+        <h3>Purpose &amp; scope</h3>
+        <p>NEPSE publishes a <b>floorsheet</b>: every executed trade tagged with its <b>buying broker</b> and
+          <b>selling broker</b>. That broker attribution is what makes this desk possible — it lets us answer
+          <b>who</b> is trading <b>what</b>, on <b>which side</b>, and <b>how persistently</b>. The desk turns
+          the raw trade log into seven lenses (the tabs) on broker flow, concentration and rotation.</p>
+        <p>Every metric is descriptive — a sum, a share, a net, a count or a ratio over trades that already
+          happened. No metric forecasts price or labels a broker “right”.</p>
+      </section>
+
+      <!-- 2 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="data">
+        <p class="sop-kicker">Section 2</p>
+        <h3>Data source &amp; update frequency</h3>
+        <table class="sop-table">
+          <thead><tr><th>Input</th><th>Source</th><th>Frequency</th></tr></thead>
+          <tbody>
+            <tr><td>Trades (symbol, buyer, seller, qty, amount)</td><td>NEPSE floorsheet, synced into <code>NepseFloorsheet</code></td><td>After each trading session</td></tr>
+            <tr><td>Sector labels</td><td>Floorsheet <code>sector</code> column + company-profile table</td><td>On listing changes</td></tr>
+            <tr><td>Broker firm names</td><td><code>nepse_brokers</code> table (<code>load_brokers</code>)</td><td>Rarely (broker registry)</td></tr>
+            <tr><td>Closing prices (for divergence)</td><td>Local NEPSE end-of-day price table</td><td>Daily after close</td></tr>
+          </tbody>
+        </table>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Session size</b><span>~50,000+ trade rows/day</span></div>
+          <div class="sop-fact"><b>Trading week</b><span>Sun–Fri (Sat + holidays excluded)</span></div>
+          <div class="sop-fact"><b>Aggregate cache</b><span>Per-day, reused across windows</span></div>
+        </div>
+        <p class="sop-note">The header shows “Last Updated On …”. Everything on the page reflects that session
+          and earlier — there is no intraday data, and anything after the last sync is not yet visible.</p>
+      </section>
+
+      <!-- 3 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="aggregation">
+        <p class="sop-kicker">Section 3</p>
+        <h3>How a session is aggregated</h3>
+        <p>A session is ~50k+ rows, so we never sum trade-by-trade in Python. Each day is collapsed
+          <b>in the database</b> with two grouped queries (one per side), riding the
+          <code>(business_date, buyer)</code> / <code>(business_date, seller)</code> indexes:</p>
+        <span class="sop-formula">buy [symbol][broker]  = [ Σ quantity , Σ amount ]     where broker = the BUYER
+sell[symbol][broker]  = [ Σ quantity , Σ amount ]     where broker = the SELLER
+sector[symbol]        = the stock's sector label</span>
+        <p>Each per-day aggregate is cached and reused. A multi-session window (1 week, 1 month, …) is built by
+          <b>merging the cached per-day aggregates</b>, never by a wide <code>BETWEEN … GROUP BY</code>
+          (which would filesort millions of rows and is ~300× slower). This is why the first load of a fresh
+          day is slower than subsequent ones, and why widening the range stays fast.</p>
+        <p class="sop-note">In aggregate, total buy quantity of a stock equals its total sell quantity (every
+          share bought was sold) — so “traded shares” for a stock is measured once, on the buy side.</p>
+      </section>
+
+      <!-- 4 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="ranges">
+        <p class="sop-kicker">Section 4</p>
+        <h3>Date ranges &amp; the Shares / Turnover lens</h3>
+        <p>Each tab carries a <b>Date Range</b> control mapped to the NEPSE trading calendar. Presets apply on
+          change; <b>Custom Range</b> applies on <b>Analyze</b>.</p>
+        <table class="sop-table">
+          <thead><tr><th>Preset</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Current Day</td><td>The latest session with data.</td></tr>
+            <tr><td>Last 1 Week / 1 Month / 3 Months / 1 Year</td><td>That many trailing <i>trading</i> sessions, merged.</td></tr>
+            <tr><td>Fiscal Year (Shrawan–Ashad)</td><td>Sessions since the Nepali fiscal-year start.</td></tr>
+            <tr><td>Custom Range</td><td>Every trading session between your Start and End dates.</td></tr>
+          </tbody>
+        </table>
+        <p>Where a tab offers a <b>Shares vs Turnover</b> view, it only changes what the ranking and % are
+          measured in: <b>Shares</b> = traded quantity; <b>Turnover</b> = rupee value (Σ amount). The
+          underlying rows are identical; only the sort key and the share denominator switch.</p>
+      </section>
+
+      <!-- 5 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="concepts">
+        <p class="sop-kicker">Section 5</p>
+        <h3>Core concepts used across tabs</h3>
+        <h4>Net position</h4>
+        <span class="sop-formula">net(broker, stock) = buy quantity − sell quantity     ( > 0 accumulating · < 0 distributing )</span>
+        <p>When several brokers are selected, their flow is <b>pooled</b> (quantities summed per stock) so the
+          tables show the combined desk.</p>
+        <h4>HHI — Herfindahl–Hirschman concentration</h4>
+        <span class="sop-formula">shareᵢ = brokerᵢ's traded qty in the stock ÷ all brokers' traded qty
+HHI    = Σ shareᵢ² × 10,000        ( 0 = fully fragmented … 10,000 = one broker is the whole stock )</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Low</b><span>HHI &lt; 1,500</span></div>
+          <div class="sop-fact"><b>Moderate</b><span>1,500 – 2,500</span></div>
+          <div class="sop-fact"><b>High</b><span>&gt; 2,500</span></div>
+        </div>
+        <p>Bands follow the DOJ/FTC merger-guideline thresholds, so “high” is a recognised market-structure
+          read, not an invented one. High HHI means a stock's trading is controlled by very few brokers.</p>
+        <h4>Matching &amp; churn (two-sided flow)</h4>
+        <span class="sop-formula">matching amount = min( buy amount , sell amount )
+matching %      = 2 × min(buy, sell) ÷ (buy + sell) × 100      ( 100 = perfectly balanced two-siding )
+churn %         = 2 × min(buyQ, sellQ) ÷ (buyQ + sellQ) × 100   ( same idea, on quantity )</span>
+        <p>A high matching/churn % means the broker both bought and sold the name heavily — market-making or
+          position-recycling rather than a one-directional bet.</p>
+      </section>
+
+      <!-- 6 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="flowradar">
+        <p class="sop-kicker">Section 6 · Tab</p>
+        <h3><span class="sop-tab-name">Broker Flow Radar</span></h3>
+        <p>Ranks <b>every broker in the market</b> by activity and directional pressure over the selected
+          window. One row per broker, sorted by total rupee activity (biggest desks first).</p>
+        <table class="sop-table">
+          <thead><tr><th>Column</th><th>Formula / meaning</th></tr></thead>
+          <tbody>
+            <tr><td><b>Buy / Sell Qty</b></td><td>Σ shares the broker bought / sold across the window.</td></tr>
+            <tr><td><b>Buy / Sell Amount</b></td><td>Σ rupee value bought / sold.</td></tr>
+            <tr><td><b>Total activity</b></td><td>buy amount + sell amount (the ranking key — gross footprint).</td></tr>
+            <tr><td><b>Difference</b></td><td>buy amount − sell amount (net rupee direction).</td></tr>
+            <tr><td><b>Matching</b></td><td>min(buy, sell) amount, and matching % = 2·min/(buy+sell)·100 — two-sided flow.</td></tr>
+            <tr><td><b>Bias %</b></td><td>(buy − sell) ÷ (buy + sell) × 100 — normalised tilt, −100 (all sell) … +100 (all buy).</td></tr>
+            <tr><td><b>Stance</b></td><td><span class="tag-buy">Accumulating</span> if bias ≥ +10%, <span class="tag-sell">Distributing</span> if ≤ −10%, else Balanced.</td></tr>
+          </tbody>
+        </table>
+        <p><b>Interpretation.</b> Big total activity + strongly positive bias = a large desk leaning to buy;
+          high matching % on a big total = a market-maker recycling inventory rather than taking a side.</p>
+      </section>
+
+      <!-- 6.1 ───────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="adradar">
+        <p class="sop-kicker">Section 6.1</p>
+        <h3>A/D Radar — stock-first Accumulation / Distribution</h3>
+        <p>Every other tab is <b>broker-first</b>: pick a broker, see what it traded. This one is
+          <b>stock-first</b>: for each scrip, is someone building a position or unloading one? It is also the
+          only metric on this desk that is <b>backtested</b> rather than purely descriptive, so it is
+          documented to a higher standard — including what it cannot do.</p>
+        <div class="sop-note">This section is the summary. The full methodology — backtest design, the
+          features that were tested and <b>rejected</b>, robustness checks and blind spots — has its own
+          document: <a href="{% url 'accumulation_sop' %}" target="_blank" rel="noopener">A/D Radar SOP</a>.</div>
+
+        <h4>The score</h4>
+        <p>Three features, each z-scored across every scored scrip in the same window (so the reading is
+          “relative to the rest of the market right now”, not against a fixed threshold that would drift):</p>
+        <table class="sop-table">
+          <thead><tr><th>Feature</th><th>Definition</th><th>Sign</th><th>Measured effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>absorb</code></td><td>Top-5 net buyers' net quantity ÷ total window volume</td><td>+</td><td>+57 bps per SD (t = 4.22)</td></tr>
+            <tr><td><code>sell_hhi</code></td><td>Herfindahl concentration of the selling side</td><td>−</td><td>−34 bps per SD (t = −5.55)</td></tr>
+            <tr><td><code>top1_share</code></td><td>Share of net buying done by the single largest broker</td><td>−</td><td>−47 bps per SD (t = −2.23)</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-formula">score = z(absorb) − z(top1_share) − z(sell_hhi)</p>
+        <p>The two negative signs are the important part. <b>Concentrated selling</b> is the most statistically
+          reliable feature on the whole desk — a seller with size has to keep hitting bids and cannot hide it,
+          whereas a patient accumulator genuinely can spread buying across brokers and days. And conditional on
+          how much is being absorbed, <b>buying concentrated in one broker scores worse</b> than the same
+          buying spread across several: real campaigns run through multiple brokers.</p>
+
+        <h4>Bands</h4>
+        <p>Percentile of the cross-section, cut into quintiles to match how the backtest was measured:
+          top 20% <b>Accumulation</b>, next 20% Mild Accumulation, middle 20% <b>Neutral</b>, then Mild
+          Distribution and <b>Distribution</b>. A neutral reading is a real answer — no side is controlling the
+          scrip — not a missing one.</p>
+
+        <h4>Universe</h4>
+        <p>Ordinary equities only, priced ≥ Rs 50, trading ≥ 800 shares/session over the window.
+          <b>Debentures, mutual funds and promoter shares are excluded</b>: they change hands through one or
+          two brokers, so every concentration measure pins at its extreme and would swamp both tails. Promoter
+          scrips carry their parent's sector (CZBILP reads as “Commercial Banks”), so they are caught by symbol
+          suffix rather than sector. The count of exclusions is printed under the table on every scan.</p>
+
+        <h4>Backtest</h4>
+        <p>3.5 years of floorsheet (2023-01-01 → 2026-08-11; 819 sessions; 9.76 M broker-day-stock cells).
+          Features use only data up to the anchor date, forward returns start the day after. Returns are
+          <b>adjusted for bonus/rights</b> — raw NEPSE closes book a 10–15% bonus ex-date as a crash — and
+          measured as <b>excess over the cross-sectional median of the same date</b>, so a rising market cannot
+          make a worthless signal look predictive. Only non-overlapping windows are reported.</p>
+        <table class="sop-table">
+          <thead><tr><th>Horizon</th><th>Bottom quintile</th><th>Top quintile</th><th>Spread</th><th>t-stat</th></tr></thead>
+          <tbody>
+            <tr><td>20 sessions</td><td>+0.18%</td><td>+0.94%</td><td>+0.76%</td><td>—</td></tr>
+            <tr><td>60 sessions</td><td>−0.75%</td><td>+3.60%</td><td>+4.34%</td><td>1.96</td></tr>
+            <tr><td><b>120 sessions</b></td><td>−0.91%</td><td>+5.39%</td><td><b>+6.30%</b></td><td><b>2.24</b></td></tr>
+          </tbody>
+        </table>
+        <p>Positive in all four years at the 120-session horizon (2023 +6.8%, 2024 +9.2%, 2025 +2.7%,
+          2026 +3.2%), and it is not a penny-stock artifact — the spread is largest in the most expensive
+          price tercile (+8.0%).</p>
+
+        <h4>How to read it — and how not to</h4>
+        <ul>
+          <li><b>It is a 3–6 month positioning screen.</b> At 20 sessions the edge (~0.8%) does not clear the
+            ~0.6% round trip. Traded weekly it will lose money.</li>
+          <li><b>Hit rate is ~53%.</b> The edge is in the average across many names, not in any single call.
+            Roughly half of top-quintile scrips still underperform.</li>
+          <li><b>2025 was weak</b> (+2.7%). It can go quiet for a year at a time.</li>
+          <li><b>It is a screen, not a signal</b> — it tells you where to look, not what to buy.</li>
+        </ul>
+
+        <h4>Blind spot</h4>
+        <p>Shares moved <b>off-market</b> — DP/BOD transfers, pledges, private deals — never print on the
+          floorsheet. A campaign conducted that way is completely invisible here, and no public data source
+          closes that gap. A “Neutral” reading means <i>no on-market campaign was detected</i>, which is not
+          the same as “nothing is happening”.</p>
+      </section>
+
+      <!-- 7 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="analysis">
+        <p class="sop-kicker">Section 7 · Tab</p>
+        <h3><span class="sop-tab-name">Broker Analysis</span></h3>
+        <p>Everything the <b>selected broker(s)</b> did over the window: a headline KPI strip, their favourite
+          buys and sells, and a multi-session persistence read. Multiple brokers pool into one combined desk.</p>
+
+        <h4 id="analysis-kpis">7.1 KPI strip</h4>
+        <table class="sop-table">
+          <thead><tr><th>Tile</th><th>Formula</th></tr></thead>
+          <tbody>
+            <tr><td><b>Buy / Sell Turnover</b></td><td>Σ rupee value the desk bought / sold, and how many stocks each side touched.</td></tr>
+            <tr><td><b>Net Flow</b></td><td>buy turnover − sell turnover (positive = net accumulating).</td></tr>
+            <tr><td><b>Stocks Touched</b></td><td>Distinct symbols on the buy side ∪ sell side.</td></tr>
+            <tr><td><b>Top Concentration</b></td><td>The desk's single largest position weight (a stock's share of the desk's buy or sell), with that ticker + side.</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="analysis-topbuysell">7.2 Top Buy / Top Sell</h4>
+        <p>The desk's largest stocks by traded volume on each side (top 10). For each: quantity, rupee amount,
+          average price (amount ÷ quantity), and <b>% weight</b> — the stock's share of the desk's total on
+          that side, measured in shares or turnover per the current view.</p>
+
+        <h4 id="analysis-persistence">7.3 Persistent Accumulation / Distribution</h4>
+        <p>A multi-session lens (own lookback: 1 week / 1 month / 3 months, floored at 1 week). It walks every
+          session in the window newest-first and, per stock, reports:</p>
+        <table class="sop-table">
+          <thead><tr><th>Field</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td><b>Streak</b></td><td>Consecutive most-recent sessions the desk stayed on one side; breaks on a flat or opposite session. The current conviction run.</td></tr>
+            <tr><td><b>Side</b></td><td><span class="tag-buy">Accumulating</span> / <span class="tag-sell">Distributing</span> / flat — the direction of that current run.</td></tr>
+            <tr><td><b>Net Qty (cum_net)</b></td><td>Net shares (buy − sell) the desk accumulated across the whole window.</td></tr>
+            <tr><td><b>Conc. (HHI)</b></td><td><a href="#concepts">HHI</a> of <i>all-broker</i> trading in that stock over the window — a market-structure read on the same names, with a low/moderate/high band.</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-note">Streak and Net Qty are broker-specific (only broker-tagged floorsheet makes them
+          computable); HHI is market-wide. Both are factual — no “smart money”/“success” labelling.</p>
+      </section>
+
+      <!-- 8 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="signals">
+        <p class="sop-kicker">Section 8 · Tab</p>
+        <h3><span class="sop-tab-name">Signal Desk</span></h3>
+        <p>Four research signals for the selected desk, all from one window pass. Each is a factual roll-up,
+          never a prediction.</p>
+        <table class="sop-table">
+          <thead><tr><th>Signal</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td><b>Price–Flow Divergence</b></td><td>The desk's net flow disagrees with the stock's price move over the window: net-buying while price <b>fell</b> (<i>accum-weak</i>), or net-selling into a <b>rising</b> price (<i>distrib-strong</i>). Ranked by absolute net.</td></tr>
+            <tr><td><b>Sector Rotation</b></td><td>The desk's net quantity (buy − sell) rolled up by sector — where it is adding vs trimming exposure. Ranked by absolute net.</td></tr>
+            <tr><td><b>Buyer / Seller Breadth</b></td><td>Market-wide: the count of distinct brokers net-buying vs net-selling each stock (consensus vs disagreement). Complements HHI.</td></tr>
+            <tr><td><b>Two-Sided Activity</b></td><td>Stocks the desk both bought and sold heavily. churn = 2·min/(buy+sell)·100; shown only when churn ≥ 33 (at least a 1:2 split), ranked by the genuinely two-sided volume (the smaller side).</td></tr>
+          </tbody>
+        </table>
+        <p>Divergence uses the window's first-to-last <b>close change</b> from the local price table alongside
+          the broker net; every other signal is pure floorsheet.</p>
+      </section>
+
+      <!-- 9 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="stockwise">
+        <p class="sop-kicker">Section 9 · Tab</p>
+        <h3><span class="sop-tab-name">Script Deep Dive</span></h3>
+        <p>For <b>one chosen stock</b>, the brokers most active in it over the window (top 10 each):</p>
+        <table class="sop-table">
+          <thead><tr><th>Table</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td><b>Top Buy / Top Sell</b></td><td>Brokers ranked by shares (or turnover) bought / sold in the stock, with quantity, amount, average price and % of the stock's total trading.</td></tr>
+            <tr><td><b>Top Holdings</b></td><td>Brokers with a positive net position (buy qty − sell qty &gt; 0) in the stock, with net amount and their average buy / sell price. A proxy for who <i>accumulated</i> the name over the window.</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-note">“Holdings” here is net accumulation over the selected window, not a custodial
+          holding — the floorsheet shows trades, not depository balances.</p>
+      </section>
+
+      <!-- 10 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="heatmap">
+        <p class="sop-kicker">Section 10 · Tab</p>
+        <h3><span class="sop-tab-name">Market Heatmap</span> — Hot Stocks</h3>
+        <p>The most-active stocks over the window (top 50), rankable by shares or turnover and filterable by
+          sector:</p>
+        <table class="sop-table">
+          <thead><tr><th>Column</th><th>Formula</th></tr></thead>
+          <tbody>
+            <tr><td><b>Quantity</b></td><td>Total shares traded in the stock (buy side = sell side).</td></tr>
+            <tr><td><b>Amount</b></td><td>Total rupee turnover.</td></tr>
+            <tr><td><b>Avg price</b></td><td>amount ÷ quantity.</td></tr>
+            <tr><td><b>Buyers / Sellers</b></td><td>Count of distinct brokers active on each side.</td></tr>
+            <tr><td><b>Top buy / Top sell</b></td><td>The single most-active broker on each side and its % of the stock's volume.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 11 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="netposition">
+        <p class="sop-kicker">Section 11 · Tab</p>
+        <h3><span class="sop-tab-name">Net Position Analytics</span></h3>
+        <p>A treemap of the selected desk's <b>net position per stock</b> over the window:</p>
+        <span class="sop-formula">net(stock) = Σ buy qty − Σ sell qty   (pooled over the selected brokers)
+tile size  = |net|          tile colour = buy (net > 0) / sell (net < 0)</span>
+        <p>Bigger tiles = larger net positions; green = net bought, red = net sold. <b>Exclude Mutual Funds</b>
+          drops close-ended funds (identified by the authoritative “Mutual Fund” sector, with a symbol-suffix
+          fallback), and a sector filter narrows the universe. Stocks with zero net are omitted.</p>
+      </section>
+
+      <!-- 12 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="exposure">
+        <p class="sop-kicker">Section 12 · Tab</p>
+        <h3><span class="sop-tab-name">Broker Exposure Monitor</span></h3>
+        <p>Per-stock <b>top-3 broker concentration</b> on each side — how dominated a stock's trading is:</p>
+        <span class="sop-formula">broker % = broker's traded shares in the stock ÷ the stock's total traded shares × 100
+buy_sum / sell_sum = the top-3 brokers' combined % on that side</span>
+        <p>One row per stock (sorted by total trading), showing the three biggest buyers and sellers with their
+          percentages. A high top-3 sum means a few brokers drive that side — the same signal HHI gives, read
+          name-by-name. A sector filter narrows the list.</p>
+      </section>
+
+      <!-- 13 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="limitations">
+        <p class="sop-kicker">Section 13 · Appendix</p>
+        <h3>Interpretation guide &amp; limitations</h3>
+        <ul>
+          <li><b>Descriptive, not predictive.</b> Every figure summarises trades that already happened. A broker
+            accumulating a name is not a “buy” recommendation, and the desk never scores brokers as right/wrong.</li>
+          <li><b>End-of-session only.</b> No intraday view; the newest data is the last synced session.</li>
+          <li><b>Broker ≠ beneficial owner.</b> One broker executes for many clients; flow is the firm's, not a
+            single investor's. Big two-sided (high churn) desks are often market-makers, not directional bets.</li>
+          <li><b>Net position ≠ custody.</b> “Holdings” and net figures are trade-derived over the window, not
+            depository balances.</li>
+          <li><b>Windows merge sessions.</b> A wider range pools more sessions; a name quiet lately can still rank
+            on a long window from earlier activity.</li>
+          <li><b>Mutual-fund exclusion is best-effort.</b> Keyed on the “Mutual Fund” sector, with a symbol-suffix
+            fallback for blank-sector rows.</li>
+          <li><b>Not investment advice.</b> The desk is a monitoring tool over public floorsheet data.</li>
+        </ul>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function sync() {
+      if (!btn) return;
+      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = light ? 'Dark' : 'Light';
+    }
+    sync();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      sync();
+    });
+  })();
+</script>
+</body>
+</html>

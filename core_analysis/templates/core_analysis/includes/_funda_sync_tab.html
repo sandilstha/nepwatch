@@ -1,0 +1,526 @@
+{% comment %}
+  Fundamentals Sync — pull a company's latest published report from
+  funda.aurasrp.com.np into the system (snapshot + FinancialStatement) and show
+  a history of recent syncs. Self-contained: reuses the /stock/api/funda/*
+  endpoints, so no dashboard-context wiring is needed.
+{% endcomment %}
+<div class="funda-sync-section mb-4">
+  <div class="funda-sync">
+    <div class="funda-sync-head">
+      <h2>Fundamentals Sync</h2>
+      <p>Pick a sector to pull its companies' latest published quarters from
+         <code>funda.aurasrp.com.np</code>. Tick specific companies to sync only those — leave them
+         all unticked and the whole sector runs. Each sync stores a snapshot and pushes the
+         statements into the Financial Statement, so the fundamentals desk, Morningstar and
+         Stock 360 update too.</p>
+      {% comment %}
+        The dropdown is built from the sectors that actually HAVE statement rows,
+        so Mutual Fund is absent by construction rather than by omission. Saying
+        so here stops it reading as a missing sector or a broken sync — funds
+        file no statements at all, and their equivalent is the NAV feed.
+      {% endcomment %}
+      <p class="funda-sync-note"><b>Mutual funds are not in this list, and should not be.</b>
+         A fund files no balance sheet or income statement — it has no revenue or ROE — so
+         there is nothing here to pull for one. Their equivalent is NAV and discount to NAV:
+         use <b>Sync Fund NAV</b> in the toolbar above. Debentures and preference shares are
+         absent for the same reason.</p>
+    </div>
+
+    {# Primary: whole-sector sync — the client loops symbol-by-symbol with progress. #}
+    <div class="funda-sector-row">
+      <select id="fundaSectorSel" class="funda-sector-sel" aria-label="Sector">
+        <option value="">Loading sectors…</option>
+      </select>
+      <button type="button" class="funda-sync-btn" id="fundaSectorBtn">⟳ Sync sector</button>
+      <button type="button" class="funda-stop-btn" id="fundaSectorStop" hidden>■ Stop</button>
+    </div>
+    <div class="funda-progress" id="fundaProgress" hidden>
+      <div class="funda-progress-bar"><span id="fundaProgressFill"></span></div>
+      <div class="funda-progress-txt" id="fundaProgressTxt"></div>
+    </div>
+
+    {% comment %}
+      Company filter — appears once a sector is chosen. Selecting nothing means
+      the whole sector, so the common case needs no extra interaction.
+    {% endcomment %}
+    <div class="funda-co" id="fundaCoWrap" hidden>
+      <div class="funda-co-head">
+        <input type="text" id="fundaCoSearch" class="funda-co-search" autocomplete="off"
+               placeholder="Filter companies… (leave all unticked to sync the whole sector)"
+               aria-label="Filter companies in this sector">
+        <span class="funda-co-count" id="fundaCoCount"></span>
+        <button type="button" class="funda-co-link" id="fundaCoAll">Select all</button>
+        <button type="button" class="funda-co-link" id="fundaCoNone">Clear</button>
+        <label class="funda-co-toggle" title="Off: companies already synced are skipped. Ticking a company always re-syncs it.">
+          <input type="checkbox" id="fundaCoRedo"> re-sync already synced
+        </label>
+      </div>
+      <div class="funda-co-list" id="fundaCoList" role="group" aria-label="Companies"></div>
+    </div>
+    <div class="funda-one-msg" id="fundaOneMsg" hidden></div>
+
+    <div class="funda-recent">
+      <div class="funda-recent-head">
+        <h3>Recently synced <span class="funda-recent-note" id="fundaRecentNote">latest 5</span></h3>
+        <button type="button" class="funda-refresh" id="fundaRefresh" title="Refresh list">↻ Refresh</button>
+      </div>
+      {% comment %}
+        One filter per column, sitting directly under the header it acts on.
+        Every control queries the SERVER, not the rows already rendered — the
+        table holds one row per synced company while the page shows only the
+        newest few, so a client-side filter would search almost nothing and
+        report "no match" for records that plainly exist. Leaving every control
+        empty restores the plain "latest 5" glance.
+      {% endcomment %}
+      <div class="funda-table-wrap">
+        <table class="funda-table">
+          <thead>
+            <tr>
+              <th>Symbol</th><th>Company</th><th>Sector</th>
+              <th>Period</th><th>FS items</th><th>Synced</th>
+            </tr>
+            <tr class="funda-frow">
+              <th><input type="text" id="fundaFsymbol" class="funda-fin" autocomplete="off"
+                         placeholder="e.g. NABIL" aria-label="Filter by symbol"></th>
+              <th><input type="text" id="fundaFcompany" class="funda-fin" autocomplete="off"
+                         placeholder="name contains…" aria-label="Filter by company name"></th>
+              <th><select id="fundaFsector" class="funda-fin" aria-label="Filter by sector">
+                    <option value="">All</option></select></th>
+              <th><select id="fundaFperiod" class="funda-fin" aria-label="Filter by period">
+                    <option value="">All</option></select></th>
+              <th><input type="number" id="fundaFfs" class="funda-fin" min="0" step="1"
+                         placeholder="min" aria-label="Minimum FS items"></th>
+              <th class="funda-fth-last">
+                <select id="fundaFwithin" class="funda-fin" aria-label="Filter by when it was synced">
+                  <option value="">Any time</option>
+                  <option value="1">Last hour</option>
+                  <option value="24">Last 24 hours</option>
+                  <option value="168">Last 7 days</option>
+                  <option value="720">Last 30 days</option>
+                </select>
+                <button type="button" class="funda-fclear" id="fundaFclear" hidden
+                        title="Clear all column filters">✕</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="fundaRecentBody"><tr><td colspan="6" class="funda-empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .funda-sync{max-width:900px}
+  .funda-sync-head h2{font-size:20px;font-weight:800;margin:0 0 4px}
+  .funda-sync-head p{font-size:13px;color:var(--ink-2,#6b7684);margin:0 0 16px;line-height:1.5}
+  .funda-sync-head code{font-size:12px;background:rgba(128,128,128,.14);padding:1px 6px;border-radius:5px}
+  /* An aside, not body copy: it explains an ABSENCE, so it must not read as
+     another instruction. Left rule + muted tone sets it apart from the para
+     above without shouting like a warning. */
+  .funda-sync-head p.funda-sync-note{
+    border-left:3px solid rgba(128,128,128,.34);
+    padding:2px 0 2px 11px; margin:-6px 0 16px; font-size:12.5px;}
+  .funda-sector-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .funda-sector-sel{flex:1;min-width:220px;max-width:340px;padding:10px 13px;font-size:14px;
+    border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:9px;background:var(--bg-raised,#fff);color:inherit}
+  .funda-stop-btn{font:inherit;font-size:13px;font-weight:800;cursor:pointer;color:#d24b3a;
+    background:transparent;border:1px solid #d24b3a;border-radius:9px;padding:10px 15px}
+  .funda-progress{margin:0 0 14px;max-width:480px}
+  .funda-progress-bar{height:8px;border-radius:6px;background:rgba(128,128,128,.15);overflow:hidden}
+  .funda-progress-bar span{display:block;height:100%;width:0;border-radius:6px;
+    background:linear-gradient(90deg,#5b8def,#8f6ef0);transition:width .25s}
+  .funda-progress-txt{font-size:12px;font-weight:600;color:var(--ink-2,#6b7684);margin-top:5px}
+  .funda-sync-btn{font:inherit;font-size:13px;font-weight:800;cursor:pointer;color:#fff;
+    background:linear-gradient(135deg,#5b8def,#8f6ef0);border:0;border-radius:9px;padding:10px 18px;white-space:nowrap}
+  .funda-sync-btn:hover{filter:brightness(1.08)} .funda-sync-btn:disabled{opacity:.6;cursor:default}
+  /* company filter inside the sector flow */
+  .funda-co{max-width:640px;margin:0 0 12px;border:1px solid var(--line,rgba(128,128,128,.2));border-radius:10px;overflow:hidden}
+  .funda-co-head{display:flex;align-items:center;gap:8px;padding:8px 10px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line,rgba(128,128,128,.15));background:rgba(128,128,128,.05)}
+  .funda-co-search{flex:1;min-width:190px;padding:7px 11px;font:inherit;font-size:13px;
+    border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:8px;background:var(--bg-raised,#fff);color:inherit}
+  .funda-co-count{font-size:12px;font-weight:700;color:var(--ink-2,#6b7684);white-space:nowrap}
+  .funda-co-link{font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:transparent;
+    border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:7px;padding:5px 10px;color:inherit}
+  .funda-co-link:hover{filter:brightness(1.1)}
+  .funda-co-list{max-height:230px;overflow-y:auto;padding:4px}
+  .funda-co-opt{display:flex;align-items:baseline;gap:8px;padding:6px 9px;border-radius:7px;cursor:pointer;font-size:13px}
+  .funda-co-opt:hover{background:rgba(128,128,128,.10)}
+  .funda-co-opt input{cursor:pointer;margin:0;flex:0 0 auto;align-self:center}
+  .funda-co-opt b{font-weight:800;flex:0 0 auto}
+  .funda-co-opt span{color:var(--ink-2,#6b7684);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .funda-co-empty{padding:10px;font-size:12px;color:var(--ink-3,#8b96a3);text-align:center}
+  .funda-co-toggle{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+    color:var(--ink-2,#6b7684);cursor:pointer;white-space:nowrap}
+  .funda-co-toggle input{cursor:pointer;margin:0}
+  .funda-co-done{margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;
+    background:rgba(31,174,126,.14);color:#1a8f68;white-space:nowrap}
+  .funda-one-msg{max-width:640px;margin:0 0 14px;padding:9px 12px;border-radius:9px;font-size:13px;line-height:1.45;
+    border:1px solid var(--line,rgba(128,128,128,.2));background:rgba(128,128,128,.07)}
+  .funda-one-msg.ok{border-color:rgba(31,174,126,.45);background:rgba(31,174,126,.10)}
+  .funda-one-msg.err{border-color:rgba(210,75,58,.45);background:rgba(210,75,58,.10)}
+  .funda-recent-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .funda-recent-head h3{font-size:15px;font-weight:800;margin:0}
+  .funda-recent-note{font-size:11px;font-weight:600;color:var(--ink-2,#6b7684);margin-left:6px}
+  .funda-refresh{margin-left:auto;font:inherit;font-size:12px;font-weight:700;cursor:pointer;
+    background:transparent;border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:7px;padding:5px 11px;color:inherit}
+  /* per-column filter row */
+  .funda-frow th{padding:6px 8px;background:rgba(128,128,128,.05);
+    border-bottom:1px solid var(--line,rgba(128,128,128,.2))}
+  .funda-fin{width:100%;min-width:0;padding:5px 8px;font:inherit;font-size:12px;font-weight:500;
+    border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:6px;
+    background:var(--bg-raised,#fff);color:inherit}
+  .funda-fin::placeholder{font-weight:400;opacity:.65}
+  .funda-fin:focus{outline:none;border-color:#5b8def}
+  /* Synced column shares its cell with the clear button, so the select needs a
+     floor or it collapses and clips its own labels ("Any tin…"). */
+  .funda-fth-last{display:flex;gap:6px;align-items:center;white-space:nowrap}
+  .funda-fth-last .funda-fin{min-width:104px}
+  .funda-fclear{flex:0 0 auto;font:inherit;font-size:12px;font-weight:800;cursor:pointer;line-height:1;
+    color:#d24b3a;background:transparent;border:1px solid rgba(210,75,58,.5);border-radius:6px;padding:5px 8px}
+  .funda-fclear:hover{background:rgba(210,75,58,.10)}
+  .funda-table-wrap{overflow-x:auto;border:1px solid var(--line,rgba(128,128,128,.2));border-radius:10px}
+  .funda-table{width:100%;border-collapse:collapse;font-size:13px}
+  .funda-table th,.funda-table td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line,rgba(128,128,128,.15))}
+  .funda-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2,#6b7684);font-weight:700}
+  .funda-table tbody tr:last-child td{border-bottom:none}
+  .funda-table .sym{font-weight:800}
+  .funda-empty{color:var(--ink-3,#8b96a3);text-align:center}
+</style>
+
+<script>
+(function(){
+  var root = document.querySelector('.funda-sync-section');
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = '1';
+  var body = document.getElementById('fundaRecentBody'),
+      refresh = document.getElementById('fundaRefresh');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function ago(iso){
+    if(!iso) return '—';
+    var t = Date.parse(iso); if(isNaN(t)) return '—';
+    var s = Math.max(0,(Date.now()-t)/1000);
+    if(s<60) return 'just now';
+    if(s<3600) return Math.floor(s/60)+'m ago';
+    if(s<86400) return Math.floor(s/3600)+'h ago';
+    return Math.floor(s/86400)+'d ago';
+  }
+  function getJSON(u){ return fetch(u,{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){ return r.json(); }); }
+  function csrfToken(){
+    var m = document.cookie.match('(?:^|; )csrftoken=([^;]*)');
+    if (m) return decodeURIComponent(m[1]);
+    var inp = document.querySelector('input[name=csrfmiddlewaretoken]');   // cookie may be HttpOnly
+    return inp ? inp.value : '';
+  }
+  /* The sync endpoint is a write, so it is POST + CSRF like every other write
+     on this dashboard; the symbol still travels in the query string. */
+  function postJSON(u){
+    return fetch(u,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':csrfToken()}})
+      .then(function(r){ return r.json(); });
+  }
+
+  /* ── History filter ───────────────────────────────────────────────────
+     Every query goes to the server. The table stores one row per synced
+     company, so filtering the five rows already rendered would search a
+     fraction of the data and quietly report "no match" for records that
+     exist. Empty controls = the original latest-5 glance. ── */
+  // One control per column; `key` is the query parameter it maps to.
+  var FILTERS = [
+    {key:'symbol',  el:document.getElementById('fundaFsymbol'),  typed:true},
+    {key:'company', el:document.getElementById('fundaFcompany'), typed:true},
+    {key:'sector',  el:document.getElementById('fundaFsector')},
+    {key:'period',  el:document.getElementById('fundaFperiod')},
+    {key:'fs_min',  el:document.getElementById('fundaFfs'),      typed:true},
+    {key:'within',  el:document.getElementById('fundaFwithin')}
+  ];
+  var fsector = document.getElementById('fundaFsector'),
+      fperiod = document.getElementById('fundaFperiod'),
+      fclear = document.getElementById('fundaFclear'),
+      fnote = document.getElementById('fundaRecentNote');
+  var facetsReady = false, fqTimer = null;
+
+  function fillFacets(d){
+    // Options come from what has actually been synced, so the filter can never
+    // offer a value that returns nothing. Only built once.
+    if(facetsReady || !d) return;
+    function opts(sel, values, label){
+      if(!sel || !values) return;
+      sel.innerHTML = '<option value="">'+label+'</option>' +
+        values.map(function(v){ return '<option value="'+esc(v)+'">'+esc(v)+'</option>'; }).join('');
+    }
+    opts(fsector, d.sectors, 'All');
+    opts(fperiod, d.periods, 'All');
+    facetsReady = true;
+  }
+
+  function filterParams(){
+    var p = [];
+    FILTERS.forEach(function(f){
+      var v = f.el && f.el.value != null ? String(f.el.value).trim() : '';
+      if(v) p.push(f.key+'='+encodeURIComponent(v));
+    });
+    return p;
+  }
+
+  function loadRecent(){
+    var p = filterParams();
+    var active = p.length > 0;
+    if(fclear) fclear.hidden = !active;
+    getJSON('/stock/api/funda/recent/' + (p.length ? '?'+p.join('&') : '')).then(function(d){
+      fillFacets(d);
+      var rows = (d && d.results) || [];
+      // Say plainly how much of the table is on screen — a capped list that
+      // looks complete is how a filter starts lying.
+      if(fnote){
+        if(!active){
+          fnote.textContent = 'latest ' + rows.length +
+            (d && d.grand_total ? ' of ' + d.grand_total : '');
+        } else if(d && d.total > rows.length){
+          fnote.textContent = 'showing ' + rows.length + ' of ' + d.total + ' matches';
+        } else {
+          fnote.textContent = (d && d.total || rows.length) + ' match' +
+            ((d && d.total) === 1 ? '' : 'es');
+        }
+      }
+      if(!rows.length){
+        body.innerHTML = '<tr><td colspan="6" class="funda-empty">' +
+          (active ? 'No synced record matches this filter.' : 'Nothing synced yet.') +
+          '</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map(function(r){
+        return '<tr><td class="sym">'+esc(r.symbol)+'</td><td>'+esc(r.security_name||'—')+'</td><td>'+
+          esc(r.sector||'—')+'</td><td>'+esc(r.period||'—')+'</td><td>'+(r.fs_written||0)+'</td><td>'+
+          esc(ago(r.synced_at))+'</td></tr>';
+      }).join('');
+    }).catch(function(){ body.innerHTML = '<tr><td colspan="6" class="funda-empty">Could not load history.</td></tr>'; });
+  }
+
+  FILTERS.forEach(function(f){
+    if(!f.el) return;
+    if(f.typed){
+      // Debounce typed columns: one request per pause, not per keystroke.
+      f.el.addEventListener('input', function(){
+        clearTimeout(fqTimer);
+        fqTimer = setTimeout(loadRecent, 250);
+      });
+    } else {
+      f.el.addEventListener('change', loadRecent);
+    }
+  });
+  if(fclear) fclear.addEventListener('click', function(){
+    FILTERS.forEach(function(f){ if(f.el) f.el.value = ''; });
+    loadRecent();
+  });
+
+  if(refresh) refresh.addEventListener('click', loadRecent);
+  loadRecent();
+
+  /* ── Sector sync: fetch the sector's symbol list, then sync one at a time
+     with a live progress bar. Client-driven loop = no long request to time out,
+     and Stop works instantly between symbols. ── */
+  var sel = document.getElementById('fundaSectorSel'),
+      sbtn = document.getElementById('fundaSectorBtn'),
+      stopBtn = document.getElementById('fundaSectorStop'),
+      prog = document.getElementById('fundaProgress'),
+      fill = document.getElementById('fundaProgressFill'),
+      ptxt = document.getElementById('fundaProgressTxt');
+  var running = false, stopFlag = false;
+
+  getJSON('/stock/api/funda/sector/').then(function(d){
+    var secs = (d && d.sectors) || [];
+    sel.innerHTML = '<option value="">Choose a sector…</option>' +
+      secs.map(function(s){ return '<option value="'+esc(s)+'">'+esc(s)+'</option>'; }).join('');
+  }).catch(function(){ sel.innerHTML = '<option value="">Could not load sectors</option>'; });
+
+  /* ── Company filter ───────────────────────────────────────────────────
+     Choosing a sector loads its companies. Ticking none means the whole
+     sector, so the default path needs no extra clicks; ticking some narrows
+     the run to exactly those. The list is fetched once per sector and cached,
+     and the same list is reused at sync time so the button never re-queries. ── */
+  var coWrap = document.getElementById('fundaCoWrap'),
+      coSearch = document.getElementById('fundaCoSearch'),
+      coList = document.getElementById('fundaCoList'),
+      coCount = document.getElementById('fundaCoCount'),
+      coAll = document.getElementById('fundaCoAll'),
+      coNone = document.getElementById('fundaCoNone'),
+      coRedo = document.getElementById('fundaCoRedo'),
+      msg = document.getElementById('fundaOneMsg');
+  var companies = [], chosen = {}, coCache = {};
+
+  function showMsg(text, kind){
+    msg.hidden = false;
+    msg.className = 'funda-one-msg' + (kind ? ' ' + kind : '');
+    msg.textContent = text;
+  }
+  function selectedSyms(){
+    return companies.filter(function(c){ return chosen[c.symbol]; })
+                    .map(function(c){ return c.symbol; });
+  }
+  // Ticked companies are always synced, even if already stored — an explicit
+  // pick is a deliberate refresh (a newly published quarter). An untouched bulk
+  // run only fills the gaps, unless "re-sync already synced" is on.
+  function plannedSyms(){
+    var picked = selectedSyms();
+    if (picked.length) return picked;
+    var redo = coRedo && coRedo.checked;
+    return companies.filter(function(c){ return redo || !c.synced; })
+                    .map(function(c){ return c.symbol; });
+  }
+  function syncBtnLabel(){
+    var n = selectedSyms().length;
+    if (n){ sbtn.textContent = '⟳ Sync ' + n + ' selected'; return; }
+    if (!companies.length){ sbtn.textContent = '⟳ Sync sector'; return; }
+    var todo = plannedSyms().length;
+    sbtn.textContent = todo ? '⟳ Sync ' + todo + (todo === companies.length ? '' : ' remaining')
+                            : '✓ All synced';
+  }
+  function drawCompanies(){
+    var q = (coSearch.value || '').trim().toUpperCase();
+    var shown = companies.filter(function(c){
+      return !q || c.symbol.toUpperCase().indexOf(q) > -1 ||
+             (c.name || '').toUpperCase().indexOf(q) > -1;
+    });
+    coList.innerHTML = shown.length
+      ? shown.map(function(c){
+          var badge = c.synced
+            ? '<em class="funda-co-done">synced'+(c.period ? ' · '+esc(c.period) : '')+'</em>' : '';
+          return '<label class="funda-co-opt"><input type="checkbox" data-s="'+esc(c.symbol)+'"'+
+                 (chosen[c.symbol] ? ' checked' : '')+'><b>'+esc(c.symbol)+'</b>'+
+                 '<span>'+esc(c.name || '')+'</span>'+badge+'</label>';
+        }).join('')
+      : '<div class="funda-co-empty">No company matches “'+esc(coSearch.value)+'”.</div>';
+    var n = selectedSyms().length;
+    var pending = companies.filter(function(c){ return !c.synced; }).length;
+    coCount.textContent = n ? n + ' selected'
+      : 'all ' + companies.length + (pending < companies.length ? ' · ' + pending + ' not synced' : '');
+    syncBtnLabel();
+  }
+  function loadCompanies(sector){
+    chosen = {};
+    coSearch.value = '';
+    if (!sector){ coWrap.hidden = true; companies = []; syncBtnLabel(); return; }
+    if (coCache[sector]){ companies = coCache[sector]; coWrap.hidden = false; drawCompanies(); return; }
+    coWrap.hidden = false;
+    coList.innerHTML = '<div class="funda-co-empty">Loading companies…</div>';
+    coCount.textContent = '';
+    getJSON('/stock/api/funda/sector/?sector='+encodeURIComponent(sector)).then(function(d){
+      if(!d || !d.ok){
+        companies = [];
+        coList.innerHTML = '<div class="funda-co-empty">'+esc((d && d.error) || 'Could not load companies.')+'</div>';
+        syncBtnLabel();
+        return;
+      }
+      // Older responses carried only `symbols`; tolerate both shapes.
+      companies = d.companies || (d.symbols || []).map(function(s){ return {symbol:s, name:''}; });
+      coCache[sector] = companies;
+      drawCompanies();
+    }).catch(function(){
+      companies = [];
+      coList.innerHTML = '<div class="funda-co-empty">Could not load companies.</div>';
+      syncBtnLabel();
+    });
+  }
+
+  sel.addEventListener('change', function(){
+    msg.hidden = true;
+    loadCompanies(this.value);
+  });
+  coSearch.addEventListener('input', drawCompanies);
+  coList.addEventListener('change', function(e){
+    var cb = e.target.closest('input[type=checkbox]');
+    if(!cb) return;
+    if(cb.checked) chosen[cb.dataset.s] = true; else delete chosen[cb.dataset.s];
+    var n = selectedSyms().length;
+    coCount.textContent = n ? n + ' selected' : 'all ' + companies.length;
+    syncBtnLabel();
+  });
+  if(coRedo) coRedo.addEventListener('change', drawCompanies);
+  coAll.addEventListener('click', function(){
+    // Only what the search currently shows, so "Select all" of a filtered list
+    // means that list and not the hidden remainder.
+    coList.querySelectorAll('input[type=checkbox]').forEach(function(cb){ chosen[cb.dataset.s] = true; });
+    drawCompanies();
+  });
+  coNone.addEventListener('click', function(){ chosen = {}; drawCompanies(); });
+
+  function setProgress(done, total, sym, okCount, failCount){
+    prog.hidden = false;
+    fill.style.width = total ? Math.round(100*done/total)+'%' : '0';
+    ptxt.textContent = done+'/'+total+(sym ? ' · '+sym : '')+
+      ' — ✓ '+okCount+' synced'+(failCount ? ' · ✗ '+failCount+' failed' : '');
+  }
+
+  function finishRun(total, okCount, fails, skipped){
+    var stopped = stopFlag;
+    running = false; stopFlag = false;
+    sbtn.disabled = false;
+    stopBtn.hidden = true;
+    var extra = fails.length ? ' · failed: '+fails.slice(0,5).join(', ')+(fails.length>5?'…':'') : '';
+    // Say what was skipped, so a short run never looks like a partial failure.
+    var skip = skipped ? ' · '+skipped+' already synced, skipped' : '';
+    ptxt.textContent = (stopped?'Stopped — ':'Done — ')+okCount+'/'+total+' companies synced'+skip+extra;
+    // Newly synced companies must stop counting as pending on the next run.
+    markSynced();
+    loadRecent();
+  }
+
+  // Refresh the stored/pending state from the server so badges and the button
+  // count reflect what just landed, without a page reload.
+  function markSynced(){
+    var sector = sel.value;
+    if(!sector) return;
+    delete coCache[sector];
+    getJSON('/stock/api/funda/sector/?sector='+encodeURIComponent(sector)).then(function(d){
+      if(!d || !d.ok) return;
+      companies = d.companies || companies;
+      coCache[sector] = companies;
+      drawCompanies();
+    }).catch(function(){ /* badges just stay as they were */ });
+  }
+
+  sbtn.addEventListener('click', function(){
+    var sector = sel.value;
+    if(!sector || running){ if(!sector) sel.focus(); return; }
+
+    // Nothing ticked = the whole sector minus what is already stored. The list is
+    // already loaded, so the run starts immediately rather than re-fetching it.
+    var syms = plannedSyms();
+    if(!companies.length){ showMsg('No companies loaded for '+sector+' yet.', 'err'); return; }
+    if(!syms.length){
+      showMsg('Every company in '+sector+' is already synced. Tick specific companies, '+
+              'or switch on “re-sync already synced”, to pull them again.', 'ok');
+      return;
+    }
+    var skipped = selectedSyms().length ? 0 : companies.length - syms.length;
+
+    msg.hidden = true;
+    running = true; stopFlag = false;
+    sbtn.disabled = true; sbtn.textContent = '⟳ Syncing…'; stopBtn.hidden = false;
+    prog.hidden = false; fill.style.width = '0';
+
+    var i = 0, okCount = 0, fails = [];
+    setProgress(0, syms.length, null, 0, 0);
+    (function next(){
+      if(stopFlag || i >= syms.length){ finishRun(syms.length, okCount, fails, skipped); return; }
+      var sym = syms[i++];
+      postJSON('/stock/api/funda/sync/?symbol='+encodeURIComponent(sym)).then(function(r){
+        if(r && r.ok) okCount++; else fails.push(sym);
+        setProgress(i, syms.length, sym, okCount, fails.length);
+        if(i % 10 === 0) loadRecent();          // keep the history table fresh mid-run
+        setTimeout(next, 150);                  // be gentle on the source
+      }).catch(function(){
+        fails.push(sym);
+        setProgress(i, syms.length, sym, okCount, fails.length);
+        setTimeout(next, 400);
+      });
+    })();
+  });
+
+  stopBtn.addEventListener('click', function(){ stopFlag = true; stopBtn.hidden = true; });
+
+})();
+</script>

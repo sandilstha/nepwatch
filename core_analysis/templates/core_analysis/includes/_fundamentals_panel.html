@@ -1,0 +1,35 @@
+{# Collapsible fundamentals side panel — syncs to the active desk's symbol.    #}
+{# Reads the read-only FinancialStatement feed via fundamental_data_api (AJAX). #}
+<aside id="fundaPanel" class="funda-panel is-collapsed" aria-label="Fundamentals">
+  <button type="button" id="fundaHandle" class="funda-handle" aria-expanded="false"
+          aria-controls="fundaBody" title="Fundamentals for the active symbol">
+    <span class="funda-handle-icon" aria-hidden="true">₹</span>
+    <span class="funda-handle-label">Fundamentals</span>
+  </button>
+
+  <div class="funda-body" id="fundaBody" role="region" aria-label="Company fundamentals">
+    <div class="funda-head">
+      <div class="funda-head-titles">
+        <span class="funda-title">Fundamentals</span>
+        <span id="fundaPeriod" class="funda-period"></span>
+      </div>
+      <div class="funda-head-actions">
+        <button type="button" id="fundaRefresh" class="funda-icon-btn" title="Refresh">⟳</button>
+        <button type="button" id="fundaClose" class="funda-icon-btn" title="Collapse" aria-label="Collapse">×</button>
+      </div>
+    </div>
+
+    <div class="funda-symbol-row">
+      <strong id="fundaSymbol" class="funda-symbol">—</strong>
+      <span id="fundaName" class="funda-name"></span>
+    </div>
+
+    <div id="fundaContent" class="funda-content">
+      <div class="funda-empty">Pick a symbol in a desk to see its fundamentals.</div>
+    </div>
+
+    <a id="fundaMore" class="funda-more" href="#" target="_blank" rel="noopener">
+      Open full analysis →
+    </a>
+  </div>
+</aside>

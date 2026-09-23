@@ -1,0 +1,437 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock 360 — {{ symbol }}</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('mi-theme');
+        if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  {# Design tokens first — this page does not load insights.css. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/tokens.css' %}?v={{ asset_version|default:1 }}">
+  {# GridStack 10.3.1, vendored under static/core_analysis/vendor/gridstack/ — no CDN, no jQuery. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/vendor/gridstack/gridstack.min.css' %}?v=10.3.1">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/stock360.css' %}?v={{ asset_version|default:1 }}">
+  {# The fundamentals desk blocks (cards, trend, statement matrix, Morningstar model) are hosted on this page and bring their own styling. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/fundamentals-desk.css' %}?v={{ asset_version|default:1 }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-inner">
+    {# Stock 360 is a standalone shell — it does not include _primary_nav, so it has to carry its own way back. #}
+    <a class="brand" href="{% url 'market_insights' %}" title="Back to Market Insights"><span class="dot">S</span>Stock&nbsp;360</a>
+    <a class="icon-btn home-btn" href="{% url 'market_insights' %}">← Home</a>
+    <a class="icon-btn" href="{% url 'stock360_sop' %}" target="_blank" rel="noopener"
+       title="Where every number on this page comes from" style="margin-left:auto">Methodology</a>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" type="button">◐ Theme</button>
+  </div>
+</header>
+
+<!-- section pills -->
+<nav class="pills" aria-label="Sections">
+  <div class="pills-inner" id="pills">
+    <button type="button" class="pill active" data-t="overview">Overview</button>
+    {% if fund_nav %}<button type="button" class="pill" data-t="fundnav">Fund NAV</button>{% endif %}
+    <button type="button" class="pill" data-t="tech">Technical</button>
+    <button type="button" class="pill" data-t="sop">SOP Signal</button>
+    <button type="button" class="pill" data-t="fund">Fundamentals</button>
+    <button type="button" class="pill" data-t="statements">Statements</button>
+    <button type="button" class="pill" data-t="ai">AI Narrative</button>
+    <button type="button" class="pill" data-t="flow">Floorsheet</button>
+  </div>
+</nav>
+
+{% if not quote %}
+  <div class="wrap"><div class="col"><div class="panel"><div class="pbody">
+    No price history found for <b>{{ symbol }}</b>. Try another symbol from the search box.
+  </div></div></div></div>
+{% else %}
+<div class="wrap">
+  <div class="col">
+
+    <!-- ① COMPANY HEADER + OVERVIEW CARDS (photo layout) -->
+    <section id="overview">
+      <div class="s360-title">
+        <div class="s360-name">
+          <h1>{{ quote.security_name }} <span class="sym">({{ symbol }})</span></h1>
+          <div class="s360-quote">
+            <span class="cur">NPR</span>
+            <span class="price num">{{ quote.close|floatformat:2 }}</span>
+            {% if quote.day_change_pct is not None %}
+              <span class="chg num {% if quote.day_change_pct >= 0 %}up{% else %}down{% endif %}">
+                {% if quote.day_change_pct >= 0 %}▲{% else %}▼{% endif %} {{ quote.day_change|floatformat:2 }} ({{ quote.day_change_pct|floatformat:2 }} %)
+              </span>
+            {% endif %}
+            {% if freshness %}
+              {# Freshness up front: a stale EOD store and a stock that simply did not trade look identical without it. #}
+              <span class="fresh-chip fc-{{ freshness.tone }}" title="{{ freshness.hint }}">{{ freshness.label }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {# Search sits with the company it changes, not in the chrome above it. #}
+        <form class="search s360-search" method="get" action="/stock/" onsubmit="return s360.go(event)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input id="symSearch" name="symbol" type="text" autocomplete="off" placeholder="Search symbol — e.g. NABIL" value="{{ symbol }}" aria-label="Search symbol">
+          <div class="ac" id="symAc"></div>
+        </form>
+        <button type="button" class="s360-btn s360-reset" id="s360LayoutReset"
+                title="Put every card back where it started">Reset layout</button>
+        {% if quote.pos_52w is not None %}
+        <div class="s360-52">
+          <div class="hl-vals num"><span class="lo">{{ quote.low_52w|floatformat:0 }}</span><span class="hi">{{ quote.high_52w|floatformat:0 }}</span></div>
+          <div class="hl-bar"><span class="mk" style="left:{{ quote.pos_52w }}%"></span></div>
+          <div class="hl-lab">52 Weeks H / L</div>
+        </div>
+        {% endif %}
+      </div>
+
+    </section>
+
+    {# ===== Bento grid: every card below is a GridStack tile. Drag by the header, resize by the edges. ===== #}
+    <div class="grid-stack" id="s360Grid">
+
+      <div class="grid-stack-item" gs-id="mkt" gs-x="0" gs-y="0" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="5">
+        <div class="grid-stack-item-content"><div class="card ocard">
+          <div class="oc-head card-header"><h3>Market</h3></div>
+          <dl class="kv" id="mktCard"><div class="kv-loading">Loading…</div></dl>
+        </div></div>
+      </div>
+
+      <div class="grid-stack-item" gs-id="ratio" gs-x="4" gs-y="0" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="5">
+        <div class="grid-stack-item-content"><div class="card ocard">
+          <div class="oc-head card-header"><h3>Key Ratios</h3></div>
+          <dl class="kv" id="ratioCard"><div class="kv-loading">Loading…</div></dl>
+        </div></div>
+      </div>
+
+      {# Dividend durability — hydrated from the stored statements #}
+      <div class="grid-stack-item" gs-id="div" gs-x="8" gs-y="0" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="5">
+        <div class="grid-stack-item-content"><div class="card ocard">
+          <div class="oc-head card-header"><h3>Dividend</h3><span class="oc-note" id="divPeriod"></span></div>
+          <div id="divCard"><div class="kv-loading">Loading…</div></div>
+        </div></div>
+      </div>
+
+    {% if fund_nav %}
+    {% comment %}
+      MUTUAL FUND NAV — renders for Mutual Fund symbols only. Funds file no
+      quarterly statements, so every ratio card above is structurally blank
+      for them. NAV is what a fund publishes instead, and for a closed-end
+      scheme the discount to NAV is the number that matters.
+    {% endcomment %}
+    <div class="grid-stack-item" gs-id="fundnav" gs-x="0" gs-y="8"  gs-w="12" gs-h="8"  gs-min-w="4" gs-min-h="4">
+        <div class="grid-stack-item-content"><section id="fundnav" class="panel card">
+      <div class="phead card-header"><h2>Fund NAV &amp; discount</h2>
+        {% if fund_nav.available and fund_nav.discount_pct is not None %}
+          <span class="desk-score sc-{{ fund_nav.discount_tone }}">
+            {% if fund_nav.discount_pct >= 0 %}+{% endif %}{{ fund_nav.discount_pct }}% to NAV</span>
+        {% endif %}
+        {% if fund_nav.fund_type %}<span class="oc-note">{{ fund_nav.fund_type }}</span>{% endif %}
+      </div>
+      <div class="pbody">
+        {% if not fund_nav.available %}
+          <div class="notice">
+            <b>{{ fund_nav.symbol }}</b> is a mutual fund, so it files no balance sheet or
+            income statement — the ratio cards above cannot populate for it, however often
+            the fundamentals sync runs. Its NAV has not been synced yet: run
+            <b>Sync Fund NAV</b> in the Raw Inventory Manager.
+          </div>
+        {% else %}
+          <div class="mgrid">
+            <div class="mcard">
+              <div class="k">NAV per unit</div>
+              <div class="v num">{{ fund_nav.nav_reference|floatformat:2|default:"—" }}</div>
+              <div class="sub">{{ fund_nav.nav_reference_label }}{% if fund_nav.nav_reference_when %} · {{ fund_nav.nav_reference_when }}{% endif %}</div>
+            </div>
+            {% if fund_nav.nav_weekly and fund_nav.nav %}
+            <div class="mcard">
+              <div class="k">Month-end NAV</div>
+              <div class="v num">{{ fund_nav.nav|floatformat:2 }}</div>
+              <div class="sub">{{ fund_nav.nav_period }}</div>
+            </div>
+            {% endif %}
+            <div class="mcard">
+              <div class="k">Market price</div>
+              <div class="v num">{{ quote.close|floatformat:2|default:"—" }}</div>
+              <div class="sub">Latest close on the exchange</div>
+            </div>
+            <div class="mcard">
+              <div class="k">Premium / discount</div>
+              <div class="v num {{ fund_nav.discount_tone }}">
+                {% if fund_nav.discount_pct is not None %}{% if fund_nav.discount_pct >= 0 %}+{% endif %}{{ fund_nav.discount_pct }}%{% else %}—{% endif %}</div>
+              <div class="sub">Close against the {{ fund_nav.nav_reference_label }}</div>
+            </div>
+            {% if fund_nav.fund_size %}
+            <div class="mcard">
+              <div class="k">Fund size</div>
+              <div class="v num">{{ fund_nav.fund_size|floatformat:0 }}</div>
+              <div class="sub">Rupees at issue</div>
+            </div>
+            {% endif %}
+            {% if fund_nav.maturity_date %}
+            <div class="mcard">
+              <div class="k">Maturity</div>
+              <div class="v num">{{ fund_nav.maturity_date|date:"Y-m-d" }}</div>
+              <div class="sub">{{ fund_nav.maturity_period|default:"scheme term" }}</div>
+            </div>
+            {% endif %}
+            {% if fund_nav.nav_daily %}
+            <div class="mcard">
+              <div class="k">Daily NAV</div>
+              <div class="v num">{{ fund_nav.nav_daily|floatformat:2 }}</div>
+              <div class="sub">{{ fund_nav.nav_daily_date|date:"Y-m-d" }} · open-end only</div>
+            </div>
+            {% endif %}
+          </div>
+
+          {% if fund_nav.is_matured %}
+          <div class="notice" style="margin-bottom:10px">
+            This scheme has <b>matured</b>. Its last published NAV is
+            {{ fund_nav.nav_reference_when }} — historical, not a current valuation.
+          </div>
+          {% endif %}
+          <div class="fresh">
+            A negative figure means the fund trades <b>below</b> NAV — the normal state for
+            Nepali closed-end schemes. The discount above is our own latest close against the
+            <b>{{ fund_nav.nav_reference_label }}</b>, the most recent the fund published.
+            Where a fund reports both, the weekly NAV is days old while the month-end one can
+            be four weeks stale, and dividing by the stale figure overstates the discount.
+            {% if fund_nav.source_discount_pct is not None %}
+              The publisher's own figure, from its price snapshot of
+              {{ fund_nav.source_close|floatformat:2 }}, was
+              {{ fund_nav.source_discount_pct|floatformat:2 }}%.
+            {% endif %}
+            NAV is reported per Nepali month, so it is a month-end reading, not a live one.
+          </div>
+        {% endif %}
+      </div>
+    </section></div>
+      </div>
+    {% endif %}
+
+      <!-- ③ FUNDAMENTALS + PRICE MOMENTUM (merged) -->
+      <div class="grid-stack-item" gs-id="fund" gs-x="0" gs-y="8"  gs-w="8"  gs-h="12" gs-min-w="4" gs-min-h="5">
+        <div class="grid-stack-item-content"><section id="fund" class="panel card">
+        <div class="phead card-header"><h2>Fundamental Analysis</h2>
+          <span class="desk-score sc-neu" id="fundScore">loading…</span>
+          <a class="link" href="{% url 'stock_valuation' symbol %}">Valuation &amp; model ↗</a></div>
+        <div class="pbody">
+          {% if perf %}
+          <div class="momentum">
+            <div class="eyebrow" style="margin-bottom:9px">Price Momentum · adjusted returns</div>
+            <div class="rets">
+              <div class="ret"><div class="k">1D</div>{% include 'core_analysis/includes/_s360_ret.html' with v=perf.returns.1D %}</div>
+              <div class="ret"><div class="k">1W</div>{% include 'core_analysis/includes/_s360_ret.html' with v=perf.returns.1W %}</div>
+              <div class="ret"><div class="k">1M</div>{% include 'core_analysis/includes/_s360_ret.html' with v=perf.returns.1M %}</div>
+              <div class="ret"><div class="k">3M</div>{% include 'core_analysis/includes/_s360_ret.html' with v=perf.returns.3M %}</div>
+              <div class="ret"><div class="k">YTD</div>{% include 'core_analysis/includes/_s360_ret.html' with v=perf.returns.YTD %}</div>
+              <div class="ret"><div class="k">1Y</div>{% include 'core_analysis/includes/_s360_ret.html' with v=perf.returns.1Y %}</div>
+            </div>
+            {% if perf.vol_annual is not None %}<div class="fresh" style="margin-top:8px">Annualised volatility {{ perf.vol_annual }}% · returns use the split/bonus-adjusted price series.</div>{% endif %}
+          </div>
+          <div class="momentum-sep"></div>
+          {% endif %}
+          <div id="fundBody"><div class="loading">Loading fundamentals…</div></div>
+
+          {# Hosts for the fundamentals desk module (fundamentals.js) — same markup contract the old standalone page used. #}
+          <div id="fa-status" class="fa-status fa-hidden"></div>
+          <div id="fa-content" class="fa-hidden">
+            <div class="fa-company fa-hidden">
+              <h1 id="fa-ticker">—</h1>
+              <span class="fa-name" id="fa-secname"></span>
+              <span class="fa-sector fa-hidden" id="fa-sector"></span>
+              <span class="fa-period" id="fa-periodlabel"></span>
+            </div>
+            <div class="fa-cards" id="fa-cards"></div>
+          </div>
+        </div>
+      </section></div>
+      </div>
+    <!-- ⑤ FINANCIAL STATEMENTS — newest 5 reported quarters by default; the
+         period pills widen the window. -->
+    <div class="grid-stack-item" gs-id="statements" gs-x="0" gs-y="20" gs-w="8"  gs-h="14" gs-min-w="4" gs-min-h="5">
+        <div class="grid-stack-item-content"><section id="statements" class="panel card">
+      <div class="phead card-header"><h2>Financial Statements · last 8 quarters</h2>
+        <a class="link" href="#fund">Ratios &amp; trend ↑</a></div>
+      <div class="pbody">
+        <div id="stmt-full">
+          <div class="fm-controls">
+            <div class="fm-tabs" id="fm-tabs" role="tablist" aria-label="Statement">
+              <button type="button" class="fm-tab active" data-st="BS" role="tab">Balance Sheet</button>
+              <button type="button" class="fm-tab" data-st="IS" role="tab">Income Statement</button>
+              <button type="button" class="fm-tab" data-st="KS" role="tab">Key Statistics</button>
+            </div>
+            <div class="fm-side">
+              <select id="fm-version" class="fa-select fm-version" aria-label="Data version"></select>
+              <div class="fm-pills" id="fm-pills" role="group" aria-label="Periods">
+                <button type="button" class="fm-pill" data-n="5">5</button>
+                <button type="button" class="fm-pill active" data-n="8">8</button>
+                <button type="button" class="fm-pill" data-n="12">12</button>
+                <button type="button" class="fm-pill" data-n="24">24</button>
+              </div>
+            </div>
+          </div>
+          <div class="fm-wrap"><table class="fm-table" id="fm-table"></table></div>
+        </div>
+      </div>
+    </section></div>
+      </div>
+
+      {# SOP Combined (Confluence) — the Strategy Simulator's engine and defaults, run for this symbol. #}
+      <div class="grid-stack-item" gs-id="sop" gs-x="8" gs-y="8"  gs-w="4"  gs-h="8"  gs-min-w="3" gs-min-h="4">
+        <div class="grid-stack-item-content"><section id="sop" class="panel card">
+        <div class="phead card-header"><h2>SOP Confluence · signal</h2>
+          <span class="desk-score sc-neu" id="sopScore">loading…</span>
+          <a class="link" href="{% url 'crud_dashboard' %}?active_tab=sop_combined&sopc_symbol={{ symbol }}">Simulator ↗</a></div>
+        <div class="pbody" id="sopBody"><div class="loading">Running the SOP model…</div></div>
+      </section></div>
+      </div>
+
+      <!-- ② TECHNICAL — trend structure, momentum, participation.
+           Server-rendered: every figure here comes from the SAME adjusted dataframe
+           the returns block and the chart already use, so nothing on this page can
+           disagree about the price series. No range-based indicators (ATR/ADX):
+           a large share of NEPSE bars print high == low and would corrupt them. -->
+      <div class="grid-stack-item" gs-id="tech" gs-x="8" gs-y="16" gs-w="4"  gs-h="10" gs-min-w="3" gs-min-h="4">
+        <div class="grid-stack-item-content"><section id="tech" class="panel card">
+        <div class="phead card-header"><h2>Technical · trend &amp; momentum</h2>
+          {% if tech %}<span class="desk-score sc-{{ tech.trend_tone }}">{{ tech.trend }}</span>{% endif %}
+          <a class="link" href="{{ external_chart_url }}?symbol={{ symbol|urlencode }}"
+             target="_blank" rel="noopener noreferrer"
+             title="Open this symbol on the charting terminal (new tab)">Full chart ↗</a></div>
+        <div class="pbody">
+          {% if not tech %}
+            <div class="notice">Not enough price history for <b>{{ symbol }}</b> to compute moving averages.</div>
+          {% else %}
+          <div class="mgrid">
+            <div class="mcard">
+              <div class="k">Trend structure</div>
+              <div class="v {{ tech.trend_tone }}">{{ tech.trend }}</div>
+              <div class="sub">Price above {{ tech.ma_above }} of {{ tech.ma_count }} moving averages</div>
+            </div>
+            <div class="mcard">
+              <div class="k">RSI 14</div>
+              <div class="v num {{ tech.rsi_tone }}">{{ tech.rsi|default:"—" }}</div>
+              <div class="sub">{{ tech.rsi_label|default:"no reading" }} · Wilder, on closes</div>
+            </div>
+            <div class="mcard">
+              <div class="k">20-session return</div>
+              <div class="v num {% if tech.ret_20s >= 0 %}pos{% else %}neg{% endif %}">{{ tech.ret_20s|default:"—" }}%</div>
+              <div class="sub">Trading sessions, not calendar days</div>
+            </div>
+            <div class="mcard">
+              <div class="k">52-week position</div>
+              <div class="v num">{{ tech.pos_52w_adj|default:"—" }}%</div>
+              <div class="sub">Inside the adjusted 52-week range</div>
+            </div>
+            <div class="mcard">
+              <div class="k">Volume vs 20-day</div>
+              <div class="v num {% if tech.vol_ratio >= 1 %}pos{% else %}neu{% endif %}">{{ tech.vol_ratio|default:"—" }}×</div>
+              <div class="sub">Participation on the latest session</div>
+            </div>
+            {% if market.beta_5y is not None %}
+            <div class="mcard">
+              <div class="k">Beta (5Y weekly)</div>
+              <div class="v num">{{ market.beta_5y }}</div>
+              <div class="sub">Weekly returns vs the NEPSE Index</div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="fresh">Trend structure reads the MA10/20/50/200 stack. Computed on the split/bonus-adjusted close series ({{ tech.bars }} sessions on file).
+            Range-based indicators are deliberately omitted — NEPSE prints many bars where high equals low.</div>
+          {% endif %}
+        </div>
+      </section></div>
+      </div>
+
+      <!-- ⑦ FLOORSHEET (hydrated) — concentration, per-broker accumulation and
+           the seller→buyer flow map, all for the selected window. -->
+      <div class="grid-stack-item" gs-id="flow" gs-x="0" gs-y="34" gs-w="12" gs-h="12" gs-min-w="4" gs-min-h="5">
+        <div class="grid-stack-item-content"><section id="flow" class="panel card">
+        <div class="phead card-header"><h2>Floorsheet · Broker Conviction</h2>
+          <span class="desk-score sc-neu" id="flowScore">loading…</span>
+          <div class="win-row" id="flowWin" role="tablist" aria-label="Floorsheet window">
+            <button type="button" class="tf active" data-w="1w">1W</button>
+            <button type="button" class="tf" data-w="1m">1M</button>
+            <button type="button" class="tf" data-w="3m">3M</button>
+            <button type="button" class="tf" data-w="1y">1Y</button>
+          </div>
+          <a class="link" href="/floorsheet/">Open floorsheet ↗</a></div>
+        <div class="pbody" id="flowBody"><div class="loading">Loading broker activity…</div></div>
+
+        {# Seller→buyer flow lives on the broker desk (time slider, playback, full pair table) — link there rather than keep a thinner copy. #}
+        <div class="pbody flow-extra">
+          <a class="flow-link" id="flowMapLink" href="/floorsheet/?tab=flowmap&symbol={{ symbol }}&range=1m">
+            <span class="fl-ic">⇄</span>
+            <span>
+              <b>Seller → buyer flow map</b>
+              <em>Open the broker desk's flow map for {{ symbol }} — ribbon widths, intraday
+                time window, session playback and the full pair table.</em>
+            </span>
+            <span class="fl-go">↗</span>
+          </a>
+        </div>
+      </section></div>
+      </div>
+      <!-- AI NARRATIVE (Gemini, on-demand) -->
+      <div class="grid-stack-item" gs-id="ai" gs-x="0" gs-y="46" gs-w="12" gs-h="6"  gs-min-w="4" gs-min-h="3">
+        <div class="grid-stack-item-content"><section id="ai" class="panel card">
+        <div class="phead card-header"><h2>AI Narrative Analysis · Gemini</h2>
+          <button class="s360-btn" id="aiGenBtn" type="button">✨ Generate</button></div>
+        <div class="pbody" id="aiNarrative">
+          <div class="notice">Generate a Gemini read of <b>{{ symbol }}</b>’s support/resistance structure, momentum and recent price path. Runs on demand (signed-in users); the result is cached for the trading day.</div>
+        </div>
+      </section></div>
+      </div>
+
+    </div>{# /grid-stack #}
+
+  </div>
+</div>
+{% endif %}
+
+<footer>Stock 360 · {{ symbol }} · all figures sourced from platform tables (adjusted prices, financials, floorsheet).</footer>
+
+<script>
+  window.S360 = {
+    symbol: "{{ symbol|escapejs }}",
+    close: {{ quote.close|default:"null" }},
+    marketCapM: {{ quote.market_cap_m|default:"null" }},
+    marketCapNote: "{{ quote.market_cap_note|default:''|escapejs }}",
+    avg60: {{ market.avg_60d|default:"null" }},
+    beta5y: {{ market.beta_5y|default:"null" }}
+  };
+</script>
+{# GridStack's "all" bundle ships its own HTML5 drag/resize engine — no jQuery / jQuery UI. #}
+<script src="{% static 'core_analysis/vendor/gridstack/gridstack-all.js' %}?v=10.3.1"></script>
+<script src="{% static 'core_analysis/js/stock360-grid.js' %}?v={{ asset_version|default:1 }}"></script>
+<script src="{% static 'core_analysis/js/stock360.js' %}?v={{ asset_version|default:1 }}"></script>
+{# The fundamentals desk module renders the cards, trend, statement matrix and Morningstar panel hosted above — one renderer, not a second copy. #}
+<script>
+  window.FA_CONFIG = {
+    apiUrl: "{% url 'fundamental_data_api' %}",
+    matrixUrl: "{% url 'fundamental_matrix_api' %}",
+    modelUrl: "{% url 'fundamental_model_api' %}",
+    symbol: "{{ symbol|escapejs }}",
+    autoModel: false
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/fundamentals.js' %}?v={{ asset_version|default:1 }}"></script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
+</body>
+</html>

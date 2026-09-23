@@ -1,0 +1,283 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fundamental Analysis — NEPSE</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">FA</span>
+      <div>
+        <h1 class="mi-title">Fundamental Analysis</h1>
+        <p class="mi-subtitle">Compare companies across a sector, and score them across the market</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn">Sign in</a>
+      {% endif %}
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='fundamentals' %}
+
+  {% comment %}
+    Two desks, both CROSS-SECTIONAL. The single-company view lives on Stock 360
+    and stays there — /fundamentals/<SYMBOL>/ redirects to it, so old links work.
+  {% endcomment %}
+  <div class="dsx-tabs" role="tablist">
+    <button class="dsx-tab active" data-tab="industry" role="tab">Industry Analysis</button>
+    <button class="dsx-tab" data-tab="smart" role="tab">Smart Stock Score</button>
+    <button class="dsx-tab" data-tab="morningstar" role="tab">Morning Star</button>
+    {% if bonds %}<button class="dsx-tab" data-tab="bonds" role="tab">Bonds &amp; Debentures</button>{% endif %}
+  </div>
+
+  <!-- ── Industry Analysis ─────────────────────────────────────────────── -->
+  <section class="dsx-panel active" id="panel-industry">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="ia-sector" class="dsx-select dsx-sector">
+          {% for s in sectors %}
+            <option value="{{ s.sector }}"{% if s.sector == 'Commercial Banks' %} selected{% endif %}>
+              {{ s.sector }} ({{ s.companies }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="dsx-field">Period
+        <select id="ia-period" class="dsx-select"></select>
+      </div>
+      <div class="dsx-seg" data-group="ia-stmt" title="Which statement to compare">
+        <button type="button" class="dsx-pill active" data-val="BS">Balance Sheet</button>
+        <button type="button" class="dsx-pill" data-val="IS">Income Statement</button>
+        <button type="button" class="dsx-pill" data-val="KS">Key Stats &amp; Ratios</button>
+        {% comment %}
+          There is deliberately NO Cash Flow pill. The upstream feed supplies
+          BS/IS/KS only — a search of all 992k rows finds no cash-flow lines
+          under any type. It was shown greyed out for a while to explain the
+          gap; that just left a permanently dead control in the bar, so it is
+          gone. The API still answers fs_type=CF with a reason if called.
+          Restore this pill only if the feed starts publishing cash flow.
+        {% endcomment %}
+      </div>
+      <button type="button" id="ia-refresh" class="dsx-analyze">Load</button>
+      <button type="button" id="ia-csv" class="dsx-csv" disabled
+              title="Download this sector matrix exactly as shown, as a CSV file">Download CSV</button>
+    </div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="ia-title">BALANCE SHEET</span>
+        <span class="dsx-ad-sub"><span id="ia-sub"></span></span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table ia-matrix" id="ia-table"></table></div>
+      <div class="dsx-ad-note" id="ia-note"></div>
+    </div>
+  </section>
+
+  <!-- ── Smart Stock Score (CAN SLIM) ──────────────────────────────────── -->
+  <section class="dsx-panel" id="panel-smart">
+    <section class="cs-gate" id="cs-gate" hidden></section>
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="cs-sector" class="dsx-select dsx-sector"></select>
+      </div>
+      <div class="dsx-field">Show
+        <select id="cs-conf" class="dsx-select">
+          <option value="all">All scored</option>
+          <option value="full">Full data only (5 of 5 factors)</option>
+        </select>
+      </div>
+      <button type="button" id="cs-refresh" class="dsx-analyze">Refresh</button>
+    </div>
+    <div class="dsx-kpis" id="cs-kpis"></div>
+    <div class="dsx-ad-evidence" id="cs-limits"></div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="cs-title">RANKED BY CAN SLIM SCORE</span>
+        <span class="dsx-ad-sub">
+          <span id="cs-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'canslim_sop' %}" target="_blank" rel="noopener"
+             title="How every factor and score is calculated — in simple language">Methodology</a>
+        </span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="cs-table"></table></div>
+      <div class="dsx-ad-note" id="cs-universe"></div>
+    </div>
+  </section>
+
+  <!-- ── Morning Star (sector G/V/Quality framework) ───────────────────── -->
+  <section class="dsx-panel" id="panel-morningstar">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="ms-sector" class="dsx-select dsx-sector"></select>
+      </div>
+      <button type="button" id="ms-refresh" class="dsx-analyze">Refresh</button>
+    </div>
+    <div class="dsx-kpis" id="ms-kpis"></div>
+    <div id="ms-scatter"></div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>MORNING STAR — GROWTH / VALUE / QUALITY</span>
+        <span class="dsx-ad-sub">
+          <span id="ms-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'morningstar_sop' %}" target="_blank" rel="noopener"
+             title="The complete methodology — every parameter, weight, gate and formula">Methodology</a>
+        </span>
+      </div>
+      <div id="ms-filterbar"></div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="ms-table"></table></div>
+      <div class="dsx-ad-note" id="ms-note"></div>
+    </div>
+  </section>
+
+  {% if bonds %}
+  <!-- ── Bonds & Debentures (valuation sheet, grouped by issuer) ───────── -->
+  <section class="dsx-panel" id="panel-bonds">
+    <div class="dsx-controls">
+      <div class="dsx-field">Issuer
+        <select id="bd-issuer" class="dsx-select">
+          <option value="">All issuers ({{ bonds.issuers }})</option>
+          {% for g in bonds.groups %}<option value="{{ g.symbol|default:'-' }}">{{ g.symbol|default:'?' }} · {{ g.name }} ({{ g.rows|length }})</option>{% endfor %}
+        </select>
+      </div>
+      <div class="dsx-field">Valuation
+        <select id="bd-call" class="dsx-select">
+          <option value="">Any</option>
+          {% for c in bonds.calls %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="dsx-kpis">
+      <div class="dsx-kpi"><span>{{ bonds.count }}</span>Listed bonds · {{ bonds.issuers }} issuers</div>
+      <div class="dsx-kpi"><span>Rs {{ bonds.total_size_bn|floatformat:1 }} bn</span>Outstanding face value</div>
+      <div class="dsx-kpi"><span>{% if bonds.avg_ytm is not None %}{{ bonds.avg_ytm }}%{% else %}—{% endif %}</span>Avg YTM (size-weighted) · benchmark {{ bonds.benchmark|floatformat:3 }}%</div>
+      <div class="dsx-kpi"><span>{{ bonds.undervalued }} / {{ bonds.overvalued }}</span>Undervalued / overvalued</div>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>BONDS &amp; DEBENTURES — BY ISSUING COMPANY</span>
+        <span class="dsx-ad-sub">valued {{ bonds.as_of|date:"Y-m-d" }} · <span id="bd-sub">{{ bonds.count }} shown</span></span>
+      </div>
+      <div class="dsx-table-wrap">
+        <table class="dsx-table" id="bd-table">
+          <thead><tr>
+            <th>Issuer</th><th>Bond</th><th class="num">Coupon</th><th>Maturity</th><th class="num">Yrs</th>
+            <th class="num">Size (Rs bn)</th><th class="num">Price</th><th class="num">YTM</th><th class="num">Spread (bp)</th>
+            <th class="num">Fair value</th><th class="num">Gap</th><th>Call</th><th class="num">Mod. dur.</th>
+          </tr></thead>
+          <tbody>
+          {% for g in bonds.groups %}
+            <tr class="bd-group" data-issuer="{{ g.symbol|default:'-' }}">
+              <td colspan="13"><b>{% if g.symbol %}<a href="{% url 'stock360_symbol' g.symbol %}">{{ g.symbol }}</a> · {% endif %}{{ g.name }}</b>
+                <span class="dsx-ad-sub"> — {{ g.sector }} · {{ g.rows|length }} issue{{ g.rows|length|pluralize }} · Rs {{ g.size_bn|floatformat:2 }} bn{% for n in g.notes %} · {{ n }}{% endfor %}</span></td>
+            </tr>
+            {% for b in g.rows %}
+            <tr class="bd-row" data-issuer="{{ g.symbol|default:'-' }}" data-call="{{ b.valuation }}">
+              <td>{{ g.symbol|default:"—" }}</td>
+              <td><b>{{ b.symbol }}</b><div class="dsx-ad-sub">{{ b.security_name }}</div></td>
+              <td class="num">{{ b.coupon_pct|floatformat:2 }}%</td>
+              <td>{{ b.maturity_date|date:"Y-m-d" }}</td>
+              <td class="num">{{ b.years_to_maturity|floatformat:2 }}</td>
+              <td class="num">{{ b.issue_size_bn|floatformat:2|default:"—" }}</td>
+              <td class="num">{{ b.price|floatformat:2|default:"—" }}{% if b.price_quality and b.price_quality != "Adequate" %}<div class="dsx-ad-sub">{{ b.price_quality }}</div>{% endif %}</td>
+              <td class="num">{% if b.ytm_pct is not None %}{{ b.ytm_pct|floatformat:3 }}%{% else %}—{% endif %}</td>
+              <td class="num">{% if b.spread_bp is not None %}{{ b.spread_bp }}{% else %}—{% endif %}</td>
+              <td class="num">{{ b.fair_value|floatformat:2|default:"—" }}</td>
+              <td class="num {% if b.valuation_tone == 'pos' %}up{% elif b.valuation_tone == 'neg' %}down{% endif %}">{% if b.variance_pct is not None %}{% if b.variance_pct >= 0 %}+{% endif %}{{ b.variance_pct|floatformat:2 }}%{% else %}—{% endif %}</td>
+              <td><span class="dsx-tag bd-{{ b.valuation_tone }}">{{ b.valuation|default:"—" }}</span></td>
+              <td class="num">{{ b.modified_duration|floatformat:2|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="dsx-ad-note">
+        Price is the last exchange trade. YTM is the yield to maturity at that price; Spread is YTM minus the
+        benchmark rate in basis points. Fair value discounts the cash flows at the benchmark plus tolerance;
+        Gap is price versus fair value. Undervalued means the YTM beats the benchmark by more than the tolerance,
+        Overvalued means it falls short. Refresh the sheet with <code>manage.py load_bond_valuations</code>.
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+<script>
+  window.MS_CONFIG = { scanUrl: "{% url 'morningstar_scan_api' %}" };
+  window.CS_CONFIG = { scanUrl: "{% url 'canslim_scan_api' %}" };
+  window.IA_CONFIG = {
+    matrixUrl: "{% url 'industry_matrix_api' %}",
+    periodsUrl: "{% url 'industry_periods_api' %}"
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/fundamentals-desk.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/canslim.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/morningstar.js' %}?v={{ asset_version }}"></script>
+<script>
+  /* Bonds tab: client-side filter by issuer and valuation call. */
+  document.addEventListener("DOMContentLoaded", function () {
+    var iss = document.getElementById("bd-issuer"), call = document.getElementById("bd-call");
+    if (!iss || !call) return;
+    function apply() {
+      var i = iss.value, c = call.value, shown = 0;
+      document.querySelectorAll("#bd-table tr.bd-row").forEach(function (tr) {
+        var ok = (!i || tr.dataset.issuer === i) && (!c || tr.dataset.call === c);
+        tr.hidden = !ok; if (ok) shown++;
+      });
+      document.querySelectorAll("#bd-table tr.bd-group").forEach(function (tr) {
+        var any = false;
+        document.querySelectorAll("#bd-table tr.bd-row").forEach(function (r) {
+          if (!r.hidden && r.dataset.issuer === tr.dataset.issuer) any = true;
+        });
+        tr.hidden = !any;
+      });
+      var sub = document.getElementById("bd-sub"); if (sub) sub.textContent = shown + " shown";
+    }
+    iss.addEventListener("change", apply); call.addEventListener("change", apply);
+  });
+</script>
+<script>
+  /* Theme toggle only — insights.js wires the Market Insights dashboard and
+     throws here because none of its elements exist on this page. */
+  (function () {
+    var KEY = "mi-theme";
+    function apply(th) {
+      document.documentElement.setAttribute("data-theme", th);
+      var b = document.getElementById("mi-theme-btn");
+      if (b) b.textContent = th === "dark" ? "Light" : "Dark";
+    }
+    var saved = "dark";
+    try { saved = localStorage.getItem(KEY) || "dark"; } catch (e) {}
+    apply(saved);
+    document.addEventListener("DOMContentLoaded", function () {
+      var b = document.getElementById("mi-theme-btn");
+      if (!b) return;
+      b.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        apply(next);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

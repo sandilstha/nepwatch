@@ -1,0 +1,134 @@
+      {% if stage_new_listing %}
+        {% include "core_analysis/includes/_new_listing_snapshot.html" with snapshot=stage_new_listing %}
+      {% endif %}
+      {% if stage_backtest_metrics %}
+        {% if stage_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ stage_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Latest Stage Classification</span>
+                <h4 class="mt-2 mb-0 fw-bold
+                  {% if stage_backtest_metrics.latest_stage == 'Stage 2' %}text-success
+                  {% elif stage_backtest_metrics.latest_stage == 'Stage 3' %}text-warning
+                  {% elif stage_backtest_metrics.latest_stage == 'Stage 4' %}text-danger
+                  {% else %}text-muted{% endif %}">{{ stage_backtest_metrics.latest_stage_label|default:stage_backtest_metrics.latest_stage }}</h4>
+                <div class="small text-muted mt-1">Action: {{ stage_backtest_metrics.latest_action|default:"Watch" }}</div>
+                {% if stage_backtest_metrics.is_provisional %}
+                <div class="small text-warning mt-1" style="font-size:11px;">⚠ New listing — based on {{ stage_backtest_metrics.history_weeks }} weeks (need {{ stage_backtest_metrics.weeks_needed }} for full read)</div>
+                {% endif %}
+                <div class="small text-muted mt-1">Latest row: {{ stage_backtest_metrics.latest_data_date }} | {{ stage_backtest_metrics.latest_price_source }}</div>
+                <div class="small text-muted mt-1" title="Consecutive sessions in the current stage — a fresh breakout reads differently from a late-stage advance">
+                  In stage: <b>{{ stage_backtest_metrics.bars_in_stage|default:0 }} bar{{ stage_backtest_metrics.bars_in_stage|pluralize }}</b>
+                  {% if stage_backtest_metrics.pct_from_ema30 is not None %}
+                    · <span title="% distance of close from the 30-week EMA (Weinstein baseline)">{{ stage_backtest_metrics.pct_from_ema30|floatformat:2 }}% from 30w EMA</span>
+                  {% endif %}
+                </div>
+                {% if stage_backtest_metrics.last_transition %}
+                <div class="small mt-1 {% if 'Stage 2' in stage_backtest_metrics.last_transition.label %}text-success{% elif 'Stage 4' in stage_backtest_metrics.last_transition.label %}text-danger{% else %}text-warning{% endif %}" style="font-size:11px;">
+                  ⇄ {{ stage_backtest_metrics.last_transition.label }} on {{ stage_backtest_metrics.last_transition.date }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Momentum Return</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.returns_3m >= 0 %}text-success{% else %}text-danger{% endif %}">{{ stage_backtest_metrics.returns_3m|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Latest Volume Expansion Ratio</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.volume_confirm %}text-success{% else %}text-light{% endif %}">{{ stage_backtest_metrics.volume_ratio|floatformat:2 }}x</h4>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Indicator Confirmation Score</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ stage_backtest_metrics.stage2_score|default:0 }}/7</h4>
+                <div class="small text-muted mt-1">RSI {{ stage_backtest_metrics.rsi|floatformat:2 }}{% if stage_backtest_metrics.rsi_confirm %} (OK){% endif %} | ADX {{ stage_backtest_metrics.adx|floatformat:2 }}{% if stage_backtest_metrics.adx_confirm %} (OK){% endif %}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Stage Analysis Output: {{ stage_selected_symbol }}</h6>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table" id="stageOutputTable">
+                <thead class="">
+                  <tr>
+                    <th>Date</th>
+                    <th class="th-num">Close</th>
+                    <th class="th-num">30-Week EMA</th>
+                    <th class="th-num">10-Week EMA</th>
+                    <th class="th-num">Resistance</th>
+                    <th class="th-num">Volume Ratio</th>
+                    <th class="th-num">Momentum %</th>
+                    <th class="th-num">RSI</th>
+                    <th class="th-num">ADX</th>
+                    <th class="th-num">Score</th>
+                    <th>Source</th>
+                    <th>Calculated Stage</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in stage_indicator_rows %}
+                  <tr data-date="{{ row.business_date }}" data-close="{{ row.close|floatformat:6 }}" data-score="{% if row.returns_3m %}{{ row.returns_3m|floatformat:6 }}{% else %}0{% endif %}">
+                    <td class="td-date">{{ row.business_date }}</td>
+                    <td class="td-num">{{ row.close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.ema_30w|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.ema_10w|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.resistance|floatformat:2 }}</td>
+                    <td class="td-num {% if row.volume_confirm %}text-success-custom{% endif %}">{{ row.volume_ratio|floatformat:2 }}x</td>
+                    <td class="td-num">{% if row.returns_3m %}{{ row.returns_3m|floatformat:2 }}%{% else %}0.00%{% endif %}</td>
+                    <td class="td-num {% if row.rsi_confirm %}text-success-custom{% endif %}">{{ row.rsi|floatformat:2 }}</td>
+                    <td class="td-num {% if row.adx_confirm %}text-success-custom{% endif %}">{{ row.adx|floatformat:2 }}</td>
+                    <td class="td-num fw-semibold">{{ row.stage2_score|default:0 }}/7</td>
+                    <td class="{% if row.price_source == 'Unadjusted fallback' %}text-warning{% else %}text-muted{% endif %}">{{ row.price_source|default:"Adjusted" }}</td>
+                    <td class="fw-semibold {% if row.stage == 'Stage 2' %}text-success-custom{% elif row.stage == 'Stage 3' %}text-warning{% elif row.stage == 'Stage 4' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.stage }} - {{ row.stage_name|default:"Basing/Neglect" }}</td>
+                    <td class="fw-semibold {% if row.stage == 'Stage 2' %}text-success-custom{% elif row.stage == 'Stage 3' %}text-warning{% elif row.stage == 'Stage 4' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.stage_action|default:"Watch" }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="13" class="text-center text-muted py-4">No Stage rows generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3 bg-raised border-top">
+              <div class="row g-2 align-items-end" id="stageOutputFilters">
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Date From</label>
+                  <input type="text" id="stageFilterDateFrom" class="form-control form-control-sm" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Date To</label>
+                  <input type="text" id="stageFilterDateTo" class="form-control form-control-sm" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Close Min</label>
+                  <input type="number" step="0.01" id="stageFilterCloseMin" class="form-control form-control-sm" placeholder="Min">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Close Max</label>
+                  <input type="number" step="0.01" id="stageFilterCloseMax" class="form-control form-control-sm" placeholder="Max">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Score Min</label>
+                  <input type="number" step="0.01" id="stageFilterScoreMin" class="form-control form-control-sm" placeholder="Momentum Min">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Score Max</label>
+                  <input type="number" step="0.01" id="stageFilterScoreMax" class="form-control form-control-sm" placeholder="Momentum Max">
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}

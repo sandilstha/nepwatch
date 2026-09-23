@@ -1,0 +1,51 @@
+    {% comment %}
+      UPPER SECTION — individual companies / scripts.
+
+      Fully independent of the Indices RRG below it: its own form, params
+      (rrg_*), results container, chart and toolbar. The two only share the page.
+    {% endcomment %}
+    <section class="rrg-desk-section" id="rrg-backtest-pane">
+      <div class="rrg-desk-heading">Individual Company / Script RRG</div>
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Relative Rotation Graph (RRG) Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Select one target symbol, set the benchmark index, date range, and lookback, then generate RRG. Use the quadrant, RS-Ratio, RS-Momentum, and trail direction to compare rotation versus the benchmark.</div>
+        <form method="GET" action="." id="rrgForm" data-results="rrg_backtestResults">
+          <input type="hidden" name="active_tab" value="rrg_backtest">
+          <input type="hidden" name="rrg_backtest_symbol" id="rrgSymbolHidden" value="{{ rrg_selected_symbol }}">
+          
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="rrgSearchInput" placeholder="Type to search..." value="{{ rrg_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="rrgDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Benchmark Index</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" name="rrg_benchmark_symbol" value="{{ rrg_benchmark_symbol }}" placeholder="NEPSE INDEX">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="rrgFromDate" name="rrg_from_date" class="form-control form-control-sm" value="{{ rrg_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="rrgToDate" name="rrg_to_date" class="form-control form-control-sm" value="{{ rrg_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Lookback</label>
+              <input type="number" min="2" step="1" name="rrg_lookback" class="form-control form-control-sm" value="{{ rrg_lookback }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate RRG</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="rrgFromDate" to_id="rrgToDate" %}
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="rrg_backtestResults" data-tab-key="rrg_backtest">
+        {% include "core_analysis/includes/_rrg_results.html" %}
+      </div>
+    </section>

@@ -1,0 +1,89 @@
+{# New-listing snapshot card. Expects `snapshot` (see services/new_listing.py). #}
+{# Shown when a symbol has too little history for the desk's indicators. #}
+<div class="card border-0 shadow-sm rounded-3 mb-4" style="background: linear-gradient(180deg, rgba(13,110,253,.08), transparent);">
+  <div class="card-body p-4">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+      <div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2">
+          New Listing
+        </span>
+        <span class="ms-2 fw-bold text-light">{{ snapshot.symbol }}</span>
+        <span class="text-secondary small">· listed {{ snapshot.first_date }} · {{ snapshot.bars_available }} trading day{{ snapshot.bars_available|pluralize }}</span>
+      </div>
+      <div class="text-end">
+        <div class="metrics-card-label text-secondary">Indicator readiness</div>
+        <div class="fw-bold {% if snapshot.confidence_pct >= 80 %}text-success{% elif snapshot.confidence_pct >= 40 %}text-warning{% else %}text-danger{% endif %}">
+          {{ snapshot.confidence_pct }}% <span class="text-secondary small fw-normal">({{ snapshot.bars_available }}/{{ snapshot.required_bars }} bars)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-info border-0 rounded-3 py-2 small mb-4">
+      {{ snapshot.desk_label }} indicators need {{ snapshot.required_bars }} trading days of history to be reliable.
+      This stock has {{ snapshot.bars_available }} so far{% if snapshot.bars_remaining %} — about {{ snapshot.bars_remaining }} more trading day{{ snapshot.bars_remaining|pluralize }} until the full signal is available{% endif %}.
+      Meanwhile, here is what its short history shows:
+    </div>
+
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+          <span class="metrics-card-label text-secondary">Return since listing</span>
+          <h5 class="mt-2 mb-0 fw-bold {% if snapshot.return_since_listing > 0 %}text-success{% elif snapshot.return_since_listing < 0 %}text-danger{% else %}text-muted{% endif %}">
+            {% if snapshot.return_since_listing != None %}{{ snapshot.return_since_listing }}%{% else %}—{% endif %}
+          </h5>
+          <span class="text-secondary small">{{ snapshot.listing_price }} → {{ snapshot.last_price }}</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+          <span class="metrics-card-label text-secondary">Range (since listing)</span>
+          <h5 class="mt-2 mb-0 fw-bold text-light">{{ snapshot.window_high }} / {{ snapshot.window_low }}</h5>
+          <span class="text-secondary small">
+            {% if snapshot.pct_from_high != None %}{{ snapshot.pct_from_high }}% from high{% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+          <span class="metrics-card-label text-secondary">Short momentum</span>
+          <h5 class="mt-2 mb-0 fw-bold text-light">
+            {% if snapshot.momentum_5d != None %}{{ snapshot.momentum_5d }}%{% else %}—{% endif %}
+            <span class="text-secondary small fw-normal">5d</span>
+          </h5>
+          <span class="text-secondary small">
+            {% if snapshot.momentum_10d != None %}{{ snapshot.momentum_10d }}% 10d{% else %}10d n/a{% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+          <span class="metrics-card-label text-secondary">VWAP (since listing)</span>
+          <h5 class="mt-2 mb-0 fw-bold text-light">{% if snapshot.vwap != None %}{{ snapshot.vwap }}{% else %}—{% endif %}</h5>
+          <span class="text-secondary small">
+            {% if snapshot.price_vs_vwap != None %}price {{ snapshot.price_vs_vwap }}% vs VWAP{% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+          <span class="metrics-card-label text-secondary">Avg volume</span>
+          <h5 class="mt-2 mb-0 fw-bold text-light">{% if snapshot.avg_volume != None %}{{ snapshot.avg_volume }}{% else %}—{% endif %}</h5>
+          <span class="text-secondary small">
+            {% if snapshot.rvol != None %}RVOL {{ snapshot.rvol }}×{% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 metric-card shadow-sm rounded-3 h-100">
+          <span class="metrics-card-label text-secondary">RS vs NEPSE</span>
+          <h5 class="mt-2 mb-0 fw-bold {% if snapshot.rs_vs_sector > 1 %}text-success{% elif snapshot.rs_vs_sector < 1 %}text-danger{% else %}text-muted{% endif %}">
+            {% if snapshot.rs_vs_sector != None %}{{ snapshot.rs_vs_sector }}{% else %}—{% endif %}
+          </h5>
+          <span class="text-secondary small">since listing (&gt;1 outperforms)</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

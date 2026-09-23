@@ -1,0 +1,1 @@
+gridstack 10.3.1 — https://github.com/gridstack/gridstack.js (dist files, MIT)

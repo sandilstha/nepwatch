@@ -1,0 +1,83 @@
+    <div class="tab-pane fade {% if active_tab == 'imm_backtest' %}show active{% endif %}" id="imm-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+          <h5 class="mb-0" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">IMM Scoring Parameters</h5>
+          <span class="metrics-card-label text-secondary">Latest row: <strong>{{ imm_data_upload_date|default:"N/A" }}</strong> | Unadjusted fallback</span>
+        </div>
+        <div class="sop-note"><strong>SOP:</strong> Search and select the exact company symbol, choose a complete date range, then execute scoring. Review score class, volume greed, relative strength, ATR%, and BUY/SELL events before acting.</div>
+        <form method="GET" action="." id="immForm">
+          <input type="hidden" name="active_tab" value="imm_backtest">
+          <input type="hidden" name="imm_backtest_symbol" id="immSymbolHidden" value="{{ imm_selected_symbol }}">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="immSearchInput" placeholder="Type to search..." value="{{ imm_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="immDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="immFromDate" name="imm_from_date" class="form-control form-control-sm" value="{{ imm_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="immToDate" name="imm_to_date" class="form-control form-control-sm" value="{{ imm_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Quick Range</label>
+              <div class="d-flex gap-1 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-imm-range="latest">Latest</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-imm-range="1m">1M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-imm-range="3m">3M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-imm-range="6m">6M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-imm-range="1y">1Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" data-imm-range="ytd">YTD</button>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate Score</button>
+            </div>
+          </div>
+          <div class="imm-parameter-grid mt-3">
+            <div class="flex-fill" style="min-width:84px;">
+              <label class="form-label text-muted small fw-medium">RS Lookback</label>
+              <input type="number" min="2" step="1" name="imm_rs_lookback" class="form-control form-control-sm" value="{{ imm_rs_lookback }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:80px;">
+              <label class="form-label text-muted small fw-medium">RSI Len</label>
+              <input type="number" min="2" step="1" name="imm_rsi_length" class="form-control form-control-sm" value="{{ imm_rsi_length }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:80px;">
+              <label class="form-label text-muted small fw-medium">ATR Len</label>
+              <input type="number" min="2" step="1" name="imm_atr_length" class="form-control form-control-sm" value="{{ imm_atr_length }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:84px;">
+              <label class="form-label text-muted small fw-medium">MACD Fast</label>
+              <input type="number" min="1" step="1" name="imm_macd_fast" class="form-control form-control-sm" value="{{ imm_macd_fast }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:84px;">
+              <label class="form-label text-muted small fw-medium">MACD Slow</label>
+              <input type="number" min="2" step="1" name="imm_macd_slow" class="form-control form-control-sm" value="{{ imm_macd_slow }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:88px;">
+              <label class="form-label text-muted small fw-medium">MACD Signal</label>
+              <input type="number" min="1" step="1" name="imm_macd_signal" class="form-control form-control-sm" value="{{ imm_macd_signal }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:100px;">
+              <label class="form-label text-muted small fw-medium">Supertrend Len</label>
+              <input type="number" min="2" step="1" name="imm_supertrend_length" class="form-control form-control-sm" value="{{ imm_supertrend_length }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:100px;">
+              <label class="form-label text-muted small fw-medium">Supertrend Mult</label>
+              <input type="number" min="0.1" step="0.1" name="imm_supertrend_multiplier" class="form-control form-control-sm" value="{{ imm_supertrend_multiplier }}" required>
+            </div>
+          </div>
+          <div class="text-muted small mt-2" style="font-size:11px;">To Date auto-limits to today.</div>
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="imm_backtestResults" data-tab-key="imm_backtest">
+        {% include "core_analysis/includes/_imm_results.html" %}
+      </div>
+    </div>

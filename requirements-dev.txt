@@ -1,0 +1,14 @@
+# Development tooling - NOT needed to run the site.
+#
+# Split out of requirements.txt because graphify alone pulls ~30 tree-sitter
+# grammar packages plus networkx / rapidfuzz, none of which the application
+# imports. Keeping it here leaves the runtime install lean.
+#
+#   pip install -r requirements.txt -r requirements-dev.txt
+
+-r requirements.txt
+
+# Code knowledge graph used by the repo workflow (see CLAUDE.md):
+#   graphify query "<question>" | graphify update .
+graphifyy==0.8.41
+

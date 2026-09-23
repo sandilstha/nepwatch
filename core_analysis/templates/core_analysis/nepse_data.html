@@ -1,0 +1,152 @@
+{% extends "core_analysis/base.html" %}
+{% load static %}
+
+{% comment %}
+Generic shell for every NEPSE Data report. The report's registry entry decides
+the title, which filter controls appear and what the columns are — this template
+is the same for all nine, and nepse-data.js fills the table from the JSON API.
+{% endcomment %}
+
+{% block extra_css %}
+{# insights.css FIRST: it defines the --surface/--ink/--up/--down tokens that #}
+{# floorsheet.css and nepse-data.css both consume. Without it every dsx-* rule #}
+{# silently loses its colours — including the sticky header's background, so #}
+{# rows scroll through it and overlap the labels. #}
+<link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'core_analysis/css/nepse-data.css' %}?v={{ asset_version }}">
+{% endblock %}
+
+{% block content %}
+<div class="nd-wrap">
+
+  {% comment %}
+    The report's name and blurb are rendered by base.html's workspace-header
+    (fed by page_title / page_sub from the view), so every page carries the
+    same badge + title + actions bar. The old .nd-head duplicated it, and its
+    back-to-Workbench link is already in the header's action cluster.
+  {% endcomment %}
+
+  {# Report switcher — same order as the exchange's own menu. #}
+  <nav class="nd-tabs" aria-label="NEPSE data reports">
+    {% for s, title in menu %}
+      <a href="{% url 'nepse_data_report' s %}"
+         class="nd-tab {% if s == slug %}active{% endif %}"
+         {% if s == slug %}aria-current="page"{% endif %}>{{ title }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="nd-controls" id="nd-controls">
+    {% if 'date' in controls %}
+      <label class="dsx-field">Date
+        <input type="date" id="nd-date" class="dsx-select">
+      </label>
+    {% endif %}
+    {% if 'symbol' in controls %}
+      <label class="dsx-field">Symbol
+        <select id="nd-symbol" class="dsx-select"></select>
+      </label>
+    {% endif %}
+    {% if 'index' in controls %}
+      <label class="dsx-field">Index
+        <select id="nd-index" class="dsx-select">
+          <option value="">— all indices, one date —</option>
+          {% for n in index_names %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+        </select>
+      </label>
+    {% endif %}
+    {% if 'daterange' in controls %}
+      <label class="dsx-field">From
+        <input type="date" id="nd-start" class="dsx-select">
+      </label>
+      <label class="dsx-field">To
+        <input type="date" id="nd-end" class="dsx-select">
+      </label>
+    {% endif %}
+    {% if 'ndays' in controls %}
+      <label class="dsx-field">Sessions (N)
+        <select id="nd-n" class="dsx-select">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="30" selected>30</option>
+          <option value="60">60</option>
+          <option value="120">120</option>
+          <option value="180">180</option>
+        </select>
+      </label>
+    {% endif %}
+    {% if 'broker' in controls %}
+      <label class="dsx-field">Broker no
+        <input type="text" id="nd-broker" class="dsx-select" inputmode="numeric" placeholder="e.g. 41">
+      </label>
+    {% endif %}
+    {% if 'order' in controls %}
+      <label class="dsx-field">Order by
+        <select id="nd-order" class="dsx-select">
+          <option value="time">Latest trades first</option>
+          <option value="quantity">Largest trades first</option>
+        </select>
+      </label>
+    {% endif %}
+    {% if 'margin_all' in controls %}
+      <label class="dsx-field">Show
+        <select id="nd-all" class="dsx-select">
+          <option value="">Eligible only</option>
+          <option value="1">All (incl. de-listed)</option>
+        </select>
+      </label>
+    {% endif %}
+
+    <label class="dsx-field">Rows per page
+      <select id="nd-page-size" class="dsx-select nd-narrow">
+        <option value="100">100</option>
+        <option value="250">250</option>
+        <option value="500" selected>500</option>
+        <option value="1000">1,000</option>
+        <option value="all">All</option>
+      </select>
+    </label>
+    <label class="dsx-field nd-grow">Filter rows
+      <input type="text" id="nd-q" class="dsx-select" placeholder="Type to filter the table…">
+    </label>
+  </div>
+
+  <div class="nd-note" id="nd-note" hidden></div>
+
+  <div class="dsx-card">
+    {# "neutral": the bare .dsx-card-head is white-on-transparent, readable only #}
+    {# over the coloured buy/sell/hold gradients. #}
+    <div class="dsx-card-head neutral" id="nd-caption">Loading…</div>
+    <div class="nd-table-wrap"><table class="dsx-table nd-table" id="nd-table"></table></div>
+    <div class="nd-pager" id="nd-pager" hidden>
+      <button type="button" class="nd-page-btn" data-go="first">« First</button>
+      <button type="button" class="nd-page-btn" data-go="prev">‹ Prev</button>
+      <span class="nd-page-info" id="nd-page-info"></span>
+      <button type="button" class="nd-page-btn" data-go="next">Next ›</button>
+      <button type="button" class="nd-page-btn" data-go="last">Last »</button>
+    </div>
+  </div>
+
+</div>
+
+{{ columns|json_script:"nd-columns-json" }}
+{{ controls|json_script:"nd-controls-json" }}
+<script>
+  window.ND = {
+    slug: "{{ slug|escapejs }}",
+    api: "{% url 'nepse_data_api' slug %}",
+    symbolsUrl: "{% url 'nepse_data_symbols' %}",
+    columns: JSON.parse(document.getElementById("nd-columns-json").textContent),
+    controls: JSON.parse(document.getElementById("nd-controls-json").textContent),
+    {# ISO only: input[type=date] rejects a localised "July 30, 2026" and blanks. #}
+    latest: {
+      price: "{{ latest.price|date:'Y-m-d' }}",
+      index: "{{ latest.index|date:'Y-m-d' }}",
+      floorsheet: "{{ latest.floorsheet|date:'Y-m-d' }}"
+    },
+    {# False only where the report returns nothing without a symbol. #}
+    symbolOptional: {{ symbol_optional|yesno:"true,false" }}
+  };
+</script>
+<script src="{% static 'core_analysis/js/nepse-data.js' %}?v={{ asset_version }}"></script>
+{% endblock %}

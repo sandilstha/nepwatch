@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request pending &mdash; Risk &amp; Portfolio Desk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">RP</div>
+      <h1 class="auth-title">Request sent</h1>
+      <p class="auth-sub">An admin will review your account request. You can sign in after approval.</p>
+
+      {% if messages %}
+        {% for message in messages %}
+        <div class="auth-message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <p class="auth-alt">Already approved? <a href="{% url 'login' %}">Sign in</a></p>
+    </div>
+    <p class="auth-foot">Your holdings are private and visible only to you.</p>
+  </div>
+</body>
+</html>

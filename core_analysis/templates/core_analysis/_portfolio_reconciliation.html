@@ -1,0 +1,20 @@
+{% if ledger.reconciliation_mismatches %}
+<details class="pf-reconciliation pf-ledger-collapse" open>
+  <summary>
+    <span>Holdings/WACC reconciliation · {{ ledger.reconciliation_mismatches|length }} issue{{ ledger.reconciliation_mismatches|length|pluralize }}</span>
+    <span class="pf-ledger-table-meta">
+      <b class="pf-ledger-toggle-hide">Hide</b><b class="pf-ledger-toggle-show">Show</b>
+    </span>
+  </summary>
+  <div class="pf-table-wrap pf-reconciliation-table-wrap">
+    <table class="pf-table pf-reconciliation-table">
+      <thead><tr><th class="l">Symbol</th><th>Current Holdings</th><th>Ledger Net</th><th>Variance</th><th>Imported WACC</th><th>Ledger WACC</th><th class="l">Status</th></tr></thead>
+      <tbody>
+      {% for row in ledger.reconciliation_mismatches %}
+        <tr><td class="l pf-tkr">{{ row.symbol }}</td><td>{{ row.holding_quantity|floatformat:2 }}</td><td>{{ row.ledger_net_quantity|floatformat:2 }}</td><td class="{% if not row.quantity_match %}num-neg{% endif %}">{{ row.variance|floatformat:2 }}</td><td>{% if row.reported_wacc is not None %}{{ row.reported_wacc|floatformat:4 }}{% else %}—{% endif %}</td><td>{% if row.ledger_wacc is not None %}{{ row.ledger_wacc|floatformat:4 }}{% else %}—{% endif %}</td><td class="l"><span class="pf-ledger-flag">{% if not row.quantity_match %}Missing/opening/later activity{% elif row.wacc_missing %}Missing WACC source{% else %}WACC variance{% endif %}</span></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endif %}

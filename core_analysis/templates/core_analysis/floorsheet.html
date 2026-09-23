@@ -1,0 +1,569 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floorsheet Analytics Desk</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────── -->
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">FS</span>
+      <div>
+        <h1 class="mi-title">Floorsheet Analytics Desk</h1>
+        <p class="mi-subtitle">Advanced broker flow and trading activity analysis</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      <span class="fs-updated" id="fs-updated">
+        {% if meta.latest_date %}Last Updated On {{ meta.latest_date }}{% endif %}
+      </span>
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">Home</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+      <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='floorsheet' %}
+
+  <!-- ── DSX tab bar ──────────────────────────────────────────────────── -->
+  <nav class="dsx-tabs" id="dsx-tabs">
+    <a class="dsx-help" href="{% url 'floorsheet_sop' %}" target="_blank" rel="noopener"
+       title="How every metric on this page is calculated — methodology SOP"
+       aria-label="Methodology SOP for the whole page">?</a>
+    <button class="dsx-tab active" data-tab="adradar">A/D Radar</button>
+    <button class="dsx-tab" data-tab="flowmap">Broker Flow Map</button>
+    <button class="dsx-tab" data-tab="flowradar">Broker Flow Radar</button>
+    <button class="dsx-tab" data-tab="favorites">Broker Analysis</button>
+    <button class="dsx-tab" data-tab="signals">Signal Desk</button>
+    <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
+    <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
+    <button class="dsx-tab" data-tab="netholding">Net Position Analytics</button>
+    <button class="dsx-tab" data-tab="concentration">Broker Exposure Monitor</button>
+    <button class="dsx-tab" data-tab="depth">Market Depth</button>
+  </nav>
+
+  {% if not meta.ok %}
+  <div class="dsx-banner" id="dsx-banner">Floorsheet feed unavailable — showing no data. It will populate once the feed responds.</div>
+  {% endif %}
+
+  {% comment %}
+  A/D Radar — stock-first accumulation/distribution. Every other tab is
+  broker-first (pick a broker, see what it traded); this one asks, for each
+  scrip, whether someone is building or unloading a position.
+
+  The score is backtested (see services/accumulation.py) and the evidence strip
+  below states the result INCLUDING its limits, because the honest headline is
+  "a 3-6 month screen with a ~53% hit rate", not "a signal".
+  {% endcomment %}
+  <section class="dsx-panel active" id="panel-adradar">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="ad-sector" class="dsx-select dsx-sector"></select>
+      </div>
+      {% comment %}
+        Current Day and Last 1 Week are withheld here: the service refuses a
+        1-session window outright, and 5 sessions is below the 15-session
+        minimum the model was tested on, so both could only ever return a
+        warning. The shortest offered window is 1 Month.
+      {% endcomment %}
+      {% include "core_analysis/includes/_date_range.html" with prefix="ad" hide_today=1 hide_week=1 %}
+      <div class="dsx-seg" data-group="ad-side" title="Which side of the book to list">
+        <button type="button" class="dsx-pill active" data-val="accumulation">Accumulation</button>
+        <button type="button" class="dsx-pill" data-val="quiet">Quiet Accumulation</button>
+        <button type="button" class="dsx-pill" data-val="distribution">Distribution</button>
+        <button type="button" class="dsx-pill" data-val="all">All Scored</button>
+      </div>
+      <button type="button" id="ad-analyze" class="dsx-analyze">Scan</button>
+    </div>
+
+    <div class="dsx-kpis" id="ad-kpis"></div>
+
+    <!-- Evidence strip: what the backtest actually found, stated up front so the
+         score is never read as a prediction. -->
+    <div class="dsx-ad-evidence" id="ad-evidence"></div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="ad-table-title">ACCUMULATION CANDIDATES</span>
+        <span class="dsx-ad-sub">
+          <span id="ad-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'accumulation_sop' %}" target="_blank" rel="noopener"
+             title="A/D Radar methodology — the score, the backtest, and its limits">Methodology</a>
+        </span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="ad-table"></table></div>
+      <div class="dsx-ad-note" id="ad-universe"></div>
+    </div>
+
+    <!-- Ask the desk: grounded Q&A over THIS scan.
+         The model is handed the computed JSON, never a screenshot, and is
+         forbidden from using any number not in it - so an answer can always be
+         checked against the table above. -->
+    <div class="dsx-card dsx-ad-ask" id="ad-ask">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>ASK THE DESK</span>
+        <span class="dsx-ad-sub" id="ad-ask-quota"></span>
+      </div>
+      <div class="dsx-ad-ask-body">
+        <p class="dsx-ad-ask-hint">
+          Answers come only from the numbers in this scan
+          (<span id="ad-ask-scope">current window</span>). It will say so when
+          something is not in the data, and it cannot forecast prices.
+        </p>
+        {% comment %}
+          CSRF_COOKIE_HTTPONLY is True in settings, so JavaScript cannot read the
+          token from document.cookie - the usual getCookie('csrftoken') trick
+          silently yields "" and every POST 403s. Render the token into the DOM
+          instead and read it from here.
+        {% endcomment %}
+        {% csrf_token %}
+        <div class="dsx-ad-ask-row">
+          <input type="text" id="ad-ask-q" class="dsx-ad-ask-input" maxlength="400"
+                 placeholder="e.g. which stocks are absorbing without the price going up?"
+                 aria-label="Ask a question about this scan">
+          <button type="button" id="ad-ask-go" class="dsx-analyze">Ask</button>
+        </div>
+        {% comment %}
+          Every example below is answerable from the brief the server sends
+          (both tails of the ranking + the quiet-accumulation list + the
+          evidence block). Questions needing data the brief does not carry -
+          fundamentals, news, anything intraday - are deliberately absent, so
+          the chips never teach a question the tool must refuse.
+
+          Grouped by what they exercise: flow structure, then who is doing it,
+          then comparison, then the honesty check.
+        {% endcomment %}
+        <div class="dsx-ad-ask-eg">
+          <button type="button" class="dsx-ad-eg">Which stocks are absorbing without the price going up?</button>
+          <button type="button" class="dsx-ad-eg">Which stocks are being distributed the hardest?</button>
+          <button type="button" class="dsx-ad-eg">Where is the selling most concentrated?</button>
+          <button type="button" class="dsx-ad-eg">Where is one broker doing most of the buying?</button>
+          <button type="button" class="dsx-ad-eg">Which stocks have the widest group of buyers?</button>
+          <button type="button" class="dsx-ad-eg">Is anything absorbing even though the price already rose?</button>
+          <button type="button" class="dsx-ad-eg">Which sectors show up most in the accumulation list?</button>
+          <button type="button" class="dsx-ad-eg">Compare the top 3 accumulating stocks.</button>
+          <button type="button" class="dsx-ad-eg">Explain the top stock in plain language.</button>
+          <button type="button" class="dsx-ad-eg">How much can I trust this score?</button>
+          <button type="button" class="dsx-ad-eg">Summarise this window in three lines.</button>
+        </div>
+        <div class="dsx-ad-ask-out" id="ad-ask-out" hidden></div>
+      </div>
+    </div>
+
+    <!-- Detail drawer: the brokers on each side for one scrip. -->
+    <div class="dsx-card dsx-ad-detail" id="ad-detail" hidden>
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="ad-detail-title">SCRIP DETAIL</span>
+        <button type="button" class="dsx-ad-close" id="ad-detail-close" aria-label="Close detail">×</button>
+      </div>
+      <div class="dsx-ad-detail-body" id="ad-detail-body"></div>
+    </div>
+  </section>
+
+  <!-- shared range / view controls (each panel toggles which it shows) -->
+  <section class="dsx-panel" id="panel-favorites">
+    <div class="dsx-controls">
+      <div class="dsx-field">Choose Broker Number(s)
+        <div class="dsx-multi" id="fav-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="fav-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="fav-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="fav-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="fav-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="fav" %}
+      <button type="button" id="fav-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+
+    <!-- KPI strip: the desk's stance at a glance (derived from favorites/) -->
+    <div class="dsx-kpis" id="fav-kpis"></div>
+
+    <div class="dsx-grid-2">
+      <div class="dsx-card">
+        <div class="dsx-card-head buy">BROKER TOP BUY</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fav-buy"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head sell">BROKER TOP SELL</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fav-sell"></table></div>
+      </div>
+    </div>
+
+    <!-- Persistent Accumulation / Distribution: multi-session net per stock with
+         conviction streak + all-broker concentration (HHI). Broker-tagged data
+         (NEPSE floorsheet) makes the streak computable; HHI reads supply control. -->
+    <div class="dsx-card dsx-ad-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>PERSISTENT ACCUMULATION / DISTRIBUTION</span>
+        <span class="dsx-ad-sub" id="fav-ad-sub"></span>
+      </div>
+      <div class="dsx-ad-filter">
+        <label for="fav-persist-sector">Sector</label>
+        <select id="fav-persist-sector" class="dsx-mini-select dsx-sector"></select>
+        <div class="dsx-seg" data-group="fav-persist-lb" title="Lookback window for the persistence scan">
+          <button type="button" class="dsx-pill" data-val="1w">1W</button>
+          <button type="button" class="dsx-pill active" data-val="1m">1M</button>
+          <button type="button" class="dsx-pill" data-val="3m">3M</button>
+        </div>
+        <div class="dsx-seg" data-group="fav-persist-side">
+          <button type="button" class="dsx-pill active" data-val="all">All</button>
+          <button type="button" class="dsx-pill" data-val="buy">Accumulating</button>
+          <button type="button" class="dsx-pill" data-val="sell">Distributing</button>
+        </div>
+      </div>
+      <div class="dsx-ad-cols" id="fav-ad-cols">
+        <span class="sortable" data-sort="symbol" data-type="str">Ticker</span>
+        <span class="sortable" data-sort="streak" data-type="num">Streak</span>
+        <span class="dsx-ad-cols-bar sortable" data-sort="cum_net" data-type="num">Distribution ◂ Net flow ▸ Accumulation</span>
+        <span class="r sortable" data-sort="cum_net" data-type="num">Net Qty</span>
+        <span class="r sortable" data-sort="hhi" data-type="num" title="Herfindahl concentration of all-broker trading (0 fragmented · 10000 single broker)">Conc. (HHI)</span>
+      </div>
+      <div class="dsx-ad" id="fav-ad"></div>
+    </div>
+  </section>
+
+  <!-- Broker Flow Radar: market-wide broker activity ranking -->
+  <section class="dsx-panel" id="panel-flowradar">
+    <div class="dsx-controls">
+      {% include "core_analysis/includes/_date_range.html" with prefix="flow" %}
+      <button type="button" id="flow-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-flow-head">
+        <span>Broker Flow Radar</span>
+        <span>Ranks brokers by gross activity, directional pressure, and two-sided matching flow.</span>
+      </div>
+      <div class="dsx-table-wrap dsx-flow-wrap">
+        <table class="dsx-table dsx-flow-table" id="flow-table"></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-signals">
+    <div class="dsx-controls">
+      <div class="dsx-field">Choose Broker Number(s)
+        <div class="dsx-multi" id="sig-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="sig-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="sig-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="sig-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="sig-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="sig" %}
+      <button type="button" id="sig-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-grid-2 dsx-signals">
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">PRICE–FLOW DIVERGENCE · DESK</div>
+        <div class="dsx-sig" id="sig-div"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">SECTOR ROTATION · DESK NET</div>
+        <div class="dsx-sig" id="sig-sec"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">BUYER / SELLER BREADTH · ALL BROKERS</div>
+        <div class="dsx-sig" id="sig-breadth"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">TWO-SIDED ACTIVITY · DESK</div>
+        <div class="dsx-sig" id="sig-two"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-stockwise">
+    <div class="dsx-controls">
+      <label class="dsx-field">Choose Ticker
+        <select id="sw-symbol" class="dsx-select"></select>
+      </label>
+      {% include "core_analysis/includes/_date_range.html" with prefix="sw" %}
+      <button type="button" id="sw-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-grid-3">
+      <div class="dsx-card">
+        <div class="dsx-card-head buy">BROKER TOP BUY</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-buy"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head sell">BROKER TOP SELL</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-sell"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head hold">BROKER TOP HOLDINGS</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-hold"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Broker Flow Map — who sold to whom, for one stock, within a time window. -->
+  <section class="dsx-panel" id="panel-flowmap">
+    <div class="dsx-controls">
+      <label class="dsx-field">Choose Ticker
+        <select id="fm-symbol" class="dsx-select"></select>
+      </label>
+      <label class="dsx-field">Timeframe
+        <select id="fm-range" class="dsx-select">
+          <option value="today" selected>Single session</option>
+          <option value="1w">1 week</option>
+          <option value="1m">1 month</option>
+          <option value="3m">Quarter (3m)</option>
+          <option value="6m">6 months</option>
+          <option value="1y">1 year</option>
+          <option value="fy">Fiscal YTD</option>
+          <option value="custom">Custom days…</option>
+        </select>
+      </label>
+      <label class="dsx-field" id="fm-date-wrap">Session
+        <input type="date" id="fm-date" class="dsx-select">
+      </label>
+      <label class="dsx-field dsx-hidden" id="fm-start-wrap">Start
+        <input type="date" id="fm-start" class="dsx-select">
+      </label>
+      <label class="dsx-field dsx-hidden" id="fm-end-wrap">End
+        <input type="date" id="fm-end" class="dsx-select">
+      </label>
+      <label class="dsx-field">From
+        <input type="time" id="fm-from" class="dsx-select" step="1">
+      </label>
+      <label class="dsx-field">To
+        <input type="time" id="fm-to" class="dsx-select" step="1">
+      </label>
+      <button type="button" id="fm-run" class="dsx-analyze">Analyze</button>
+    </div>
+
+    <div class="dsx-flow-presets" id="fm-presets" role="group" aria-label="Time window presets">
+      <button type="button" class="dsx-preset active" data-preset="full">Full session</button>
+      <button type="button" class="dsx-preset" data-preset="open">Opening 30m</button>
+      <button type="button" class="dsx-preset" data-preset="morning">Pre-noon</button>
+      <button type="button" class="dsx-preset" data-preset="afternoon">Afternoon</button>
+      <button type="button" class="dsx-preset" data-preset="close">Closing 30m</button>
+      <span class="dsx-flow-hint" id="fm-hint"></span>
+    </div>
+
+    <div class="dsx-flow-tiles" id="fm-tiles"></div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head" id="fm-tl-head">TRADED VALUE BY TIME — click or drag a range to filter</div>
+      <div class="dsx-timeline" id="fm-timeline"></div>
+    </div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head">SELLERS &nbsp;→&nbsp; BUYERS &nbsp;·&nbsp; ribbon width = value transferred</div>
+      <div class="dsx-play">
+        <button type="button" class="dsx-play-btn" id="fm-play" title="Play the session through time">▶ Play</button>
+        <button type="button" class="dsx-play-btn ghost" id="fm-reset" title="Show the full session again">⟲ Reset</button>
+        <input type="range" id="fm-scrub" class="dsx-scrub" min="0" max="0" value="0" step="1" aria-label="Session time">
+        <span class="dsx-play-clock" id="fm-clock">—</span>
+        <label class="dsx-play-speed">Speed
+          {# Retuned for 5-minute buckets (~50 frames): 1x still runs ~15s. #}
+          <select id="fm-speed" class="dsx-select">
+            <option value="600">0.5×</option>
+            <option value="300" selected>1×</option>
+            <option value="150">2×</option>
+            <option value="70">4×</option>
+          </select>
+        </label>
+      </div>
+      <div class="dsx-flow-wrap"><svg id="fm-svg" class="dsx-flow-svg"></svg></div>
+    </div>
+
+    <div class="dsx-grid-2">
+      <div class="dsx-card">
+        <div class="dsx-card-head">TOP 10 SELLERS BY VOLUME</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fm-top-sell"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head">TOP 10 BUYERS BY VOLUME</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fm-top-buy"></table></div>
+      </div>
+    </div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head">LARGEST FLOWS</div>
+      <div class="dsx-table-wrap"><table class="dsx-table" id="fm-links"></table></div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-hotstocks">
+    <div class="dsx-controls">
+      {% include "core_analysis/includes/_date_range.html" with prefix="hot" %}
+      <label class="dsx-field">Choose Sector
+        <select id="hot-sector" class="dsx-select dsx-sector"></select>
+      </label>
+      <button type="button" id="hot-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral">HOT STOCKS — MOST ACTIVE</div>
+      <div class="dsx-table-wrap"><table class="dsx-table" id="hot-table"></table></div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-netholding">
+    <div class="dsx-controls">
+      <div class="dsx-field">Net Holding For Broker(s)
+        <div class="dsx-multi" id="nh-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="nh-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="nh-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="nh-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="nh-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="nh" %}
+      <label class="dsx-check"><input type="checkbox" id="nh-exclude-mf"> Exclude Mutual Funds</label>
+      <label class="dsx-field">Choose Sector
+        <select id="nh-sector" class="dsx-select dsx-sector"></select>
+      </label>
+      <button type="button" id="nh-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-legend">
+      <span><i class="dot buy"></i> Net Buy</span>
+      <span><i class="dot sell"></i> Net Sell</span>
+    </div>
+    <div class="dsx-treemap" id="nh-treemap"></div>
+  </section>
+
+  <section class="dsx-panel" id="panel-concentration">
+    <div class="dsx-controls">
+      <span class="dsx-blurb">Broker activity concentration in each stock based on % of total transactions</span>
+      {% include "core_analysis/includes/_date_range.html" with prefix="conc" %}
+      <label class="dsx-field">Choose Sector
+        <select id="conc-sector" class="dsx-select dsx-sector"></select>
+      </label>
+      <button type="button" id="conc-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-conc" id="conc-table"></table></div>
+    </div>
+  </section>
+
+  {% comment %}
+  Market Depth — TMS top-5 order-book replay, one script at a time. This is
+  Phase 2A-1 of the market-depth design: raw observations (book, top-5 qty vs a
+  rolling baseline, qty added/pulled between captures, splits, seconds elapsed)
+  and NO score. The feed polls scripts in rotation, so frames are per script and
+  a pull faster than the capture gap is invisible — the panel says so.
+  {% endcomment %}
+  <section class="dsx-panel" id="panel-depth">
+    <div class="dsx-controls">
+      <label class="dsx-field">Date
+        <select id="md-date" class="dsx-select"></select>
+      </label>
+      <label class="dsx-field">Script
+        <select id="md-symbol" class="dsx-select"></select>
+      </label>
+      <button type="button" id="md-load" class="dsx-analyze">Replay</button>
+      <a class="dsx-ad-sop" href="{% url 'market_depth_sop' %}" target="_blank" rel="noopener"
+         title="Market Depth methodology — every number, the capture-gap limit, and what is not built yet">Methodology</a>
+      <span class="dsx-blurb" id="md-hint">Pick a date and script. Frames are per script; the slider steps through every capture.</span>
+    </div>
+
+    <div class="dsx-kpis" id="md-kpis"></div>
+
+    <div class="md-replay" id="md-replay" hidden>
+      <div class="md-scrub">
+        <button type="button" class="md-btn" id="md-prev" title="Previous frame">&#9664;</button>
+        <button type="button" class="md-btn" id="md-play" title="Play / pause">&#9654;</button>
+        <button type="button" class="md-btn" id="md-next" title="Next frame">&#9654;|</button>
+        <input type="range" id="md-slider" min="0" max="0" value="0">
+        <span class="md-frame" id="md-frame">&mdash;</span>
+      </div>
+      <div class="dsx-grid-2 md-book">
+        <div class="dsx-card">
+          <div class="dsx-card-head buy">BID &middot; <span id="md-bid-head"></span></div>
+          <div class="dsx-table-wrap"><table class="dsx-table" id="md-bids"></table></div>
+        </div>
+        <div class="dsx-card">
+          <div class="dsx-card-head sell">ASK &middot; <span id="md-ask-head"></span></div>
+          <div class="dsx-table-wrap"><table class="dsx-table" id="md-asks"></table></div>
+        </div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral dsx-ad-head"><span>FRAME OBSERVATIONS</span><span class="dsx-ad-sub" id="md-obs-sub"></span></div>
+        <div class="md-obs" id="md-obs"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral dsx-ad-head"><span>LIQUIDITY EVENTS &middot; this script, this day</span><span class="dsx-ad-sub"><span id="md-ev-sub"></span> <a class="dsx-ad-sop" href="{% url 'market_depth_sop' %}#events" target="_blank" rel="noopener">How events are defined</a></span></div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="md-events"></table></div>
+        <div class="dsx-ad-note">An event is the single price level whose quantity changed by at least half of the script&rsquo;s rolling top-5 baseline between two captures. ADD = quantity appeared, PULL = quantity left. A pull can be a fill or a cancel; the floorsheet, not the book, settles which. Seconds are the gap between captures, so speed is only as fine as the feed.</div>
+      </div>
+    </div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head"><span>DAY OVERVIEW &middot; every script captured</span><span class="dsx-ad-sub" id="md-ov-sub"></span></div>
+      <div class="dsx-table-wrap"><table class="dsx-table" id="md-overview"></table></div>
+      <div class="dsx-ad-note">Spike = top-5 quantity divided by that script&rsquo;s own rolling median (last 20 captures), so a number means the same for a thin and a liquid name. Click a row to replay it.</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Theme toggle — shares the "mi-theme" key with the Market Insights dashboard.
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function syncThemeButton() {
+      if (!btn) return;
+      var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = isLight ? 'Dark' : 'Light';
+      btn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+      btn.setAttribute('aria-label', btn.title);
+    }
+    syncThemeButton();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      syncThemeButton();
+    });
+  })();
+</script>
+{{ meta|json_script:"dsx-meta-json" }}
+<script>
+  try { window.DSX_BOOTSTRAP = JSON.parse(document.getElementById('dsx-meta-json').textContent); }
+  catch (e) { window.DSX_BOOTSTRAP = null; }
+</script>
+<script src="{% static 'core_analysis/js/floorsheet-brokers.js' %}?v={{ asset_version }}"></script>
+<script>
+  window.MD_CONFIG = {
+    datesUrl: "{% url 'depth_dates_api' %}",
+    overviewUrl: "{% url 'depth_overview_api' %}",
+    framesUrl: "{% url 'depth_frames_api' %}"
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/floorsheet-depth.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
+</body>
+</html>

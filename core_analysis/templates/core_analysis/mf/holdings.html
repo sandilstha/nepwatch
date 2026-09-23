@@ -1,0 +1,129 @@
+{% extends "core_analysis/mf/_base.html" %}
+{% block title %}Fund Holdings by Company{% endblock %}
+{% block heading %}Mutual Fund Holdings{% endblock %}
+{% block subheading %}Which funds own a stock, month by month, and who is adding or trimming{% endblock %}
+
+{% block content %}
+<div class="mfd-bar">
+  {% comment %}
+    ~300 companies in the picker, so it needs a filter — scrolling a native
+    select that long to find one ticker is the whole friction of this screen.
+  {% endcomment %}
+  <div class="mfd-field">
+    <label for="mf-find">Find</label>
+    <input id="mf-find" class="mfd-input" type="search" placeholder="Ticker or name">
+  </div>
+  <div class="mfd-field">
+    <label for="mf-script">Company</label>
+    <select id="mf-script" class="mfd-select" style="width:min(330px, 78vw)">
+      {% for s in scripts %}
+        <option value="{{ s.script }}">{{ s.script }}{% if s.company_name %} — {{ s.company_name }}{% endif %}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mfd-field">
+    <label for="mf-months">Months</label>
+    <select id="mf-months" class="mfd-select" style="min-width:100px">
+      <option value="6">6</option><option value="9" selected>9</option>
+      <option value="12">12</option><option value="14">All</option>
+    </select>
+  </div>
+  <div class="mfd-spacer"></div>
+  <button type="button" class="mfd-btn" id="mf-export">Export CSV</button>
+</div>
+
+<div class="mfd-wrap"><table class="mfd-table" id="mf-table"></table></div>
+<div class="mfd-note" id="mf-note"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var M = window.MFD;
+  var sel = document.getElementById("mf-script"),
+      months = document.getElementById("mf-months"),
+      table = null;
+
+  function build(d) {
+    var cols = [
+      {key:"symbol", label:"Ticker", fmt:function(r){
+        return r.symbol === "Total Kitta" ? "<b>Total Kitta</b>"
+          : '<a href="/mutual-fund/desk/financials/?symbol='+encodeURIComponent(r.symbol)+'">'+
+            M.esc(r.symbol)+'</a>'; }},
+      {key:"fund_name", label:"Company Name", fmt:function(r){ return M.esc(r.fund_name||""); }}
+    ];
+    d.periods.forEach(function (period, i) {
+      cols.push({
+        key: "m" + i,
+        label: period,
+        fmt: function (r) {
+          var c = r.cells[i];
+          if (!c || c.kitta == null) return '<span class="mfd-muted">—</span>';
+          var chg = c.change_pct;
+          /* The change compares with the column to the RIGHT — the previous
+             month. A fund appearing for the first time shows no change rather
+             than +100%, which would read as a position doubling. */
+          var tail = chg == null ? "" :
+            ' <span class="'+M.cls(chg)+'">('+M.signed(chg)+')</span>';
+          return M.num(c.kitta, 0) + tail;
+        },
+        raw: function (r) { return r.cells[i] ? r.cells[i].kitta : null; }
+      });
+    });
+    table = new M.Table(document.getElementById("mf-table"), cols,
+      {empty:"No fund reported holding this stock in the months shown."});
+  }
+
+  function load() {
+    M.getJSON(M.urls.holdings, {script: sel.value, months: months.value}).then(function (d) {
+      if (!d.ok) {
+        document.getElementById("mf-table").innerHTML =
+          '<tbody><tr><td class="mfd-empty">' + M.esc(d.error||"No data.") + "</td></tr></tbody>";
+        return;
+      }
+      M.syncUrl({script: d.script, months: months.value});
+      build(d);
+      var total = {symbol:"Total Kitta", fund_name:"",
+                   cells: d.totals.map(function(t){ return {kitta:t, change_pct:null}; })};
+      table.setRows(d.funds, total);
+      document.getElementById("mf-note").innerHTML =
+        "<b>" + M.esc(d.script) + (d.company_name ? " — " + M.esc(d.company_name) : "") +
+        " · held by " + d.holder_count + " fund(s).</b> " +
+        "Figures are <b>kitta</b>, and the bracketed change compares with the month " +
+        "in the column to its right. A fund that first appears shows no change rather " +
+        "than a spurious +100%. Months run newest first.";
+    }).catch(function(){});
+  }
+
+  /* Filtering rebuilds the option list from a kept copy of the full set, so a
+     cleared box restores everything and the current pick survives if it still
+     matches. */
+  var ALL = [].slice.call(sel.options).map(function (o) {
+    return {v: o.value, t: o.textContent};
+  });
+  document.getElementById("mf-find").addEventListener("input", function () {
+    var q = this.value.trim().toLowerCase(), keep = sel.value;
+    var hits = !q ? ALL : ALL.filter(function (o) {
+      return o.t.toLowerCase().indexOf(q) !== -1;
+    });
+    sel.innerHTML = hits.map(function (o) {
+      return '<option value="' + M.esc(o.v) + '">' + M.esc(o.t) + "</option>";
+    }).join("");
+    if (!hits.length) return;
+    sel.value = hits.some(function (o) { return o.v === keep; }) ? keep : hits[0].v;
+    if (sel.value !== keep) load();
+  });
+
+  sel.addEventListener("change", load);
+  months.addEventListener("change", load);
+  document.getElementById("mf-export").addEventListener("click", function () {
+    if (table) table.csv("fund-holdings-" + sel.value + ".csv");
+  });
+  var pre = M.urlParam("script");
+  if (pre) { var o=[].slice.call(sel.options).filter(function(x){return x.value===pre;})[0]; if(o) sel.value=pre; }
+  if (sel.options.length) load();
+  else document.getElementById("mf-table").innerHTML =
+    '<tbody><tr><td class="mfd-empty">No holdings synced yet.</td></tr></tbody>';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+SN,Broker ,Contact Person,Contact Number,Broker number,Status,TMS Link
+1,Kumari Securities Private Limited,-,4423689,1,ACTIVE,tms01.nepsetms.com.np
+2,Arun Securities (PVT) Ltd.,-,016916470,3,ACTIVE,tms03.nepsetms.com.np
+3,Opal Securities Investment (PVT) Ltd.,-,4239273,4,ACTIVE,tms04.nepsetms.com.np
+4,Market Securities & Exchange (PVT) Ltd.,-,4248973,5,ACTIVE,tms05.nepsetms.com.np
+5,Agrawal Securities (PVT) Ltd.,-,4424657,6,ACTIVE,tms06.nepsetms.com.np
+6,J.F. Securites (PVT) Ltd.,-,4442912,7,ACTIVE,tms07.nepsetms.com.np
+7,Brilliant Securities Pvt. Ltd.,ASHOK KUMAR JHA,015970780,8,ACTIVE,tms08.nepsetms.com.np
+8,Pragyan Securities (PVT) Ltd.,-,016226890,10,ACTIVE,tms10.nepsetms.com.np
+9,Malla & Malla Stock Broking Company Pvt. Limited,-,4432088,11,ACTIVE,tms11.nepsetms.com.np
+10,Thrive Brokerage House Pvt. Ltd,-,4419051,13,ACTIVE,tms13.nepsetms.com.np
+11,Nepal Stock House (PVT) Ltd.,-,4265888,14,ACTIVE,tms14.nepsetms.com.np
+12,Primo Securities (PVT) Ltd.,Megh Nath Upadhya,4168214,16,ACTIVE,tms16.nepsetms.com.np
+13,ABC Securities Private Limited,-,4230787,17,ACTIVE,tms17.nepsetms.com.np
+14,Sagarmatha Securities Private Limited,-,4433221,18,ACTIVE,tms18.nepsetms.com.np
+15,Nepal Investment And Securities Trading Private Limited,-,4495450,19,ACTIVE,tms19.nepsetms.com.np
+16,Sipla Securities Private Limited,-,4255782,20,ACTIVE,tms20.nepsetms.com.np
+17,Midas Stock Broking Company Private Limited,-,4240089,21,ACTIVE,tms21.nepsetms.com.np
+18,Siprabi Securities Pvt. Ltd.,-,5530701,22,ACTIVE,tms22.nepsetms.com.np
+19,Sweta Securities Private Limited,-,4444791,25,ACTIVE,tms25.nepsetms.com.np
+20,Asian Securities Private Ltd.,Rudra Prasad Sharma,014524351,26,ACTIVE,tms26.nepsetms.com.np
+21,Shree Krishna Securities Ltd.,-,4224262,28,ACTIVE,tms28.nepsetms.com.np
+22,Trisul Securities & Invt. Ltd.,-,4440709,29,ACTIVE,tms29.nepsetms.com.np
+23,Premier Securities Company Ltd.,-,4432700,32,ACTIVE,tms32.nepsetms.com.np
+24,Dakshinkali Investment & Securities Pvt. Ltd.,Dinesh Raj Sapkota,4168640,33,ACTIVE,tms33.nepsetms.com.np
+25,Vision Securities Pvt. Ltd,Raj Kumar Timilsina,4770452,34,ACTIVE,tms34.nepsetms.com.np
+26,Kohinoor Investment & Securities Pvt. Ltd.,-,4442858,35,ACTIVE,tms35.nepsetms.com.np
+27,Secured Securities Ltd.,Santosh Mainali,4168172,36,ACTIVE,tms36.nepsetms.com.np
+28,Swarna Laxmi Securities Pvt. Ltd.,Dharm Raj Sapkota,430534,37,ACTIVE,tms37.nepsetms.com.np
+29,Dipshikha Dhitopatra Karobar Co. Pvt Ltd.,Dipak Raj Oli,4102532,38,ACTIVE,tms38.nepsetms.com.np
+30,Sumeru Securities Pvt. Ltd.,Jeevan Prasai,4444740,39,ACTIVE,tms39.nepsetms.com.np
+31,Creative Securities Pvt Ltd,Raman Dev Pant,4168205,40,ACTIVE,tms40.nepsetms.com.np
+32,Linch Stock Market Ltd.,Sarita Adhikari,4784567,41,ACTIVE,tms41.nepsetms.com.np
+33,Sani Securities Company Ltd.,Santosh Paudel,4401006,42,ACTIVE,tms42.nepsetms.com.np
+34,South Asian Bulls Pvt. Ltd.,Prakesh Kumar Aggrawal,4284785,43,ACTIVE,tms43.nepsetms.com.np
+35,Dynamic Money Managers Securities Pvt. Ltd.,Madhu Joshi,4414522,44,ACTIVE,tms44.nepsetms.com.np
+36,Imperial Securities Company Pvt. Ltd.,Bhakti Ram Ghimire,4231004,45,ACTIVE,tms45.nepsetms.com.np
+37,Kalika Securities Pvt. Ltd.,Narendra Raj Sijapati,4430601,46,ACTIVE,tms46.nepsetms.com.np
+38,Neev Securities Pvt. Ltd.,Baivab Sharma,4470464,47,ACTIVE,tms47.nepsetms.com.np
+39,Trishakti Securities Public Limited,Tank Prasad Gautam,05970148,48,ACTIVE,tms48.nepsetms.com.np
+40,Online Securities Pvt. Ltd.,Dinesh Sharma Bidari,014168298,49,ACTIVE,tms49.nepsetms.com.np
+41,Cristal Kanchanjanga Securites Pvt. Ltd.,Priya Raj Regmi,9851026960,50,ACTIVE,tms50.nepsetms.com.np
+42,Oxford Securities Pvt. Ltd.,-,9841382573,51,ACTIVE,tms51.nepsetms.com.np
+43,Sundhara Securities Limited,Fanindra Dhakal,"01-4212215, 4260174",52,ACTIVE,tms52.nepsetms.com.np
+44,Investment Management Nepal Pvt. Ltd.,-,4256589,53,ACTIVE,tms53.nepsetms.com.np
+45,Sewa Securities Pvt. Ltd.,-,4256642,54,ACTIVE,tms54.nepsetms.com.np
+46,Bhrikuti Stock Broking Co. Pvt. Ltd.,-,4223466,55,SUSPEND,tms55.nepsetms.com.np
+47,Sri Hari Securities Pvt. Ltd.,-,4437562,56,ACTIVE,tms56.nepsetms.com.np
+48,Aryatara Investment & Securities,Gunnidhi Bhusal,4233596,57,ACTIVE,tms57.nepsetms.com.np
+49,Naasa Securities Co. Ltd.,Rajiv Lacoul,01-4440384,58,ACTIVE,tms58.nepsetms.com.np
+50,Deevyaa Securities & Stock House Pvt. Ltd,Ram Prasad Acharya,01-4421488,59,ACTIVE,tms59.nepsetms.com.np
+51,Nagarik Stock Dealer,Maheshwor Lal Shrestha,9851000000,60,ACTIVE,nsd.nepsetms.com.np
+52,BHOLE GANESH SECURITIES LTD,HARI BHANDARI,9847083952,61,ACTIVE,tms61.nepsetms.com.np
+53,Capital Max Securities Ltd,Bishnu Pokharel,9851097632,62,ACTIVE,tms62.nepsetms.com.np
+54,Himalayan Brokerage Company Limited,Sagar Dhakal,9851055216,63,ACTIVE,tms63.nepsetms.com.np
+55,SUN SECURITIES PVT LTD,KRISHNA GIRI,9851333777,64,ACTIVE,tms64.nepsetms.com.np
+56,Sharepro Securities Private Limited,Sagun Shakya,9851122347,65,ACTIVE,tms65.nepsetms.com.np
+57,Miyo Securities Pvt Ltd,Ashish Ranabhat,9801881325,66,ACTIVE,tms66.nepsetms.com.np
+58,Property Wiard Limited,Jeeban Kumar Prasai,9851349930,67,ACTIVE,tms67.nepsetms.com.np
+59,Elite Stock House Limited,Sandeep Prasad Mishra,9851046054,68,ACTIVE,tms68.nepsetms.com.np
+60,INDEX SECURITIES LIMITED,BINOD ALE,9767245316,69,ACTIVE,tms69.nepsetms.com.np
+61,Infinity Securities Limited,Nita Nepal,9851351802,70,ACTIVE,tms70.nepsetms.com.np
+62,SHUBHAKAMANA SECURITIES PVT. LTD,PROSAN KUMAR SHAH,9852027296,71,ACTIVE,tms71.nepsetms.com.np
+63,Hatemalo Financial Services Private Limited,Ganesh Pokharel,9851112907,72,ACTIVE,tms72.nepsetms.com.np
+64,Money World Share Exchange PVT Ltd,Prerana Shrestha,9849892892,73,ACTIVE,tms73.nepsetms.com.np
+65,KALASH STOCK MARKET PVT. LTD.,SHALIKRAM ADHIKARI,9851254622,74,ACTIVE,tms74.nepsetms.com.np
+66,N.I.M.B. Stock Markets Limited,Yubaraj Bhusal,9851400375,75,ACTIVE,tms75.nepsetms.com.np
+67,Machhapuchchhre Securities Limited,Kabindra Regmi,9851106225,76,ACTIVE,tms76.nepsetms.com.np
+68,Nabil Stock Dealer Ltd.,Madan Timilsina,9844760946,77,ACTIVE,tms77.nepsetms.com.np
+69,Garima Securities Limited,Shree Krishna Tiwari,9841933097,78,ACTIVE,tms78.garimasecurities.com.np
+70,pahiinvestment,Dipesh Yadav,9866823055,79,ACTIVE,tms79.nepsetms.com.np
+71,Indira securities pvt. ltd,Rakesh shrish,9851107444,80,ACTIVE,tms80.nepsetms.com.np
+72,Aakashbhairab Securities Ltd.,Mahesh Khanal,9851027899,81,ACTIVE,tms81.nepsetms.com.np
+73,N.M.B. SECURITIES LIMITED,Kumud Chandra Upadhyay,9852024863,82,ACTIVE,tms82.nepsetms.com.np
+74,Sanima Securities Limited,Sanjiv Poudel,9851128311,83,ACTIVE,tms83.nepsetms.com.np
+75,MILKY WAY SHARE BROKER COMPANY LTD,LABIN KADEL,9840899480,84,ACTIVE,tms84.nepsetms.com.np
+76,Capital Hub P. Ltd,Rajan Lamsal,9851020334,85,ACTIVE,tms85.nepsetms.com.np
+77,Stoxkarts Securities Limited,Subash Neupane,9851144940,86,ACTIVE,tms86.nepsetms.com.np
+78,S.P.S.A. Securities Limited,Jelina Kandel,9851226859,87,ACTIVE,tms87.nepsetms.com.np
+79,Blue Chip Securities Ltd,Dilli Ram Pangeni,9851040252,88,ACTIVE,tms88.nepsetms.com.np
+80,Global IME Securities Limited,Keshab Pyakurel,9841661185,89,ACTIVE,tms89.nepsetms.com.np
+81,Sajilo Broker Limited,Gobinda Sharma Gairhe,9841387829,90,ACTIVE,tms90.nepsetms.com.np
+82,Citizens Share Broker Limited,Santosh Pant,9766381154,91,ACTIVE,tms91.nepsetms.com.np
+83,Roadshow securities limited,sagar gurung,9851224167,92,ACTIVE,tms92.nepsetms.com.np
+84,Beni Securities Pvt.Ltd.,Mod Prasad Tripathi,9841309269,93,ACTIVE,tms93.nepsetms.com.np
+85,K.B.L. Securities Limited,BINAYA REGMI,9851076533,94,ACTIVE,tms94.nepsetms.com.np
+86,Magnet Securities and Investment Company Private Limited,Bhimsen Giri,9851170069,95,ACTIVE,tms95.nepsetms.com.np
+87,Himalayan Securities Limited,Suman Sharma,9851288045,96,ACTIVE,tms96.nepsetms.com.np
+88,R.B.B. Securities Company Ltd,Beni Shrestha,9851364896,97,ACTIVE,tms97.nepsetms.com.np
+89,Trademow Securities Private Limited,Bijaya Karki,9851119274,98,ACTIVE,tms98.trademow.com
+90,Prabhu Stock Market Limited,Drona Prasad Dhamala,9851062359,99,ACTIVE,tms99.nepsetms.com.np
+91,Sunrise Securities Limited,Sirjana Shrestha,9767983247,100,ACTIVE,-
+92,APPLE SECURITIES PRIVATE LIMITED,RICHA MISHRA,9849389621,101,ACTIVE,-
+,,,,,,
+,Stock Dealer,Contact Person,Contact Number,Stock Dealer number,Status,TMS Link
+1,Nagarik Stock Dealer,Maheshwor Lal Shrestha,9851000000,60,ACTIVE,nsd.nepsetms.com.np
+2,Nabil Stock Dealer Ltd.,Madan Timilsina,9844760946,77,ACTIVE,tms77.nepsetms.com.np

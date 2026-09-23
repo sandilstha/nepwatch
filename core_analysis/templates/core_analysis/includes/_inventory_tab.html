@@ -1,0 +1,319 @@
+    <div class="tab-pane fade {% if active_tab == 'inventory' %}show active{% endif %}" id="inventory-pane" role="tabpanel">
+
+      <!-- Data sync toolbar — scoped to the Raw Inventory Manager tab. -->
+      <div class="d-flex flex-column gap-2 sync-toolbar mb-4">
+          <!-- Row 1: Sync Price Data -->
+          <form method="POST" action="{% url 'trigger_daily_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync Price</span>
+            <input type="text" id="headerSyncFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" aria-label="Sync price from date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerSyncToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" aria-label="Sync price to date" autocomplete="off">
+            <select name="source" class="form-control form-control-sm sync-scope-input">
+              <option value="both">Stocks + Indices</option>
+              <option value="stocks">Stocks Only</option>
+              <option value="indices">Indices Only</option>
+            </select>
+            <button type="submit" class="btn btn-dark btn-sm sync-btn" data-loading-label="Syncing...">
+              Sync Price Data
+            </button>
+          </form>
+          <!-- Row 2: Sync & Calculate -->
+          <form method="POST" action="{% url 'trigger_sync_and_calculate' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync &amp; Calc</span>
+            <input type="text" id="headerCalcFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" aria-label="Sync and calculate from date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerCalcToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" aria-label="Sync and calculate to date" autocomplete="off">
+            <button type="submit" class="btn btn-primary btn-sm sync-btn" data-loading-label="Calculating...">
+              Sync &amp; Calculate
+            </button>
+          </form>
+          <!-- Row 3: Sync Floorsheet (trade-level broker feed) -->
+          <form method="POST" action="{% url 'trigger_floorsheet_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync Floorsheet</span>
+            <button type="button" class="btn btn-outline-success btn-sm sync-latest-btn"
+                    data-date-range="latest" data-from-id="headerFloorFromDate" data-to-id="headerFloorToDate"
+                    title="Set both dates to the latest trading day">
+              Latest
+            </button>
+            <input type="text" id="headerFloorFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" aria-label="Sync floorsheet from date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerFloorToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" aria-label="Sync floorsheet to date" autocomplete="off">
+            <button type="submit" class="btn btn-success btn-sm sync-btn" data-loading-label="Syncing...">
+              Sync Floorsheet
+            </button>
+          </form>
+          {% comment %}
+            Row 4: Proposed dividends (ShareSansar scrape). This already rides
+            along with the daily price sync for the two newest fiscal years —
+            this row is for the cases that does not cover: the first full
+            backfill, or re-pulling one closed year after the source amends it.
+          {% endcomment %}
+          <form method="POST" action="{% url 'trigger_proposed_dividend_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Proposed Dividend</span>
+            <select name="scope" class="form-control form-control-sm sync-scope-input">
+              <option value="recent">2 newest fiscal years</option>
+              <option value="all">Full history (all years)</option>
+            </select>
+            <span class="sync-sep">or</span>
+            <input type="text" name="year" class="form-control form-control-sm sync-date-input"
+                   placeholder="One year e.g. 2081/2082" autocomplete="off">
+            <button type="submit" class="btn btn-warning btn-sm sync-btn" data-loading-label="Scraping...">
+              Sync Dividends
+            </button>
+          </form>
+          {% comment %}
+            Row 5: Mutual fund NAV (ShareSansar scrape). This is the ONLY source
+            of data for the Mutual Fund sector — funds file no quarterly
+            statements, so the Fundamentals Sync below will never populate them
+            however often it runs. Worth running monthly: the feed exposes only
+            each fund's latest reading, so history accumulates from syncs rather
+            than being backfillable.
+          {% endcomment %}
+          <form method="POST" action="{% url 'trigger_mutual_fund_nav_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Mutual Fund NAV</span>
+            <span class="text-muted small flex-grow-1">
+              Latest NAV, market price and premium/discount for every listed fund.
+              Funds publish no Balance Sheet or Income Statement — this is their
+              fundamentals.
+            </span>
+            <button type="submit" class="btn btn-info btn-sm sync-btn" data-loading-label="Scraping...">
+              Sync Fund NAV
+            </button>
+          </form>
+
+          {% comment %}
+            Holdings and statements come from the internal 192.168.1.39 feed,
+            which is a different source from the NAV scrape above and carries
+            what no public feed does: per-script positions and each fund's
+            balance sheet. It rate-limits hard, so a full pull pauses partway
+            and takes a couple of minutes — that is the throttle being honoured,
+            not a hang.
+          {% endcomment %}
+          <form method="POST" action="{% url 'mf_sync_api' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Mutual Fund Holdings</span>
+            <span class="text-muted small flex-grow-1">
+              Per-script holdings and balance sheets for every fund and month.
+              Feeds the Financials, Holdings, Sector and Assets reports.
+              <b>Takes 1&ndash;2 minutes</b> &mdash; the feed rate-limits and the pull
+              honours it. Leave the page open; do not reload.
+            </span>
+            <button type="submit" class="btn btn-info btn-sm sync-btn" data-loading-label="Pulling... (1–2 min)">
+              Sync Fund Holdings
+            </button>
+          </form>
+      </div>{# /sync-toolbar #}
+
+      {# Fundamentals Sync — pull latest published quarterly reports into the system. #}
+      {% include "core_analysis/includes/_funda_sync_tab.html" %}
+
+      {% comment %}
+        Life insurance "Other Indicators" — the nine lines the fundamentals feed
+        never sends (it stops at li_ks_534). Typed in from the company's
+        quarterly report; merged under the feed's KS rows on Industry Analysis
+        and Stock 360 at read time.
+      {% endcomment %}
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4" id="lifeIndicators">
+        <h5 class="mb-1" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Insurance — Other Indicators (manual)</h5>
+        <div class="small text-muted mb-3">
+          The fundamentals feed publishes only part of each insurer's "Other Indicators" table (8 of 17 for
+          life, 7 for non-life); enter the rest from the quarterly report. Amounts in <b>full rupees as printed</b>
+          (commas allowed); they are shown as Rs. 000 alongside the feed's rows. Re-saving the same company &amp;
+          period replaces it. The field set switches with the sector.
+        </div>
+        <form method="POST" action="{% url 'life_indicator_save' %}" id="liForm">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-2">
+              <label class="form-label text-muted small" for="liSector">Sector</label>
+              <select id="liSector" name="sector" class="form-control form-control-sm" required>
+                {% for g in life_tickers %}<option value="{{ g.sector }}">{{ g.sector }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small" for="liTicker">Company</label>
+              <select id="liTicker" name="ticker" class="form-control form-control-sm" required>
+                <option value="">— pick —</option>
+                {% for g in life_tickers %}{% for t in g.tickers %}<option value="{{ t }}" data-sector="{{ g.sector }}">{{ t }}</option>{% endfor %}{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small" for="liFy">Fiscal year (AD)</label>
+              <input type="text" id="liFy" name="fiscal_year_ad" class="form-control form-control-sm" required
+                     placeholder="2025/26" pattern="\d{4}/\d{2}" title="e.g. 2025/26 (BS 2082/83)">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small" for="liQ">Quarter</label>
+              <select id="liQ" name="quarter" class="form-control form-control-sm" required>
+                <option value="1">Q1</option><option value="2">Q2</option>
+                <option value="3">Q3</option><option value="4" selected>Q4</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label text-muted small" for="liSrc">Source note</label>
+              <input type="text" id="liSrc" name="source_note" class="form-control form-control-sm"
+                     placeholder="e.g. Q4 2082/83 quarterly report, Other Indicators table">
+            </div>
+            {% for f in life_spec %}
+            <div class="col-md-4 li-field" data-sectors="{{ f.sectors_attr }}">
+              <label class="form-label text-muted small" for="li_{{ f.field }}">{{ f.label }}
+                <span class="text-muted">({% if f.kind == 'rs' %}Rs{% elif f.kind == 'rate' %}as printed{% else %}{{ f.unit }}{% endif %})</span></label>
+              <input type="text" id="li_{{ f.field }}" name="{{ f.field }}" class="form-control form-control-sm"
+                     {% if f.kind == 'rate' %}placeholder="Rs. 55 - Rs. 85 Per Thousand"{% elif f.kind == 'count' %}placeholder="1,177,803"{% elif f.kind == 'ratio' %}placeholder="1.54"{% else %}placeholder="2,575,547,764"{% endif %}
+                     autocomplete="off">
+            </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-dark btn-sm mt-3 px-4 rounded-2">Save Other Indicators</button>
+        </form>
+        <script>
+          /* Sector picks the field set and filters the company list. Hidden
+             fields are disabled so they post nothing — the server nulls them. */
+          (function () {
+            var sec = document.getElementById('liSector'), tick = document.getElementById('liTicker');
+            if (!sec || !tick) return;
+            function apply() {
+              var s = sec.value;
+              document.querySelectorAll('#liForm .li-field').forEach(function (box) {
+                var on = (box.getAttribute('data-sectors') || '').split('|').indexOf(s) !== -1;
+                box.hidden = !on;
+                box.querySelectorAll('input').forEach(function (i) { i.disabled = !on; });
+              });
+              var keep = false;
+              Array.prototype.forEach.call(tick.options, function (o) {
+                if (!o.value) return;
+                var on = o.getAttribute('data-sector') === s;
+                o.hidden = !on; o.disabled = !on;
+                if (on && o.selected) keep = true;
+              });
+              if (!keep) tick.value = '';
+            }
+            sec.addEventListener('change', apply); apply();
+          })();
+        </script>
+
+        {% if life_recent %}
+        <div class="panel-outer mt-4">
+          <table class="minimal-table">
+            <thead>
+              <tr>
+                <th>Company</th><th>Sector</th><th>Period</th>
+                <th class="th-num">Policies issued</th><th class="th-num">Claims o/s (Rs)</th>
+                <th>Declared bonus</th><th class="th-num">Life fund (Rs)</th>
+                <th class="th-num">Solvency</th><th>Source</th><th style="width:110px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in life_recent %}
+              <tr>
+                <td><span class="td-ticker">{{ r.ticker }}</span></td>
+                <td class="text-muted small">{{ r.sector }}</td>
+                <td class="td-date">{{ r.fiscal_year_ad }} Q{{ r.quarter }}</td>
+                <td class="td-num">{{ r.policies_issued|default_if_none:"—" }}</td>
+                <td class="td-num">{{ r.gross_claim_outstanding|default_if_none:"—" }}</td>
+                <td>{{ r.declared_bonus_rate|default:"—" }}</td>
+                <td class="td-num">{{ r.life_insurance_fund|default_if_none:"—" }}</td>
+                <td class="td-num">{{ r.solvency_margin_ratio|default_if_none:"—" }}</td>
+                <td class="text-muted small">{{ r.source_note|default:"—" }}</td>
+                <td>
+                  <form method="POST" action="{% url 'life_indicator_delete' r.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-action-del"
+                            onclick="return confirm('Delete other indicators for {{ r.ticker }} {{ r.fiscal_year_ad }} Q{{ r.quarter }}?')">Delete</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-3" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Add New Stock Record Coordinates</h5>
+        <form method="POST" action="{% url 'crud_operations' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label text-muted small" for="inventoryCompany">Company Ticker</label>
+              <input type="text" id="inventoryCompany" name="company" class="form-control form-control-sm text-uppercase" required placeholder="e.g. ADBL">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small" for="inventoryBusinessDate">Business Date</label>
+              <input type="text" id="inventoryBusinessDate" name="business_date" class="form-control form-control-sm" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small" for="inventoryExternalId">External ID</label>
+              <input type="number" id="inventoryExternalId" name="external_id" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small" for="inventorySecurityId">Security ID</label>
+              <input type="number" id="inventorySecurityId" name="security_id" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small" for="inventoryCloseAdj">Close Price (Adj)</label>
+              <input type="number" step="0.01" id="inventoryCloseAdj" name="close_price_adj" class="form-control form-control-sm" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-dark btn-sm mt-3 px-4 rounded-2">Commit Transaction Row</button>
+        </form>
+        <div class="mt-3 small text-muted">
+          <strong>SOP:</strong> Stage 2 Buy Logic = Close &gt; Resistance AND Close &gt; 30W EMA AND Volume Ratio &gt; 1.5.
+        </div>
+      </div>
+
+      <div class="panel-outer">
+        <table class="minimal-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ticker Symbol</th>
+              <th class="th-num">Close Price (Adjusted)</th>
+              <th>Security Reference ID</th>
+              <th style="width: 240px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+            <tr class="inventory-row">
+              <td class="td-date">{{ record.business_date }}</td>
+              <td><span class="td-ticker">{{ record.company_id }}</span></td>
+              <td class="td-num">
+                <form method="POST" action="{% url 'crud_operations' %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="record_id" value="{{ record.id }}">
+                  <input type="number" step="0.01" name="close_price_adj" value="{{ record.close_price_adj }}" class="input-close"
+                         aria-label="Adjusted close for {{ record.company_id }} on {{ record.business_date }}">
+                  <button type="submit" class="btn-action-update ms-1">Update</button>
+                </form>
+              </td>
+              <td class="text-muted">{{ record.security_id }}</td>
+              <td>
+                <form method="POST" action="{% url 'crud_delete' record.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-action-del"
+                          onclick="return confirm('Confirm data wipe for {{ record.company_id }} on {{ record.business_date }}?')">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-5">No dataset vectors found in local storage schema.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 2 — T3MA RIBBON
+    ══════════════════════════════════════════════════════════════════ -->

@@ -1,0 +1,60 @@
+    <div class="tab-pane fade {% if active_tab == 'ema_backtest' %}show active{% endif %}" id="ema-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">EMA 50/200 Strategy Parameters</h5>
+        <form method="GET" action="." id="emaForm">
+          <input type="hidden" name="active_tab" value="ema_backtest">
+          <input type="hidden" name="ema_backtest_symbol" id="emaSymbolHidden" value="{{ ema_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="emaSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ ema_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="emaDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="emaFromDate" name="ema_from_date" class="form-control form-control-sm" value="{{ ema_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="emaToDate" name="ema_to_date" class="form-control form-control-sm" value="{{ ema_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Fast EMA</label>
+              <input type="number" min="1" step="1" name="ema_fast_period" class="form-control form-control-sm" value="{{ ema_fast_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Slow EMA</label>
+              <input type="number" min="1" step="1" name="ema_slow_period" class="form-control form-control-sm" value="{{ ema_slow_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Take Profit %</label>
+              <input type="number" step="0.01" min="0" name="ema_take_profit_pct" class="form-control form-control-sm" value="{{ ema_take_profit_pct }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Stop Loss %</label>
+              <input type="number" step="0.01" min="0" name="ema_stop_loss_pct" class="form-control form-control-sm" value="{{ ema_stop_loss_pct }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute EMA Model</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="emaFromDate" to_id="emaToDate" %}
+        </form>
+      </div>
+
+      <div class="tab-ajax-results" id="ema_backtestResults" data-tab-key="ema_backtest">
+        {% include "core_analysis/includes/_ema_results.html" %}
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 4 — CCI
+    ══════════════════════════════════════════════════════════════════ -->

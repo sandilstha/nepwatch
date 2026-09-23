@@ -1,0 +1,112 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valuation & Model — {{ symbol }}</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('mi-theme');
+        if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/tokens.css' %}?v={{ asset_version|default:1 }}">
+  {# Shares Stock 360's stylesheet: same panels, same tokens, same valuation blocks. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/stock360.css' %}?v={{ asset_version|default:1 }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/fundamentals-desk.css' %}?v={{ asset_version|default:1 }}">
+</head>
+<body class="val-page">
+
+<header class="hero">
+  <div class="hero-inner">
+    <a class="brand" href="{% url 'market_insights' %}" title="Back to Market Insights"><span class="dot">S</span>Stock&nbsp;360</a>
+    <a class="icon-btn home-btn" href="{% url 'market_insights' %}">← Home</a>
+    <a class="icon-btn home-btn" href="{% url 'stock360_symbol' symbol %}">← Stock 360</a>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" type="button" style="margin-left:auto">◐ Theme</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="col">
+
+    <section id="overview">
+      <div class="s360-title">
+        <div class="s360-name">
+          <h1>{{ security_name }} <span class="sym">({{ symbol }})</span></h1>
+          <div class="s360-quote">
+            <span class="cur">Valuation &amp; sector model</span>
+            {% if close %}<span class="price num">{{ close|floatformat:2 }}</span>{% endif %}
+          </div>
+        </div>
+        {# Same search contract as Stock 360 — it posts to /stock/ and the JS rewrites the target. #}
+        <form class="search s360-search" method="get" action="/stock/" onsubmit="return sv.go(event)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input id="symSearch" name="symbol" type="text" autocomplete="off" placeholder="Search symbol — e.g. NABIL" value="{{ symbol }}" aria-label="Search symbol">
+          <div class="ac" id="symAc"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VALUATION (intrinsic) & PEER RANK -->
+    <section id="val" class="panel">
+      <div class="phead"><h2>Valuation &amp; Peers</h2>
+        <span class="desk-score sc-neu" id="valScore">loading…</span>
+        <a class="link" href="#model">Morningstar model ↓</a></div>
+      <div class="pbody">
+        <div class="val-grid val-grid-2">
+          <div class="val-left">
+            <div class="eyebrow">Intrinsic · Justified P/B = (ROE − g) / (r − g)</div>
+            <div id="valBody"><div class="loading">Loading valuation…</div></div>
+            <div class="val-inputs" id="valInputs" hidden>
+              <label>Cost of equity r
+                <span class="ipt"><input type="number" id="valR" step="0.5" min="1" max="40"> %</span>
+              </label>
+              <label>Growth g
+                <span class="ipt"><input type="number" id="valG" step="0.5" min="0" max="30"> %</span>
+              </label>
+              <button type="button" class="s360-btn" id="valApply">Recalculate</button>
+              <button type="button" class="s360-btn ghost" id="valReset">Reset</button>
+            </div>
+            <div id="valSens"></div>
+          </div>
+          <div class="val-right">
+            <div class="eyebrow">Peer rank · sector percentile</div>
+            <div id="peerBody"><div class="loading">Loading peer rank…</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MORNINGSTAR — the full model, peer table included. This page has the room
+         Stock 360 did not, so nothing here is collapsed behind a toggle. -->
+    <section id="model" class="panel">
+      <div class="phead"><h2>Morningstar · Growth &amp; Value model</h2>
+        <a class="link" href="{% url 'fundamental_sop' %}#morningstar" target="_blank" rel="noopener">Methodology ↗</a></div>
+      <div class="pbody"><div id="fa-model"><div class="loading">Loading the sector model…</div></div></div>
+    </section>
+
+  </div>
+</div>
+
+<footer>Valuation &amp; model · {{ symbol }} · figures from the platform's own fundamental snapshots and price tables.</footer>
+
+<script>
+  window.SV = { symbol: "{{ symbol|escapejs }}" };
+  window.FA_CONFIG = {
+    modelUrl: "{% url 'fundamental_model_api' %}",
+    // modelSymbol, not symbol: this page hosts the model only, so the statements
+    // pipeline must not run — it would look for a shell that is not here.
+    modelSymbol: "{{ symbol|escapejs }}",
+    autoModel: true
+  };
+</script>
+<script src="{% static 'core_analysis/js/valuation.js' %}?v={{ asset_version|default:1 }}"></script>
+<script defer src="{% static 'core_analysis/js/fundamentals.js' %}?v={{ asset_version|default:1 }}"></script>
+</body>
+</html>

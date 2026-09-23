@@ -1,0 +1,125 @@
+      {% if rrg_new_listing %}
+        {% include "core_analysis/includes/_new_listing_snapshot.html" with snapshot=rrg_new_listing %}
+      {% endif %}
+      {% if rrg_backtest_metrics %}
+        {% if rrg_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rrg_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Current Quadrant</span>
+                <h4 class="mt-2 mb-0 fw-bold 
+                  {% if rrg_backtest_metrics.latest_quadrant == 'Leading' %}text-success
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Weakening' %}text-warning
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Lagging' %}text-danger
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Improving' %}text-primary
+                  {% else %}text-muted{% endif %}">{{ rrg_backtest_metrics.latest_quadrant }}</h4>
+                <div class="small text-muted mt-1" title="Consecutive sessions in this quadrant">
+                  {{ rrg_backtest_metrics.bars_in_quadrant|default:1 }} bar{{ rrg_backtest_metrics.bars_in_quadrant|pluralize }} in quadrant{% if rrg_backtest_metrics.rotated_from %} · from {{ rrg_backtest_metrics.rotated_from }}{% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS-Ratio</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_backtest_metrics.latest_rs_ratio|floatformat:2 }}</h4>
+                <div class="small text-muted mt-1">Δ {{ rrg_backtest_metrics.rs_ratio_delta|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS-Momentum</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_backtest_metrics.latest_rs_momentum|floatformat:2 }}</h4>
+                <div class="small text-muted mt-1">Δ {{ rrg_backtest_metrics.rs_momentum_delta|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Benchmark</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_benchmark_symbol }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_backtest_metrics.data_points }} plotted points{% if rrg_backtest_metrics.matched_bars %} from {{ rrg_backtest_metrics.matched_bars }} shared bars{% endif %}</div>
+                {% if rrg_backtest_metrics.stale %}<div class="small text-warning mt-1" title="The benchmark has {{ rrg_backtest_metrics.stale_sessions }} newer session{{ rrg_backtest_metrics.stale_sessions|pluralize }}">⚠ Last point {{ rrg_backtest_metrics.latest_date }} — {{ rrg_backtest_metrics.stale_sessions }} session{{ rrg_backtest_metrics.stale_sessions|pluralize }} behind the benchmark</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4 border-0 metric-card shadow-sm rounded-3 mb-4 rrg-chart-card">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Quadrant Map</h6>
+                <div class="small text-muted mt-1">X-axis: RS-Ratio. Y-axis: RS-Momentum. Center line: 100.</div>
+              </div>
+              <div class="rrg-legend">
+                <span class="rrg-legend-item rrg-leading">Leading</span>
+                <span class="rrg-legend-item rrg-weakening">Weakening</span>
+                <span class="rrg-legend-item rrg-lagging">Lagging</span>
+                <span class="rrg-legend-item rrg-improving">Improving</span>
+              </div>
+            </div>
+            <div class="rrg-indices-toolbar" role="toolbar" aria-label="RRG chart controls">
+              <button type="button" id="rrgAnimateBtn" class="rrg-toolbar-btn primary" aria-pressed="false">&#9658; Animate</button>
+              <button type="button" id="rrgFitBtn" class="rrg-toolbar-btn" aria-pressed="false">Fit</button>
+              <button type="button" id="rrgMaxBtn" class="rrg-toolbar-btn" aria-pressed="false" title="Full-screen chart (Esc to close)">Max</button>
+              <button type="button" id="rrgCenterBtn" class="rrg-toolbar-btn" aria-pressed="true">Center</button>
+              <button type="button" id="rrgLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-pressed="false" aria-label="Lock scale" title="Lock scale">&#128275;</button>
+              <div class="rrg-tail-control">
+                <label class="rrg-tail-label" for="rrgTailNumber">Tail Length</label>
+                <input type="range" id="rrgTailSlider" class="rrg-tail-slider" min="1" max="50" value="1" aria-label="Tail length">
+                <input type="number" id="rrgTailNumber" class="rrg-tail-number" min="1" max="50" step="1" value="1">
+              </div>
+              <label class="rrg-arrow-mode">
+                <input type="checkbox" id="rrgArrowMode">
+                <span>Arrow Mode</span>
+              </label>
+            </div>
+            <div id="rrgChart" class="rrg-chart-wrap">
+              <div class="rrg-chart-empty">RRG chart data is not available.</div>
+            </div>
+          </div>
+          {{ rrg_chart_points|json_script:"rrg-chart-data" }}
+
+          <div class="panel-outer">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Log: {{ rrg_selected_symbol }} vs {{ rrg_benchmark_symbol }}</h6>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th class="th-num">Stock Close</th>
+                    <th class="th-num">Benchmark Close</th>
+                    <th class="th-num">Relative Strength (RS)</th>
+                    <th class="th-num">RS-Ratio</th>
+                    <th class="th-num">RS-Momentum</th>
+                    <th>Quadrant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in rrg_indicator_rows %}
+                  <tr>
+                    <td class="td-date">{{ row.business_date }}</td>
+                    <td class="td-num">{{ row.stock_close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.bench_close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.RS|floatformat:4 }}</td>
+                    <td class="td-num">{{ row.RS_Ratio|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.RS_Momentum|floatformat:2 }}</td>
+                    <td class="fw-semibold 
+                      {% if row.Quadrant == 'Leading' %}text-success-custom
+                      {% elif row.Quadrant == 'Weakening' %}text-warning
+                      {% elif row.Quadrant == 'Lagging' %}text-danger-custom
+                      {% elif row.Quadrant == 'Improving' %}text-primary
+                      {% else %}text-muted{% endif %}">{{ row.Quadrant }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No RRG data generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}

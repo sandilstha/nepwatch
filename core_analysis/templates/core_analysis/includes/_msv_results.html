@@ -1,0 +1,205 @@
+      {% if msv_new_listing %}
+        {% include "core_analysis/includes/_new_listing_snapshot.html" with snapshot=msv_new_listing %}
+      {% endif %}
+      {% if msv_backtest_metrics %}
+        {% if msv_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ msv_backtest_metrics.error }}</div>
+          {% if msv_backtest_metrics.warnings %}
+            <div class="alert alert-warning border-0 rounded-3 shadow-sm py-3">
+              <ul class="mb-0">
+                {% for warning in msv_backtest_metrics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% else %}
+          {% if msv_backtest_metrics.warnings %}
+            <div class="alert alert-warning border-0 rounded-3 shadow-sm py-3">
+              <strong>Warnings:</strong>
+              <ul class="mb-0 mt-1">
+                {% for warning in msv_backtest_metrics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Latest Position</span>
+                <h5 class="mt-2 mb-0 fw-bold text-light">{{ msv_backtest_metrics.latest_position_status }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Latest Signal</span>
+                <h5 class="mt-2 mb-0 fw-bold {% if msv_backtest_metrics.latest_signal == 'Buy' %}text-success{% elif msv_backtest_metrics.latest_signal == 'Exit' %}text-danger{% else %}text-muted{% endif %}">{{ msv_backtest_metrics.latest_signal }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Entries / Exits</span>
+                <h5 class="mt-2 mb-0 fw-bold text-primary">{{ msv_backtest_metrics.entries }} / {{ msv_backtest_metrics.exits }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Supertrend Status</span>
+                <h5 class="mt-2 mb-0 fw-bold {% if msv_backtest_metrics.latest_trend_status == 'Bullish' %}text-success{% else %}text-danger{% endif %}">{{ msv_backtest_metrics.latest_trend_status }}</h5>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">RVOL Status</div>
+                <div class="fw-semibold {% if msv_backtest_metrics.latest_rvol_ok %}text-success{% else %}text-danger{% endif %}">
+                  {{ msv_backtest_metrics.latest_rvol|default:"N/A" }} (Threshold {{ msv_rvol_threshold }})
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">ATR Stop Loss</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.latest_stop_loss|default:"N/A" }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">MACD Histogram Panel</div>
+                <div class="fw-semibold text-light">Shown in indicator table below</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">VWAP / Supertrend</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.latest_vwap|default:"N/A" }} / {{ msv_backtest_metrics.latest_supertrend|default:"N/A" }}</div>
+              </div>
+            </div>
+          </div>
+
+          {% if msv_backtest_metrics.trades_count %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Share of trades that closed positive (open trade included, marked end-of-data)">Win Rate</div>
+                <div class="fw-semibold {% if msv_backtest_metrics.win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">{{ msv_backtest_metrics.win_rate }}% <span class="text-muted small">({{ msv_backtest_metrics.trades_count }} trades)</span></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Gross win % ÷ gross loss %, equal-weight per trade">Profit Factor</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.profit_factor|default:"N/A" }}</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted">Avg Win / Avg Loss</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.avg_win_pct|default:"—" }}% / {{ msv_backtest_metrics.avg_loss_pct|default:"—" }}%</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Compounded, sequential full-position trades">Total Return</div>
+                <div class="fw-semibold {% if msv_backtest_metrics.total_return_pct >= 0 %}text-success{% else %}text-danger{% endif %}">{{ msv_backtest_metrics.total_return_pct }}%</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Worst peak-to-trough drop of the trade-sequence equity curve">Max Drawdown</div>
+                <div class="fw-semibold text-danger">{{ msv_backtest_metrics.max_drawdown_pct }}%</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted">Best / Worst Trade</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.best_trade_pct }}% / {{ msv_backtest_metrics.worst_trade_pct }}%</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="panel-outer mb-4">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Momentum Scan Trade Log: {{ msv_selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="">
+                <tr>
+                  <th>Entry Date</th>
+                  <th>Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">P&amp;L %</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in msv_completed_trades %}
+                <tr>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ trade.pnl_pct|floatformat:2 }}%</td>
+                  <td class="text-muted">{{ trade.exit_reason }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">No completed MSV trades in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Momentum Scan Indicator Output</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="">
+                <tr>
+                  <th>Date</th>
+                  <th class="th-num">Close</th>
+                  <th class="th-num">MACD</th>
+                  <th class="th-num">Signal</th>
+                  <th class="th-num">Histogram</th>
+                  <th class="th-num">Supertrend</th>
+                  <th class="th-num">VWAP</th>
+                  <th class="th-num">ATR</th>
+                  <th class="th-num">RVOL</th>
+                  <th>Signal</th>
+                  <th>Position</th>
+                  <th class="th-num">Stop Loss</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in msv_indicator_rows %}
+                <tr>
+                  <td class="td-date">{{ row.business_date }}</td>
+                  <td class="td-num">{{ row.close_price_adj|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.MACD_line|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.MACD_signal|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.MACD_histogram|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.Supertrend|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.VWAP|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.ATR|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.RVOL|floatformat:3 }}</td>
+                  <td class="{% if row.signal == 'Buy' %}text-success-custom{% elif row.signal == 'Exit' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.signal }}</td>
+                  <td class="text-muted">{{ row.position_status }}</td>
+                  <td class="td-num">{{ row.stop_loss|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="12" class="text-center text-muted py-4">No indicator rows to render.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}

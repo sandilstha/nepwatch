@@ -1,0 +1,687 @@
+{% load static %}
+{% comment %}
+RRG → Seasonal Return desk. Monthly seasonality of every NEPSE index, computed
+from the local index table by core_analysis.services.seasonal_returns. Server
+rendered from the `seasonal` context payload (no client fetch). The NEPSE
+market-cycle chart rides along on the `market_cycle` payload.
+{% endcomment %}
+<div class="tab-pane fade {% if active_tab == 'rrg_seasonal' %}show active{% endif %}" id="rrg-seasonal-pane" role="tabpanel">
+  <style>
+    .season-wrap { --pos:#16a34a; --neg:#dc2626; }
+    .season-head h5 { font-size: 16px; font-weight: 800; color: var(--ink-1); margin: 0 0 2px; }
+    .season-head p { font-size: 12.5px; color: var(--ink-3, #94a3b8); margin: 0 0 14px; }
+    .season-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 780px) { .season-stats { grid-template-columns: 1fr; } }
+    .season-stat { background: var(--bg-raised, rgba(128,128,128,.06)); border: 1px solid var(--line, rgba(128,128,128,.2));
+      border-radius: 10px; padding: 12px 14px; }
+    .season-stat .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3, #94a3b8); }
+    .season-stat .v { font-size: 18px; font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; margin-top: 3px; }
+    .season-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 980px) { .season-grid2 { grid-template-columns: 1fr; } }
+    .season-card { background: var(--bg-surface, rgba(128,128,128,.04)); border: 1px solid var(--line, rgba(128,128,128,.2));
+      border-radius: 12px; padding: 14px 16px; }
+    .season-card h6 { font-size: 13px; font-weight: 700; color: var(--ink-1); margin: 0 0 10px; }
+    table.season-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.season-tbl th, table.season-tbl td { padding: 7px 9px; border-bottom: 1px solid var(--line, rgba(128,128,128,.16)); text-align: right; white-space: nowrap; }
+    table.season-tbl th { color: var(--ink-3, #94a3b8); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: .04em; }
+    table.season-tbl td.l, table.season-tbl th.l { text-align: left; }
+    table.season-tbl td.name { color: var(--ink-1); font-weight: 600; }
+    .season-matrix-scroll { overflow-x: auto; border: 1px solid var(--line, rgba(128,128,128,.2)); border-radius: 12px; }
+    table.season-matrix { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+    table.season-matrix { table-layout: fixed; width: 100%; }
+    table.season-matrix th, table.season-matrix td { padding: 6px 6px; border-bottom: 1px solid var(--line, rgba(128,128,128,.12));
+      text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    /* Column headers wrap onto 2-3 lines within a narrow width so all indices fit
+       without a horizontal scrollbar. Data cells stay on one line (short %). */
+    table.season-matrix thead th { position: sticky; top: 0; background: var(--bg-raised, #0b1d3f); color: var(--ink-3, #94a3b8);
+      font-weight: 600; font-size: 9.5px; text-transform: uppercase; letter-spacing: .02em;
+      white-space: normal; overflow-wrap: break-word; vertical-align: bottom; line-height: 1.15; }
+    table.season-matrix td { font-size: 11px; }
+    table.season-matrix .month { width: 88px; }
+    table.season-matrix col, table.season-matrix .savg { width: 54px; }
+    table.season-matrix td.month, table.season-matrix th.month { position: sticky; left: 0; background: var(--bg-raised, #0b1d3f);
+      text-align: left; color: var(--ink-1); font-weight: 700; z-index: 1; }
+    /* Average (total) row: one uniform slight tint across the whole row, opaque so
+       the sticky label stays clean while scrolling. Overrides the per-cell heat
+       background; the green/red numbers still toggle with the metric. */
+    table.season-matrix tfoot td { border-top: 2px solid var(--line, rgba(128,128,128,.4)); font-weight: 700;
+      background: var(--bg-input, #0e1c33) !important;
+      background: color-mix(in srgb, var(--accent, #4c8dff) 14%, var(--bg-raised, #0b1d3f)) !important; }
+    table.season-matrix .savg { border-left: 2px solid var(--line, rgba(128,128,128,.4)); font-weight: 700; }
+    .season-note { font-size: 11.5px; color: var(--ink-3, #94a3b8); margin-top: 12px; line-height: 1.5; }
+    .season-empty { padding: 30px; text-align: center; color: var(--ink-3, #94a3b8); }
+    .season-help { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
+      margin-left: 5px; border-radius: 50%; border: 1px solid var(--line, rgba(128,128,128,.45)); color: var(--ink-3, #94a3b8);
+      font-size: 9.5px; font-weight: 700; line-height: 1; cursor: help; vertical-align: middle; }
+    .season-help:hover { color: var(--ink-1, #e7eefc); border-color: var(--accent, #4c8dff); }
+    .season-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .season-card-head h6 { margin: 0; }
+    .season-mtoggle { display: inline-flex; border: 1px solid var(--line, rgba(128,128,128,.3)); border-radius: 8px; overflow: hidden; }
+    .season-mbtn { background: transparent; border: 0; padding: 5px 12px; font-size: 11.5px; font-weight: 600;
+      color: var(--ink-3, #94a3b8); cursor: pointer; }
+    .season-mbtn.active { background: var(--accent, #4c8dff); color: #fff; }
+    /* Latest Monthly Return (6 cols) + Best/Worst side-by-side; Latest gets the
+       wider column. Each table scrolls horizontally if it can't fit. */
+    .season-row2 { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+    @media (max-width: 1100px) { .season-row2 { grid-template-columns: 1fr; } }
+    .season-row2 .season-card { margin-bottom: 0; }
+    .season-row2 table.season-tbl { font-size: 11.5px; }
+    .season-row2 table.season-tbl th, .season-row2 table.season-tbl td { padding: 6px 7px; }
+    /* Accumulation / distribution strategy card + market outlook */
+    .season-strat { border: 1px solid var(--line, rgba(128,128,128,.2)); border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 16px; background: var(--bg-surface, rgba(128,128,128,.04)); }
+    .strat-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .strat-head h6 { font-size: 14px; font-weight: 800; color: var(--ink-1); margin: 0 0 2px; }
+    .strat-sub { font-size: 11px; color: var(--ink-3, #94a3b8); }
+    .phase-chip { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px; text-transform: uppercase;
+      letter-spacing: .03em; white-space: nowrap; }
+    .phase-distribution { background: rgba(220,38,38,.14); color: #dc2626; }
+    .phase-accumulation { background: rgba(22,163,74,.14); color: #16a34a; }
+    .phase-hold { background: rgba(76,141,255,.16); color: #4c8dff; }
+    .phase-wait, .phase-neutral { background: rgba(148,163,184,.16); color: var(--ink-3, #94a3b8); }
+    .strat-outlook { border-left: 3px solid var(--accent, #4c8dff); padding: 9px 13px; margin-bottom: 12px;
+      background: var(--bg-raised, rgba(128,128,128,.06)); border-radius: 0 8px 8px 0; }
+    .strat-outlook-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3, #94a3b8);
+      margin-bottom: 4px; font-weight: 700; }
+    .strat-outlook p { margin: 0; font-size: 12.5px; color: var(--ink-1); line-height: 1.55; }
+    table.strat-tbl td, table.strat-tbl th { vertical-align: top; }
+    .strat-full { color: var(--ink-3, #94a3b8); font-weight: 400; font-size: 11px; }
+    .conf-chip { font-size: 10.5px; font-weight: 700; border: 1px solid; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+    .strat-summary { white-space: normal !important; color: var(--ink-2, #a9b8d4); min-width: 240px; }
+    .strat-toggle { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+      border-radius: 50%; border: 1px solid var(--line, rgba(128,128,128,.45)); background: transparent;
+      color: var(--ink-3, #94a3b8); font-size: 12px; font-weight: 800; line-height: 1; cursor: pointer; }
+    .strat-toggle:hover { color: var(--ink-1, #e7eefc); border-color: var(--accent, #4c8dff); }
+    .strat-toggle[aria-expanded="true"] { background: var(--accent, #4c8dff); color: #fff; border-color: var(--accent, #4c8dff); }
+    .strat-body[hidden] { display: none; }
+    .mc-card { margin-bottom: 20px; }
+    .mc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 11px; color: var(--ink-3, #94a3b8); }
+    .mc-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+
+    /* Bull / bear market history */
+    .mr-card { margin-bottom: 20px; }
+    .mr-state { margin: 12px 0 14px; }
+    .mr-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+    .mr-state-grid > div { padding: 9px 12px; border: 1px solid rgba(128,128,128,.22); border-radius: 9px; }
+    .mr-k { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .04em; color: var(--ink-3, #94a3b8); }
+    .mr-v { display: block; font-size: 19px; font-weight: 800; line-height: 1.25; }
+    .mr-sub { display: block; font-size: 11.5px; color: var(--ink-3, #94a3b8); }
+    .mr-note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3, #94a3b8); }
+    .mr-tabs { display: flex; gap: 6px; margin: 0 0 10px; }
+    .mr-tab { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; padding: 6px 12px;
+              border: 1px solid rgba(128,128,128,.3); border-radius: 999px; background: transparent; color: inherit; }
+    .mr-tab.active { border-color: #5b8def; color: #5b8def; }
+    .mr-summary { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 9px;
+                  font-size: 12px; color: var(--ink-3, #94a3b8); }
+    /* Long tables scroll inside the card; the page never scrolls sideways. */
+    .mr-table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto;
+                     border: 1px solid rgba(128,128,128,.2); border-radius: 10px; }
+    .mr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .mr-table th, .mr-table td { padding: 8px 11px; text-align: left; white-space: nowrap;
+                                 border-bottom: 1px solid rgba(128,128,128,.14); }
+    .mr-table thead th { position: sticky; top: 0; z-index: 1; background: var(--bg-raised, #10202f);
+                         font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3, #94a3b8); }
+    .mr-table td.num, .mr-table th.num { text-align: right; }
+    .mr-table tbody tr:last-child td { border-bottom: none; }
+    .mr-n { color: var(--ink-3, #94a3b8); }
+    .mr-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; color: #fff;
+                font-size: 10.5px; font-weight: 800; letter-spacing: .03em; }
+    /* "which phase is running today" — the conclusion, so it leads the card */
+    .mr-now { padding: 10px 13px; border-radius: 9px; background: rgba(128,128,128,.07); margin: 12px 0 12px; }
+    .mr-now-line { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+    .mr-now-txt { font-size: 13.5px; line-height: 1.55; }
+    .mr-now-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-3, #94a3b8); }
+    /* the open phase is a projection to today, not a closed cycle — shown dashed */
+    .mr-ongoing td { border-top: 1px dashed rgba(128,128,128,.45); background: rgba(128,128,128,.06); }
+    .mr-caveats { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink-3, #94a3b8); }
+    .mr-caveats p { margin: 0 0 5px; }
+    .mc-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  </style>
+
+  <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4 season-wrap">
+    {% if not seasonal or not seasonal.ok %}
+      <div class="season-empty">{{ seasonal.reason|default:"Seasonal data is not available yet." }}</div>
+    {% else %}
+    <div class="season-head" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <h5 style="margin:0;">Seasonal Return</h5>
+      <a href="{% url 'market_cycle_sop' %}" class="strat-toggle" target="_blank" rel="noopener" title="SOP — NEPSE Market Cycle Stage Classification (Weinstein 4-stage, whole index)" aria-label="NEPSE Market Cycle Stage Classification SOP" style="text-decoration:none; width:auto; padding:2px 10px; border-radius:999px;">Market Cycle SOP</a>
+    </div>
+
+    {% if market_cycle and market_cycle.ok %}
+    <div class="season-strat mc-card">
+      <div class="strat-head">
+        <div>
+          <h6>NEPSE Market Cycle — Weinstein Stages</h6>
+          <span class="strat-sub">NEPSE Index close with 50 / 150 (30-week) / 200-day MAs, background shaded by stage · as of {{ market_cycle.as_of }}</span>
+        </div>
+        <span class="phase-chip" style="border:1px solid {{ market_cycle.current.color }}; color:{{ market_cycle.current.color }}; background:transparent;">{{ market_cycle.current.name }}</span>
+      </div>
+      <div id="mcChart" style="width:100%; min-height:380px;"></div>
+      <div class="mc-legend">
+        {% for s in market_cycle.legend %}
+          <span class="mc-legend-item"><span class="mc-dot" style="background:{{ s.color }};"></span>{{ s.name }}</span>
+        {% endfor %}
+        <span class="mc-legend-item"><span class="mc-dot" style="background:#f59e0b;border-radius:2px;"></span>Golden / Death cross</span>
+      </div>
+      {{ market_cycle|json_script:"mc-data" }}
+    </div>
+    {% endif %}
+
+    {% comment %}
+    Bull / Bear market history. Long-horizon companion to the Weinstein chart
+    above: that reads the current trend over ~3 years, this dates every cycle in
+    the full index history. Two datings are shown because they were derived
+    independently and agree on 7 of 9 turning points — Pagan-Sossounov (the
+    standard academic procedure) as the headline, and a daily 20% swing filter
+    for finer resolution.
+    {% endcomment %}
+    {% if market_regimes and market_regimes.ok %}
+    <div class="season-strat mr-card">
+      <div class="strat-head">
+        <div>
+          <h6>Bull &amp; Bear Markets — NEPSE Index</h6>
+          <span class="strat-sub">
+            {{ market_regimes.sessions }} sessions · {{ market_regimes.first_date }} to {{ market_regimes.as_of }} ·
+            Pagan-Sossounov dating ({{ market_regimes.params.amplitude }}% amplitude,
+            ±{{ market_regimes.params.ps_window }}-month window)
+          </span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          {% if market_regimes.state %}
+            <span class="phase-chip"
+                  style="border:1px solid {% if market_regimes.state.confirmed %}{% if market_regimes.state.anchor_kind == 'BULL' %}#dc2626{% else %}#16a34a{% endif %}{% else %}#94a3b8{% endif %};
+                         color:{% if market_regimes.state.confirmed %}{% if market_regimes.state.anchor_kind == 'BULL' %}#dc2626{% else %}#16a34a{% endif %}{% else %}#94a3b8{% endif %};
+                         background:transparent;">{{ market_regimes.state.label }}</span>
+          {% endif %}
+          {# Same convention as Seasonal Strategy below: the long table is #}
+          {# collapsed so it never pushes the seasonality matrices off-screen. #}
+          <button type="button" class="strat-toggle" id="mrToggle" aria-expanded="false"
+                  aria-controls="mrBody" aria-label="Show every bull and bear phase"
+                  title="Show every bull and bear phase">?</button>
+        </div>
+      </div>
+
+      {% if market_regimes.current_phase %}
+      {% with cp=market_regimes.current_phase %}
+      {# The conclusion the tables cannot give: which phase is running TODAY. #}
+      <div class="mr-now" style="border-left:4px solid {{ cp.color }};">
+        <div class="mr-now-line">
+          <span class="mr-badge" style="background:{{ cp.color }};">{{ cp.kind }} · RUNNING</span>
+          <span class="mr-now-txt">
+            As of <b>{{ cp.as_of_label }}</b>, NEPSE is in a <b>{{ cp.kind|lower }} market that began
+            {{ cp.start_full }}</b> at {{ cp.start_value }} — now in month <b>{{ cp.months|floatformat:0 }}</b>
+            ({{ cp.sessions }} sessions), <b style="color:{{ cp.color }};">{{ cp.pct_label }}</b> to date.
+          </span>
+        </div>
+        <p class="mr-now-sub">
+          Peak so far {{ cp.extreme }} on {{ cp.extreme_label }} ({{ cp.extreme_pct_label }}).
+          {% if not cp.confirmed_end %}
+            That high is <b>not yet a confirmed top</b> — a peak is only dated once a 20% fall follows it,
+            so this phase remains open.
+          {% endif %}
+        </p>
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      {% if market_regimes.state %}
+      {% with s=market_regimes.state %}
+      <div class="mr-state">
+        <div class="mr-state-grid">
+          <div><span class="mr-k">Last confirmed {{ s.anchor_kind|lower }} {% if s.anchor_kind == 'BULL' %}peak{% else %}trough{% endif %}</span>
+               <span class="mr-v">{{ s.anchor_value }}</span><span class="mr-sub">{{ s.since_label }}</span></div>
+          <div><span class="mr-k">Latest close</span>
+               <span class="mr-v">{{ s.current }}</span><span class="mr-sub">{{ s.from_ref_label }} from {% if s.anchor_kind == 'BULL' %}peak{% else %}trough{% endif %}</span></div>
+          <div><span class="mr-k">Deepest move since</span>
+               <span class="mr-v">{{ s.extreme_value }}</span><span class="mr-sub">{{ s.drawdown }}% · {{ s.extreme_date }}</span></div>
+          <div><span class="mr-k">Unconfirmed for</span>
+               <span class="mr-v">{{ s.sessions }}</span><span class="mr-sub">sessions · {{ s.days }} days</span></div>
+        </div>
+        {# The threshold is stated so the reader can see the call is a rule, not a view. #}
+        <p class="mr-note">{{ s.note }}
+           A {% if s.anchor_kind == 'BULL' %}bear{% else %}bull{% endif %} market would be confirmed at
+           <strong>{{ s.trigger }}</strong>.</p>
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      <div class="mr-body" id="mrBody" hidden>
+      <div class="mr-tabs" role="tablist">
+        <button type="button" class="mr-tab active" data-mr="ps" role="tab" aria-selected="true">Major cycles ({{ market_regimes.ps|length }})</button>
+        <button type="button" class="mr-tab" data-mr="swing" role="tab" aria-selected="false">Detailed ({{ market_regimes.swing|length }})</button>
+      </div>
+
+      {% for key, phases, summary in market_regimes.views %}
+      <div class="mr-pane" data-mr-pane="{{ key }}" {% if key != 'ps' %}hidden{% endif %}>
+        {% if summary %}
+        <div class="mr-summary">
+          <span><b>{{ summary.bull_count }}</b> bull{{ summary.bull_count|pluralize }} · median {{ summary.bull_median_months }} months, {{ summary.bull_median_pct }}%</span>
+          <span><b>{{ summary.bear_count }}</b> bear{{ summary.bear_count|pluralize }} · median {{ summary.bear_median_months }} months, {{ summary.bear_median_pct }}%</span>
+          <span>{{ summary.bull_time_pct }}% of time in bull markets</span>
+        </div>
+        {% endif %}
+        <div class="mr-table-wrap">
+          <table class="mr-table">
+            <thead><tr>
+              <th>#</th><th>Phase</th><th>From</th><th>To</th>
+              <th class="num">Start</th><th class="num">End</th><th class="num">Change</th><th class="num">Months</th>
+            </tr></thead>
+            <tbody>
+              {% for p in phases %}
+              <tr>
+                <td class="mr-n">{{ forloop.counter }}</td>
+                <td><span class="mr-badge" style="background:{{ p.color }};">{{ p.kind }}</span></td>
+                <td>{{ p.start_label }}</td>
+                <td>{{ p.end_label }}</td>
+                <td class="num">{{ p.from_value }}</td>
+                <td class="num">{{ p.to_value }}</td>
+                <td class="num" style="color:{{ p.color }}; font-weight:800;">{{ p.pct_label }}</td>
+                <td class="num">{{ p.months }}</td>
+              </tr>
+              {% endfor %}
+              {% if market_regimes.current_phase %}
+              {% with cp=market_regimes.current_phase %}
+              {# Closing row so the table ends at TODAY, not at the last pivot. #}
+              <tr class="mr-ongoing">
+                <td class="mr-n">→</td>
+                <td><span class="mr-badge" style="background:{{ cp.color }};">{{ cp.kind }}</span></td>
+                <td>{{ cp.start_label }}</td>
+                <td><b>Ongoing</b></td>
+                <td class="num">{{ cp.start_value }}</td>
+                <td class="num">{{ cp.current }}</td>
+                <td class="num" style="color:{{ cp.color }}; font-weight:800;">{{ cp.pct_label }}</td>
+                <td class="num">{{ cp.months|floatformat:0 }}</td>
+              </tr>
+              {% endwith %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if market_regimes.unclassified_head or market_regimes.closures %}
+      <div class="mr-caveats">
+        {% if market_regimes.unclassified_head %}
+          <p><b>Unclassified:</b> {{ market_regimes.unclassified_head.from }} to {{ market_regimes.unclassified_head.to }} —
+             the index never moved far enough to call a turning point, so this stretch belongs to no phase.</p>
+        {% endif %}
+        {% if market_regimes.closures %}
+          <p><b>Exchange closures inside phases:</b> {{ market_regimes.closures|length }} gaps over 10 days
+             (2015 earthquake, 2020 COVID and others). Calendar durations that span them are true but not
+             comparable — the 2020 bear covers 4 months yet only 17 sessions.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+      </div>{# /mr-body #}
+    </div>
+    {% endif %}
+
+    {% with st=seasonal.strategy %}
+    {% if st and st.ok %}
+    <div class="season-strat">
+      <div class="strat-head">
+        <div>
+          <h6>Seasonal Strategy — Accumulation / Distribution</h6>
+          <span class="strat-sub">Optimal seasonal entry / exit per index, ranked by Blend · as of {{ st.generated_for }}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="phase-chip phase-{{ st.phase|lower }}">{{ st.phase }}</span>
+          <a href="{% url 'seasonal_sop' %}" class="strat-toggle" target="_blank" rel="noopener" title="Methodology (SOP) — how the Accumulation / Distribution strategy is computed" aria-label="Seasonal strategy methodology (SOP)" style="text-decoration:none;">SOP</a>
+          <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="true" aria-controls="stratBody" aria-label="Hide seasonal strategy details" title="Hide seasonal strategy details">?</button>
+        </div>
+      </div>
+
+      <div class="strat-body" id="stratBody">
+      <div class="strat-outlook">
+        <div class="strat-outlook-k">Seasonal Market Outlook{% if st.horizon %} · {{ st.horizon }}{% endif %}</div>
+        <p>{{ st.outlook }}</p>
+      </div>
+
+      <div class="season-matrix-scroll">
+        <table class="season-tbl strat-tbl">
+          <thead><tr>
+            <th class="l">Subindex</th>
+            <th title="Buy window (month you accumulate into)">Accumulate</th>
+            <th title="Sell / take-profit window">Exit</th>
+            <th title="Recommended holding period">Holding Period</th>
+            <th title="Realistic, bookable return: outlier-trimmed mean of the window's realised compounded month-over-month return (in-sample)">Expected Return %</th>
+            <th title="Hindsight ceiling: average best-case intra-month swing captured over the window (assumes perfect timing — not repeatable)">Opp %</th>
+            <th title="Ranking metric: the per-month average of Expected Return % and Opp %, compounded over the window. Windows are selected and ranked by this blend">Blend %</th>
+            <th title="Monthly-equivalent (geometric) return — compares windows of different lengths on capital-efficiency">/Mo %</th>
+            <th title="Share of years the window's REAL return finished positive">Hit Rate</th>
+            <th title="Years of history behind the window">Yrs</th>
+            <th title="Hit-rate × sample size; downgraded if the pattern failed in one half of the history">Confidence</th>
+            <th class="l">Recommendation Summary</th>
+          </tr></thead>
+          <tbody>
+            {% for r in st.rows %}
+              <tr>
+                <td class="l name" data-full="{{ r.label }}" title="{{ r.label }}">{{ r.code }}</td>
+                <td>{{ r.accumulate }}</td>
+                <td>{{ r.exit }}</td>
+                <td>{{ r.hold }}</td>
+                <td style="color: {{ r.expected_color }}; font-weight: 700;">{{ r.expected_str }}</td>
+                <td style="color: {{ r.opp_color }};">{{ r.opp_str }}</td>
+                <td style="color: {{ r.blend_color }}; font-weight: 700;">{{ r.blend_str }}</td>
+                <td style="color: {{ r.permo_color }};">{{ r.permo_str }}</td>
+                <td>{{ r.hit_str }}</td>
+                <td>{{ r.years }}</td>
+                <td><span class="conf-chip" style="color: {{ r.conf_color }}; border-color: {{ r.conf_color }};">{{ r.confidence }}</span></td>
+                <td class="l strat-summary">{{ r.summary }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="season-note"><b>Entry / exit are selected by the Blend</b> — the per-month average of the realistic return and Opp %. <b>Expected Return %</b> = realistic, bookable price return: outlier-trimmed mean of the window's realised, year-by-year compounded month-over-month move (buy at the accumulate month's close, sell at the exit month's close; dividends excluded). <b>Opp %</b> = a <b>hindsight ceiling</b> — the average best-case intra-month swing over the window, assuming perfect timing of each month's high/low; not repeatable. <b>Blend %</b> = the average of the two, compounded; the table is ranked by it. <b>/Mo %</b> = Expected Return per month held. <b>Confidence</b> blends the real-return hit-rate with sample size and is downgraded when the pattern did not hold in both halves of the history. Windows need 5+ years of history and recompute automatically as new data lands. <b>Timing hints</b> in Recommendation Summary show where the entry month's low and the exit month's high have historically printed (early = first third of the month's sessions, mid = middle, late = final third) — a tendency to refine order placement, not a rule. <b>Note:</b> the window is chosen in-sample from the full history — realised forward returns tend to be more modest than the historical fit.</div>
+      </div>{# /strat-body #}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="season-stats">
+      <div class="season-stat"><div class="k">Date Coverage<span class="season-help" title="Average month-over-month performance for the NEPSE Index and sub-indices, from your local index history. Green = historically positive month, red = negative.">?</span></div><div class="v">{{ seasonal.coverage }}</div></div>
+      <div class="season-stat"><div class="k">Indices Included</div><div class="v">{{ seasonal.indices_count }}</div></div>
+      <div class="season-stat"><div class="k">Rows Processed</div><div class="v">{{ seasonal.rows_processed_str }}</div></div>
+    </div>
+
+    <div class="season-row2">
+    <div class="season-card">
+      <div class="season-card-head">
+        <h6>Latest Monthly Return</h6>
+        <div class="season-mtoggle" role="group" aria-label="Month labels">
+          <button type="button" class="season-mbtn active" data-lang="en">English</button>
+          <button type="button" class="season-mbtn" data-lang="np">नेपाली</button>
+        </div>
+      </div>
+      <div class="season-matrix-scroll">
+        <table class="season-tbl">
+          <thead><tr>
+            <th class="l">Index</th><th>Month</th>
+            <th title="Most recent completed month's actual return">Return %</th>
+            <th title="Seasonal average return for this month">Avg %</th>
+            <th title="Seasonal best-case (hindsight) intra-month swing for this month">Opp %</th>
+            <th title="Return % − Avg Return % (this month vs its seasonal norm)">Diff</th>
+          </tr></thead>
+          <tbody>
+            {% for r in seasonal.latest_rows %}
+              <tr>
+                <td class="l name">{{ r.label }}</td>
+                <td style="color: var(--ink-3, #94a3b8);"><span class="mname" data-en="{{ r.period_en }}" data-np="{{ r.period_np }}">{{ r.period_en }}</span></td>
+                <td style="color: {{ r.value_color }}; font-weight: 700;">{{ r.value_str }}</td>
+                <td style="color: {{ r.avg_color }};" title="Seasonal average over {{ r.avg_n }} year{{ r.avg_n|pluralize }} of this month">{{ r.avg_str }}</td>
+                <td style="color: {{ r.opp_color }};">{{ r.opp_str }}</td>
+                <td style="color: {{ r.diff_color }}; font-weight: 700;">{{ r.diff_str }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="season-note">Shows the most recent <b>completed</b> month (the in-progress month is excluded). Avg % &amp; Opp % are this index's seasonal averages for that month; <b>Diff = Return − Avg</b> (how the month did vs its seasonal norm).</div>
+    </div>
+
+    <div class="season-card">
+      <h6>Best / Worst Month by Index (Average)</h6>
+      <div class="season-matrix-scroll">
+        <table class="season-tbl">
+          <thead><tr><th class="l">Index</th><th>Best Month</th><th>Worst Month</th><th>Latest %</th></tr></thead>
+          <tbody>
+            {% for r in seasonal.bestworst_rows %}
+              <tr>
+                <td class="l name">{{ r.label }}</td>
+                <td title="Averaged over {{ r.best_n }} year{{ r.best_n|pluralize }}"><span style="color: var(--ink-3, #94a3b8);">{{ r.best_month }}</span> <span style="color: var(--pos);">({{ r.best_str }})</span></td>
+                <td title="Averaged over {{ r.worst_n }} year{{ r.worst_n|pluralize }}"><span style="color: var(--ink-3, #94a3b8);">{{ r.worst_month }}</span> <span style="color: var(--neg);">({{ r.worst_str }})</span></td>
+                <td style="color: {{ r.latest_color }}; font-weight: 700;">{{ r.latest_str }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </div>{# /season-row2 #}
+
+    <div class="season-card">
+      <div class="season-card-head">
+        <h6>Monthly Seasonality by Index</h6>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div class="season-mtoggle" role="group" aria-label="Metric">
+            <button type="button" class="season-mbtn active" data-metric="ret">Avg Return %</button>
+            <button type="button" class="season-mbtn" data-metric="opp">Opportunity %</button>
+          </div>
+          <div class="season-mtoggle" role="group" aria-label="Month labels">
+            <button type="button" class="season-mbtn active" data-lang="en">English</button>
+            <button type="button" class="season-mbtn" data-lang="np">नेपाली</button>
+          </div>
+        </div>
+      </div>
+      <div class="season-matrix-scroll">
+        <table class="season-matrix">
+          <thead>
+            <tr>
+              <th class="month l">Month</th>
+              {% for c in seasonal.columns %}<th>{{ c.label }}</th>{% endfor %}
+              <th class="savg">Avg</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in seasonal.matrix_rows %}
+              <tr>
+                <td class="month"><span class="mname" data-en="{{ row.month }}" data-np="{{ row.month_np }}">{{ row.month }}</span></td>
+                {% for cell in row.cells %}
+                  <td class="scell"
+                      data-ret="{{ cell.ret_text }}" data-ret-color="{{ cell.ret_color }}" data-ret-bg="{{ cell.ret_bg }}"
+                      data-opp="{{ cell.opp_text }}" data-opp-color="{{ cell.opp_color }}" data-opp-bg="{{ cell.opp_bg }}"
+                      style="color: {{ cell.ret_color }}; background: {{ cell.ret_bg }};">{{ cell.ret_text }}</td>
+                {% endfor %}
+                <td class="scell savg"
+                    data-ret="{{ row.row_avg.ret_text }}" data-ret-color="{{ row.row_avg.ret_color }}" data-ret-bg="{{ row.row_avg.ret_bg }}"
+                    data-opp="{{ row.row_avg.opp_text }}" data-opp-color="{{ row.row_avg.opp_color }}" data-opp-bg="{{ row.row_avg.opp_bg }}"
+                    style="color: {{ row.row_avg.ret_color }}; background: {{ row.row_avg.ret_bg }};">{{ row.row_avg.ret_text }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="season-total">
+              <td class="month">Average</td>
+              {% for cell in seasonal.total_row.cells %}
+                <td class="scell"
+                    data-ret="{{ cell.ret_text }}" data-ret-color="{{ cell.ret_color }}" data-ret-bg="{{ cell.ret_bg }}"
+                    data-opp="{{ cell.opp_text }}" data-opp-color="{{ cell.opp_color }}" data-opp-bg="{{ cell.opp_bg }}"
+                    style="color: {{ cell.ret_color }}; background: {{ cell.ret_bg }};">{{ cell.ret_text }}</td>
+              {% endfor %}
+              <td class="scell savg"
+                  data-ret="{{ seasonal.total_row.grand.ret_text }}" data-ret-color="{{ seasonal.total_row.grand.ret_color }}" data-ret-bg="{{ seasonal.total_row.grand.ret_bg }}"
+                  data-opp="{{ seasonal.total_row.grand.opp_text }}" data-opp-color="{{ seasonal.total_row.grand.opp_color }}" data-opp-bg="{{ seasonal.total_row.grand.opp_bg }}"
+                  style="color: {{ seasonal.total_row.grand.ret_color }}; background: {{ seasonal.total_row.grand.ret_bg }};">{{ seasonal.total_row.grand.ret_text }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="season-note">
+        <b>Avg Return %</b> = average month-over-month change of each index's month-end close, per calendar month across all years. With 6+ years of a month the single best and worst year are dropped before averaging so one extreme year doesn't define the season. Hover a cell to see how many years back it. Best / Worst ranks only months with 5+ years of history.
+        <b>Opportunity %</b> = a <b>hindsight, best-case</b> intra-month swing (not a repeatable return): from the earliest trading day's High down to the month's Low when the high came first, else from that day's Low up to the month's High. It assumes perfect timing of the turn and marks the maximum move the month offered, not one you could have booked in advance.
+        Latest Monthly Return uses the most recent completed month when available; the current partial month is excluded from seasonal averages so it does not skew them. Multi-month gaps in an index's history are skipped rather than counted as a single month's return.
+        Rows follow the Nepali fiscal year — Shrawan (mid-July) through Ashadh (mid-July next year); Nepali labels map each Gregorian month to the Bikram Sambat month that begins within it (approximate).
+      </div>
+    </div>
+
+    <script src="{% static 'core_analysis/vendor/apexcharts.min.js' %}"></script>
+    <script>
+      (function () {
+        var pane = document.getElementById('rrg-seasonal-pane');
+        if (!pane) return;
+
+        // ── Bull/bear dating: collapse the phase tables by default ─────────
+        var mrToggle = pane.querySelector('#mrToggle'),
+            mrBody = pane.querySelector('#mrBody');
+        if (mrToggle && mrBody) {
+          mrToggle.addEventListener('click', function () {
+            var open = mrBody.hidden;
+            mrBody.hidden = !open;
+            mrToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            mrToggle.setAttribute('title', open ? 'Hide the phase tables' : 'Show every bull and bear phase');
+          });
+        }
+
+        // ── Bull/bear dating: switch between the two datings ───────────────
+        // Both tables are already rendered; this only toggles visibility, so
+        // switching costs nothing and needs no request.
+        var mrTabs = pane.querySelectorAll('.mr-tab');
+        if (mrTabs.length) {
+          mrTabs.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var key = btn.dataset.mr;
+              mrTabs.forEach(function (b) {
+                var on = b === btn;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+              });
+              pane.querySelectorAll('[data-mr-pane]').forEach(function (p) {
+                p.hidden = p.dataset.mrPane !== key;
+              });
+            });
+          });
+        }
+
+        // ── NEPSE market-cycle chart (Weinstein stages) ────────────────────
+        // Line chart: close + 50/150/200-day MAs, with the background shaded by
+        // stage (xaxis annotations) and golden/death crosses marked. Rendered
+        // lazily: a chart mounted into a hidden tab pane gets 0 width, so we wait
+        // until the pane is actually visible (now, or on Bootstrap tab-show).
+        var mcRendered = false;
+        function renderMarketCycle() {
+          if (mcRendered) return;
+          var host = document.getElementById('mcChart');
+          var dataEl = document.getElementById('mc-data');
+          if (!host || !dataEl || typeof ApexCharts === 'undefined') return;
+          if (!host.offsetParent && host.offsetWidth === 0) return;  // still hidden
+          var d;
+          try { d = JSON.parse(dataEl.textContent); } catch (e) { return; }
+          if (!d || !d.ok || !d.points || !d.points.length) return;
+          mcRendered = true;
+
+          var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+          var stageColor = {1: '#94a3b8', 2: '#16a34a', 3: '#eab308', 4: '#dc2626'};
+          var mk = function (key) { return d.points.map(function (p) { return [p.x, p[key]]; }); };
+
+          // Actual extent of every plotted series — drives the y-axis bounds below.
+          var mcVals = [];
+          d.points.forEach(function (p) {
+            ['c', 'm50', 'm150', 'm200'].forEach(function (k) {
+              if (p[k] != null && isFinite(p[k])) mcVals.push(p[k]);
+            });
+          });
+          var mcLow = mcVals.length ? Math.min.apply(null, mcVals) : 1750;
+          var mcHigh = mcVals.length ? Math.max.apply(null, mcVals) : 3500;
+
+          var bandAnns = (d.bands || []).map(function (b) {
+            return { x: b.x, x2: b.x2, fillColor: stageColor[b.s] || '#94a3b8', opacity: isDark ? 0.13 : 0.10 };
+          });
+          var crossAnns = (d.crosses || []).map(function (c) {
+            return { x: c.x, borderColor: '#f59e0b', strokeDashArray: 3,
+              label: { text: c.t === 'golden' ? 'GC' : 'DC', borderColor: '#f59e0b',
+                style: { color: '#111', background: '#f59e0b', fontSize: '9px' }, orientation: 'horizontal' } };
+          });
+
+          var opts = {
+            chart: { type: 'line', height: 400, fontFamily: 'inherit', animations: { enabled: false },
+              toolbar: { show: true, tools: { download: false, selection: true, zoom: true, zoomin: true,
+                zoomout: true, pan: true, reset: true } }, background: 'transparent' },
+            theme: { mode: isDark ? 'dark' : 'light' },
+            series: [
+              { name: 'NEPSE', data: mk('c') },
+              { name: '50D MA', data: mk('m50') },
+              { name: '150D MA (30w)', data: mk('m150') },
+              { name: '200D MA', data: mk('m200') }
+            ],
+            /* The NEPSE line must flip with the theme — near-white on a white
+               plot area made the primary series invisible in light mode. */
+            colors: [isDark ? '#e7eefc' : '#0f172a', '#4c8dff', '#f59e0b', '#a855f7'],
+            stroke: { width: [2.2, 1.2, 1.4, 1.2], curve: 'straight' },
+            fill: { type: 'solid', opacity: 1 },
+            dataLabels: { enabled: false },
+            markers: { size: 0 },
+            legend: { show: true, position: 'top', horizontalAlign: 'left', fontSize: '11px' },
+            grid: { borderColor: isDark ? 'rgba(148,163,184,.14)' : 'rgba(15,23,42,.08)', strokeDashArray: 3 },
+            xaxis: { type: 'datetime', labels: { datetimeUTC: true } },
+            yaxis: {
+              // Apex auto-scaled this to 1,750-4,250 while the series only spans
+              // ~1,818-3,002, so roughly half the plot was empty headroom and the
+              // index was squashed into the bottom. Pin the axis to 1,750-3,500
+              // (250-point ticks) so the shape of the cycle is actually readable.
+              // Both bounds still widen to the data: a rally past 3,500 or a fall
+              // below 1,750 grows the axis instead of clipping the line.
+              min: Math.min(1750, Math.floor(mcLow / 250) * 250),
+              max: Math.max(3500, Math.ceil(mcHigh / 250) * 250),
+              tickAmount: 7,
+              labels: { formatter: function (v) { return v == null ? '' : Math.round(v).toLocaleString(); } },
+              decimalsInFloat: 0 },
+            tooltip: { shared: true, x: { format: 'dd MMM yyyy' },
+              y: { formatter: function (v) { return v == null ? '—' : v.toLocaleString(undefined, { maximumFractionDigits: 2 }); } } },
+            annotations: { xaxis: bandAnns.concat(crossAnns) }
+          };
+          try { new ApexCharts(host, opts).render(); }
+          catch (e) { mcRendered = false; }
+        }
+
+        // Render now if visible, and again whenever the Seasonal sub-tab is shown.
+        renderMarketCycle();
+        var subBtn = document.querySelector('[data-bs-target="#rrg-seasonal-pane"]');
+        if (subBtn) subBtn.addEventListener('shown.bs.tab', renderMarketCycle);
+        document.addEventListener('shown.bs.tab', function (e) {
+          if (pane.classList.contains('active') || (pane.offsetParent !== null)) renderMarketCycle();
+        });
+
+        // Seasonal Strategy card is collapsed by default; the ? toggle on the
+        // header expands/collapses the outlook + table + notes.
+        var stratToggle = pane.querySelector('#stratToggle');
+        var stratBody = pane.querySelector('#stratBody');
+        if (stratToggle && stratBody) {
+          stratToggle.addEventListener('click', function () {
+            var open = stratBody.hasAttribute('hidden');
+            if (open) { stratBody.removeAttribute('hidden'); } else { stratBody.setAttribute('hidden', ''); }
+            stratToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            stratToggle.setAttribute('title', open ? 'Hide seasonal strategy details' : 'Show seasonal strategy details');
+          });
+        }
+
+        // Month-label language toggle (English / नेपाली) — swaps the .mname labels.
+        // Two language toggles (Latest table + matrix) stay in sync — active is
+        // set by value so both groups reflect the same choice, and every .mname in
+        // the pane (matrix rows + Latest-table months) switches together.
+        var langBtns = pane.querySelectorAll('[data-lang]');
+        Array.prototype.forEach.call(langBtns, function (b) {
+          b.addEventListener('click', function () {
+            var lang = b.getAttribute('data-lang');
+            Array.prototype.forEach.call(langBtns, function (x) {
+              x.classList.toggle('active', x.getAttribute('data-lang') === lang);
+            });
+            Array.prototype.forEach.call(pane.querySelectorAll('.mname'), function (s) {
+              var next = lang === 'np' ? s.getAttribute('data-np') : s.getAttribute('data-en');
+              if (next) s.textContent = next;
+            });
+          });
+        });
+
+        // Metric toggle (Avg Return % / Opportunity %) — swaps each matrix cell's
+        // value, text colour and heat background between the two data sets.
+        var metricBtns = pane.querySelectorAll('[data-metric]');
+        Array.prototype.forEach.call(metricBtns, function (b) {
+          b.addEventListener('click', function () {
+            var m = b.getAttribute('data-metric');
+            Array.prototype.forEach.call(metricBtns, function (x) { x.classList.toggle('active', x === b); });
+            Array.prototype.forEach.call(pane.querySelectorAll('.scell'), function (td) {
+              td.textContent = td.getAttribute('data-' + m);
+              td.style.color = td.getAttribute('data-' + m + '-color');
+              td.style.background = td.getAttribute('data-' + m + '-bg');
+            });
+          });
+        });
+
+      })();
+    </script>
+    {% endif %}
+  </div>
+</div>

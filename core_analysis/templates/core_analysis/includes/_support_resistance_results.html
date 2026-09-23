@@ -1,0 +1,509 @@
+      {% if support_resistance_metrics %}
+        {% if support_resistance_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ support_resistance_metrics.error }}</div>
+        {% else %}
+          {% if support_resistance_metrics.warnings %}
+            <div class="alert alert-warning border-0 rounded-3 shadow-sm py-3">
+              <strong>Warnings:</strong>
+              <ul class="mb-0 mt-1">
+                {% for warning in support_resistance_metrics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-lg-4 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Latest Price</span>
+                <div class="sr-summary-value text-warning">NPR {{ support_resistance_metrics.latest_price|floatformat:2 }}</div>
+                <div class="sr-summary-meta">{{ support_resistance_metrics.latest_data_date }} &middot; {{ support_resistance_metrics.latest_price_source }}</div>
+                {% if support_resistance_metrics.price_zone %}
+                  <div class="sr-summary-meta text-warning">Trading inside a confluence zone {{ support_resistance_metrics.price_zone.low|floatformat:2 }}–{{ support_resistance_metrics.price_zone.high|floatformat:2 }}{% if support_resistance_metrics.price_zone.method_count > 1 %} &middot; {{ support_resistance_metrics.price_zone.method_count }} methods agree{% endif %}</div>
+                {% endif %}
+                {% if support_resistance_metrics.latest_swing_high and support_resistance_metrics.latest_swing_low %}
+                  <div class="sr-summary-meta">Swing range {{ support_resistance_metrics.latest_swing_low.price|floatformat:2 }} – {{ support_resistance_metrics.latest_swing_high.price|floatformat:2 }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Nearest Resistance</span>
+                {% if support_resistance_metrics.nearest_resistance %}
+                  <div class="sr-summary-value text-danger">NPR {{ support_resistance_metrics.nearest_resistance.price|floatformat:2 }}</div>
+                  <div class="sr-summary-meta">
+                    {{ support_resistance_metrics.resistance_distance_pct|floatformat:2 }}% above
+                    {% if support_resistance_metrics.nearest_resistance.low != support_resistance_metrics.nearest_resistance.high %}
+                      &middot; zone {{ support_resistance_metrics.nearest_resistance.low|floatformat:2 }}–{{ support_resistance_metrics.nearest_resistance.high|floatformat:2 }}
+                    {% endif %}
+                    {% if not support_resistance_metrics.nearest_resistance.key_points %}&middot; {{ support_resistance_metrics.nearest_resistance.basis }}{% endif %}
+                  </div>
+                  {% if support_resistance_metrics.nearest_resistance.key_points %}
+                    <div class="sr-summary-meta">{% if support_resistance_metrics.nearest_resistance.method_count > 1 %}{{ support_resistance_metrics.nearest_resistance.method_count }}× confluence: {% endif %}{{ support_resistance_metrics.nearest_resistance.key_points|join:", " }}</div>
+                  {% endif %}
+                  {% if support_resistance_metrics.latest_swing_high %}
+                    <div class="sr-summary-meta text-danger">Latest swing high {{ support_resistance_metrics.latest_swing_high.price|floatformat:2 }} &middot; {{ support_resistance_metrics.latest_swing_high.date }}</div>
+                  {% endif %}
+                {% else %}
+                  <div class="sr-summary-value text-muted">N/A</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Nearest Support</span>
+                {% if support_resistance_metrics.nearest_support %}
+                  <div class="sr-summary-value text-primary">NPR {{ support_resistance_metrics.nearest_support.price|floatformat:2 }}</div>
+                  <div class="sr-summary-meta">
+                    {{ support_resistance_metrics.support_distance_pct|floatformat:2 }}% below
+                    {% if support_resistance_metrics.nearest_support.low != support_resistance_metrics.nearest_support.high %}
+                      &middot; zone {{ support_resistance_metrics.nearest_support.low|floatformat:2 }}–{{ support_resistance_metrics.nearest_support.high|floatformat:2 }}
+                    {% endif %}
+                    {% if not support_resistance_metrics.nearest_support.key_points %}&middot; {{ support_resistance_metrics.nearest_support.basis }}{% endif %}
+                  </div>
+                  {% if support_resistance_metrics.nearest_support.key_points %}
+                    <div class="sr-summary-meta">{% if support_resistance_metrics.nearest_support.method_count > 1 %}{{ support_resistance_metrics.nearest_support.method_count }}× confluence: {% endif %}{{ support_resistance_metrics.nearest_support.key_points|join:", " }}</div>
+                  {% endif %}
+                  {% if support_resistance_metrics.latest_swing_low %}
+                    <div class="sr-summary-meta text-primary">Latest swing low {{ support_resistance_metrics.latest_swing_low.price|floatformat:2 }} &middot; {{ support_resistance_metrics.latest_swing_low.date }}</div>
+                  {% endif %}
+                  <div class="sr-summary-meta text-muted">BB ref {{ support_resistance_metrics.bollinger_bands.lower_band|floatformat:2 }}–{{ support_resistance_metrics.bollinger_bands.upper_band|floatformat:2 }} &middot; %B {{ support_resistance_metrics.bollinger_bands.percent_b|default:"N/A" }}</div>
+                {% else %}
+                  <div class="sr-summary-value text-muted">N/A</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          {% if support_resistance_metrics.pivot_average %}
+          {% with pa=support_resistance_metrics.pivot_average %}
+          <div class="panel-outer mb-4">
+            <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <div>
+                <h5 class="mb-1 fw-bold">Pivot Average Support &amp; Resistance</h5>
+                <div class="small text-muted">Classic &middot; Camarilla &middot; Woodie's &middot; Fibonacci — averaged per level &middot; H {{ pa.input.high|floatformat:2 }} / L {{ pa.input.low|floatformat:2 }} / C {{ pa.input.close|floatformat:2 }}</div>
+              </div>
+              <div class="small text-muted">52-Week range {{ pa.input.wk52_low|floatformat:2 }} – {{ pa.input.wk52_high|floatformat:2 }}</div>
+            </div>
+            <div style="overflow-x:auto;">
+            <table class="minimal-table">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th class="th-num">S3</th><th class="th-num">S2</th><th class="th-num">S1</th>
+                  <th class="th-num">Pivot</th>
+                  <th class="th-num">R1</th><th class="th-num">R2</th><th class="th-num">R3</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in pa.methods %}
+                <tr>
+                  <td class="fw-semibold">{{ m.name }}</td>
+                  <td class="td-num text-success-custom">{{ m.s3|floatformat:2 }}</td>
+                  <td class="td-num text-success-custom">{{ m.s2|floatformat:2 }}</td>
+                  <td class="td-num text-success-custom">{{ m.s1|floatformat:2 }}</td>
+                  <td class="td-num">{{ m.pivot|floatformat:2 }}</td>
+                  <td class="td-num text-danger-custom">{{ m.r1|floatformat:2 }}</td>
+                  <td class="td-num text-danger-custom">{{ m.r2|floatformat:2 }}</td>
+                  <td class="td-num text-danger-custom">{{ m.r3|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="sr-latest-row">
+                  <td class="fw-bold">Average</td>
+                  <td class="td-num fw-bold">{{ pa.average.s3|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.s2|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.s1|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.pivot|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.r1|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.r2|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.r3|floatformat:2 }}</td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
+            {% if pa.fib_52week %}
+            <div class="p-3 border-top">
+              <div class="small fw-bold text-muted mb-2">52-Week Fibonacci Retracement</div>
+              <div class="d-flex flex-wrap gap-2">
+                {% for f in pa.fib_52week %}
+                  <span class="sr-pill {% if f.kind == 'resistance' %}sr-level-resistance{% elif f.kind == 'support' %}sr-level-support{% else %}sr-level-neutral{% endif %}" style="padding:5px 11px;border-radius:6px;">{{ f.label }} &middot; {{ f.price|floatformat:2 }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endwith %}
+          {% endif %}
+
+          {% if institutional_analysis_rows %}
+            <div class="panel-outer mb-4">
+              <div class="p-3 bg-raised border-bottom">
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Institutional Multi-Framework Analysis</h6>
+              </div>
+              {% if institutional_analysis_rows.0.alert %}
+                <div class="alert alert-warning border-0 rounded-0 m-0 py-2 small">{{ institutional_analysis_rows.0.alert }}</div>
+              {% endif %}
+              <div class="imm-scroll-wrap">
+                <table class="minimal-table institutional-table">
+                  <thead class="">
+                    <tr>
+                      <th>System</th>
+                      <th>Bias</th>
+                      <th>Institutional Logic</th>
+                      <th>Price Sentiment</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in institutional_analysis_rows %}
+                    <tr>
+                      <td class="institutional-system">
+                        <span>{{ row.system }}</span>
+                        {% if row.detail_sections %}
+                          <button class="institutional-help-btn" type="button" data-bs-toggle="collapse" data-bs-target="#institutionalDetail{{ forloop.counter }}" aria-expanded="false" aria-controls="institutionalDetail{{ forloop.counter }}">?</button>
+                        {% endif %}
+                      </td>
+                      <td class="td-num">
+                        <span class="fw-bold {% if row.signal == 'Bullish' %}text-success-custom{% elif row.signal == 'Bearish' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.signal|default:"Neutral" }}</span>
+                        {% if row.confidence %}<div class="small text-muted">{{ row.confidence }}%</div>{% endif %}
+                      </td>
+                      <td class="institutional-rule">{{ row.institutional_logic|linebreaksbr }}</td>
+                      <td class="institutional-rule">{{ row.price_sentiment|linebreaksbr }}</td>
+                      <td class="fw-semibold text-light">{{ row.status }}</td>
+                    </tr>
+                    {% if row.detail_sections %}
+                    <tr class="institutional-detail-row collapse" id="institutionalDetail{{ forloop.counter }}">
+                      <td></td>
+                      <td colspan="4">
+                        <div class="institutional-detail">
+                          <div class="institutional-detail-title">{{ row.detail_title|default:"View Rules" }}</div>
+                          <div class="institutional-detail-grid">
+                            {% for section in row.detail_sections %}
+                              <div class="institutional-rule-card">
+                                <div class="institutional-rule-title">{{ section.title }}</div>
+                                <ul>
+                                  {% for item in section.items %}
+                                    <li>{{ item }}</li>
+                                  {% endfor %}
+                                </ul>
+                              </div>
+                            {% endfor %}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if user.is_staff %}
+          <div class="panel-outer mb-4 sr-ai-panel"
+               id="sr-ai-analysis"
+               data-ai-url="{% url 'gemini_sr_analysis' %}">
+            <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">
+                AI Narrative Analysis
+                <span style="opacity:.6; font-weight:600;">· Gemini</span>
+              </h6>
+              <span class="text-muted small" data-ai-meta>Generated from this symbol's computed levels &amp; recent price path</span>
+            </div>
+            <div class="p-3 sr-ai-body" data-ai-body>
+              <div class="text-muted small d-flex align-items-center gap-2" data-ai-loading>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Generating AI analysis…
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if support_resistance_metrics.confluence_resistances or support_resistance_metrics.confluence_supports %}
+          <div class="panel-outer mb-4">
+            <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Confluence Support &amp; Resistance Ladder</h6>
+              <span class="text-muted small">Averaged zones ranked by agreeing methods (weekly highs/lows, Fibonacci, pivots, MAs, volume profile)</span>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead class="">
+                  <tr>
+                    <th>Level</th>
+                    <th class="th-num">Price (avg)</th>
+                    <th class="th-num">Zone</th>
+                    <th class="th-num">Distance</th>
+                    <th>Confluence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in support_resistance_metrics.confluence_resistances reversed %}
+                  <tr>
+                    <td><span class="td-ticker text-danger-custom">{{ row.label }}</span></td>
+                    <td class="td-num text-danger-custom">{{ row.price|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.low|floatformat:2 }}–{{ row.high|floatformat:2 }}</td>
+                    <td class="td-num">+{{ row.pct_distance|floatformat:2 }}%</td>
+                    <td><span class="fw-semibold text-light">{{ row.method_count }}× </span><span class="small text-muted">{{ row.methods|join:", " }}</span></td>
+                  </tr>
+                  {% endfor %}
+                  <tr class="sr-latest-row">
+                    <td><span class="td-ticker text-warning">Price</span></td>
+                    <td class="td-num text-warning">{{ support_resistance_metrics.latest_price|floatformat:2 }}</td>
+                    <td class="td-num">—</td>
+                    <td class="td-num">0.00%</td>
+                    <td class="small text-muted">Latest close ({{ support_resistance_metrics.latest_data_date }})</td>
+                  </tr>
+                  {% for row in support_resistance_metrics.confluence_supports %}
+                  <tr>
+                    <td><span class="td-ticker text-success-custom">{{ row.label }}</span></td>
+                    <td class="td-num text-success-custom">{{ row.price|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.low|floatformat:2 }}–{{ row.high|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.pct_distance|floatformat:2 }}%</td>
+                    <td><span class="fw-semibold text-light">{{ row.method_count }}× </span><span class="small text-muted">{{ row.methods|join:", " }}</span></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="filter-card">
+                <div class="small text-muted">Latest Day Range</div>
+                <div class="fw-semibold text-light">{{ support_resistance_metrics.latest_low|floatformat:2 }} - {{ support_resistance_metrics.latest_high|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="filter-card">
+                <div class="small text-muted">Momentum Snapshot</div>
+                <div class="fw-semibold text-light">RSI {{ support_resistance_metrics.latest_rsi|default:"N/A" }} | Stoch %K {{ support_resistance_metrics.latest_stochastic_k|default:"N/A" }}</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="filter-card">
+                <div class="small text-muted">Generated Levels</div>
+                <div class="fw-semibold text-light">{{ support_resistance_metrics.levels_count }} total | {{ support_resistance_metrics.resistance_count }} resistance | {{ support_resistance_metrics.support_count }} support</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 align-items-start">
+            <div class="col-xl-8">
+              <div class="panel-outer">
+                <div class="p-3 bg-raised border-bottom d-flex justify-content-between align-items-center gap-3">
+                  <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Support/Resistance Levels: {{ support_resistance_selected_symbol }}</h6>
+                  <span class="text-muted small">{{ support_resistance_metrics.rows_used }} rows scanned</span>
+                </div>
+                <div class="imm-scroll-wrap">
+                  <table class="minimal-table sr-level-table">
+                    <thead class="">
+                      <tr>
+                        <th>Support/Resistance Levels</th>
+                        <th class="th-num">Price</th>
+                        <th>Key Turning Points</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in support_resistance_rows %}
+                      <tr class="{% if row.zone == 'latest' %}sr-latest-row{% endif %}">
+                        <td class="{{ row.level_class }}">
+                          <div class="sr-label-stack">
+                            {% for label in row.level_names %}
+                              <span class="sr-pill">{{ label }}</span>
+                            {% empty %}
+                              <span class="sr-empty">-</span>
+                            {% endfor %}
+                          </div>
+                        </td>
+                        <td class="td-num {{ row.price_class }}">
+                          {{ row.price|floatformat:2 }}
+                          <span class="sr-distance">{{ row.distance|floatformat:2 }} / {{ row.pct_distance|floatformat:2 }}%</span>
+                        </td>
+                        <td class="{{ row.key_class }}">
+                          <div class="sr-label-stack">
+                            {% for key_point in row.key_points %}
+                              <span class="sr-pill">{{ key_point }}</span>
+                            {% empty %}
+                              <span class="sr-empty">-</span>
+                            {% endfor %}
+                          </div>
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="3" class="text-center text-muted py-4">No support/resistance levels generated.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-4">
+              <div class="panel-outer sr-side-panel">
+                <div class="p-3 bg-raised border-bottom">
+                  <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Simple S/R Checklist</h6>
+                </div>
+                <div class="imm-scroll-wrap">
+                  <table class="minimal-table">
+                    <thead class="">
+                      <tr>
+                        <th class="th-num">#</th>
+                        <th>Basis</th>
+                        <th>Level</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in support_resistance_metrics.simple_level_rows %}
+                      <tr>
+                        <td class="td-num">{{ row.rank }}</td>
+                        <td>
+                          <div class="fw-semibold text-light">{{ row.basis }}</div>
+                          <div class="small text-muted mt-1">{{ row.note }}</div>
+                        </td>
+                        <td class="sr-side-level">{{ row.level }}</td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="3" class="text-center text-muted py-4">No checklist levels generated.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if advanced_market_structure_metrics %}
+            {% if advanced_market_structure_metrics.error %}
+              <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3 mt-4">{{ advanced_market_structure_metrics.error }}</div>
+            {% else %}
+              {% if advanced_market_structure_metrics.warnings %}
+                <div class="alert alert-secondary border-0 rounded-3 shadow-sm py-3 mt-4 small">
+                  <strong>Advanced layer notes:</strong>
+                  <ul class="mb-0 mt-1">
+                    {% for warning in advanced_market_structure_metrics.warnings %}
+                      <li>{{ warning }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+
+              <div class="panel-outer mt-4">
+                <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                  <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Advanced Market Structure / SMC Layer</h6>
+                  <span class="text-muted small">{{ advanced_market_structure_metrics.rows_used }} rows | {{ advanced_market_structure_metrics.ml_model }}</span>
+                </div>
+                <div class="p-3">
+                  <div class="row g-3 mb-3">
+                    <div class="col-lg-3 col-md-6">
+                      <div class="filter-card h-100">
+                        <div class="small text-muted">Fractals</div>
+                        <div class="fw-semibold text-light">{{ advanced_market_structure_metrics.pivot_count }} pivots | H {{ advanced_market_structure_metrics.swing_high_count }} / L {{ advanced_market_structure_metrics.swing_low_count }}</div>
+                      </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                      <div class="filter-card h-100">
+                        <div class="small text-muted">VPVR</div>
+                        <div class="fw-semibold text-light">POC {{ advanced_market_structure_metrics.profile.poc|default:"N/A" }} | VAH {{ advanced_market_structure_metrics.profile.vah|default:"N/A" }} | VAL {{ advanced_market_structure_metrics.profile.val|default:"N/A" }}</div>
+                      </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                      <div class="filter-card h-100">
+                        <div class="small text-muted">Mathematical Baselines</div>
+                        <div class="fw-semibold text-light">VWAP {{ advanced_market_structure_metrics.baselines.latest_vwap|default:"N/A" }} | HMA {{ advanced_market_structure_metrics.baselines.latest_hma|default:"N/A" }} | {{ advanced_market_structure_metrics.baselines.premium_discount }}</div>
+                      </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                      <div class="filter-card h-100">
+                        <div class="small text-muted">Regime Layer</div>
+                        <div class="fw-semibold text-light">{{ advanced_market_structure_metrics.density_zones|length }} zones | {{ advanced_market_structure_metrics.liquidity_sweeps|length }} sweeps</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="advancedMarketStructureChart" class="ams-chart-wrap">
+                    <div class="rrg-chart-empty">Advanced market structure chart data is not available.</div>
+                  </div>
+                  {{ advanced_market_structure_metrics.chart|json_script:"advanced-market-structure-data" }}
+                </div>
+              </div>
+
+              <div class="row g-3 align-items-start mt-1">
+                <div class="col-xl-6">
+                  <div class="panel-outer">
+                    <div class="p-3 bg-raised border-bottom">
+                      <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Density Zones / Order Blocks</h6>
+                    </div>
+                    <div class="imm-scroll-wrap">
+                      <table class="minimal-table">
+                        <thead class="">
+                          <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th class="th-num">Zone</th>
+                            <th class="th-num">Strength</th>
+                            <th>Prediction</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for zone in advanced_market_structure_metrics.density_zones %}
+                          <tr>
+                            <td class="td-num">{{ zone.rank }}</td>
+                            <td><span class="td-ticker">{{ zone.type }}</span><div class="small text-muted mt-1">{{ zone.sources }}</div></td>
+                            <td class="td-num">{{ zone.low|floatformat:2 }} - {{ zone.high|floatformat:2 }}<span class="sr-distance">Touches {{ zone.touches }} | Vol {{ zone.volume_density|floatformat:2 }}%</span></td>
+                            <td class="td-num text-warning">{{ zone.strength|floatformat:2 }}</td>
+                            <td>
+                              <span class="{% if zone.prediction == 'Likely Hold' %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ zone.prediction }}</span>
+                              <div class="small text-muted mt-1">{{ zone.hold_probability|default:"N/A" }}% hold</div>
+                            </td>
+                          </tr>
+                          {% empty %}
+                          <tr><td colspan="5" class="text-center text-muted py-4">No density zones generated.</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-xl-6">
+                  <div class="panel-outer">
+                    <div class="p-3 bg-raised border-bottom">
+                      <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Structure Breaks / Liquidity Sweeps</h6>
+                    </div>
+                    <div class="imm-scroll-wrap">
+                      <table class="minimal-table" data-default-page-size="5">
+                        <thead class="">
+                          <tr>
+                            <th>Date</th>
+                            <th>Signal</th>
+                            <th class="th-num">Level</th>
+                            <th class="th-num">Close</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for row in advanced_market_structure_metrics.structure_liquidity_rows %}
+                          <tr>
+                            <td class="td-date">{{ row.date }}</td>
+                            <td><span class="{{ row.signal_class }}">{{ row.signal }}</span></td>
+                            <td class="td-num">{{ row.level|floatformat:2 }}</td>
+                            <td class="td-num">{{ row.close|floatformat:2 }}</td>
+                          </tr>
+                          {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No structure breaks or sweeps generated.</td></tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endif %}

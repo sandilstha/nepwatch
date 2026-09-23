@@ -1,0 +1,137 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page_title %}{{ page_title }}{% elif active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}Strategy Simulator{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}RRG Analytics Desk{% elif active_tab == 'inventory' or active_tab == 'rrg_seasonal' %}NEPSE Analytics Workbench{% else %}Technical Analysis Desk{% endif %}</title>
+  <script>
+    // Apply the saved theme before paint to avoid a flash. Shares the
+    // "mi-theme" key with the Market Insights dashboard so the choice carries
+    // across both pages.
+    (function () {
+      try {
+        var t = localStorage.getItem('mi-theme');
+        if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  {# Design tokens first: this page does not load insights.css, so without #}
+  {# tokens.css every var(--fs-*) / var(--sp-*) here would be undefined. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/tokens.css' %}?v={{ dashboard_asset_version|default:1 }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/dashboard.css' %}?v={{ dashboard_asset_version|default:1 }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/workbench-layout.css' %}?v={{ dashboard_asset_version|default:1 }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ dashboard_asset_version|default:1 }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<main class="workspace-wrap">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} border-0 rounded-3 shadow-sm text-center py-2 mb-3 small fw-medium" role="status">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="workspace-header py-3">
+    <div class="header-text-center">
+      {% comment %}
+      A page may name itself by supplying page_badge / page_title / page_sub.
+      Without that, the header falls through to an active_tab switch whose final
+      else says "Technical Analysis Desk" — which is what NEPSE Data pages were
+      showing, because they never set active_tab.
+      {% endcomment %}
+      {% if page_title %}
+        <p class="workspace-title"><span>{{ page_badge|default:"NEPSE" }}</span> {{ page_title }}</p>
+        <p class="workspace-sub">{{ page_sub }}</p>
+      {% elif active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}
+        <p class="workspace-title"><span>SS</span> Strategy Simulator</p>
+        <p class="workspace-sub">Advanced strategy backtesting and model simulation</p>
+      {% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}
+        <p class="workspace-title"><span>RRG</span> Analytics Desk</p>
+        <p class="workspace-sub">Relative rotation analysis for stocks and indices versus NEPSE</p>
+      {% elif active_tab == 'inventory' or active_tab == 'rrg_seasonal' %}
+        <p class="workspace-title"><span>NEPSE</span> Analytics Intelligence Workspace</p>
+        <p class="workspace-sub">Data management and analytics workbench</p>
+      {% else %}
+        <p class="workspace-title"><span>TA</span> Technical Analysis Desk</p>
+        <p class="workspace-sub">Technical screening, scoring and market structure analysis</p>
+      {% endif %}
+    </div>
+    <div class="header-actions">
+      <div class="theme-control-cluster">
+        {% include "core_analysis/includes/_stock_search.html" %}
+        <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Home" aria-label="Home">Home</a>
+        <button type="button" id="themeToggleBtn" class="ui-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+        <a href="{% url 'crud_dashboard' %}" class="ui-icon-btn {% if active_tab == 'inventory' or active_tab == 'rrg_seasonal' %}active{% endif %}" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
+      </div>
+      {# Data-sync toolbar now lives inside the Raw Inventory Manager tab (see includes/_inventory_tab.html). #}
+    </div>{# /header-actions #}
+  </div>
+
+  {% comment %}Persistent global section nav so the workbench is never a dead-end —
+     keeps a back-path to every area and highlights the current section. active_section
+     is derived from active_tab: RRG panes -> 'rrg', everything else here -> 'technical'.
+     Market Insights / Floor sheet render their own copy and are unaffected.{% endcomment %}
+  {% if page_section %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section=page_section %}
+  {% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='rrg' %}
+  {% elif active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='strategy' %}
+  {% elif active_tab == 'inventory' or active_tab == 'rrg_seasonal' %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='data' %}
+  {% else %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='technical' %}
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</main>{# /workspace-wrap #}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.sync-form').forEach(function(form) {
+      form.addEventListener('submit', function() {
+        const button = form.querySelector('button[type="submit"]');
+        if (!button) return;
+        button.textContent = button.dataset.loadingLabel || 'Working...';
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+      });
+    });
+
+    // Theme toggle — shares the "mi-theme" key with the Insights dashboard.
+    const themeBtn = document.getElementById('themeToggleBtn');
+    function syncThemeIcon() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      if (themeBtn) {
+        themeBtn.textContent = isLight ? 'Dark' : 'Light';
+        themeBtn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+        themeBtn.setAttribute('aria-label', themeBtn.title);
+      }
+    }
+    syncThemeIcon();
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function() {
+        const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('mi-theme', next); } catch (e) {}
+        syncThemeIcon();
+      });
+    }
+  });
+
+</script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ dashboard_asset_version|default:1 }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

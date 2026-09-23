@@ -1,0 +1,80 @@
+No.,Symbol,Security Name,Sector,Coupon,Maturity,Years,Face Value (Rs),Price (Rs),Price Quality,YTM,Benchmark,Spread (bp),Fair Value (Rs),Variance (Rs),Variance (%),Valuation,Macaulay,Modified,Today
+1,SBLD83,10.25% SBL Debenture 2083,Commercial Banks,10.25%,21-Sep-2026,0.05,"2,500,000,000","1,015.00",Adequate,7.087%,4.074%,301,"1,016.59",1.59,0.16%,Undervalued,0.05,0.05,2026-09-07
+2,SRBLD83,10.25% Sunrise Bank Debenture 2083,Commercial Banks,10.25%,12-Dec-2026,0.28,"3,000,000,000","1,025.00",Adequate,6.006%,4.074%,193,"1,030.28",5.28,0.52%,Undervalued,0.28,0.26,2026-09-08
+3,ADBLD83,10.35% Agricultural Bank Debenture 2083,Commercial Banks,10.35%,09-Feb-2027,0.44,"2,500,000,000","1,039.90",Adequate,4.274%,4.074%,20,"1,040.77",0.87,0.08%,Fairly valued,0.44,0.42,2026-09-09
+6,NBLD82,10% Nabil Debenture 2082,Commercial Banks,10.00%,02-May-2027,0.67,"2,000,000,000","1,051.10",Adequate,4.187%,4.074%,11,"1,051.84",0.74,0.07%,Fairly valued,0.65,0.63,2026-09-10
+7,RBBD83,8.5% RBBL Debenture 2083,Commercial Banks,8.50%,16-Jun-2027,0.79,"2,500,000,000","1,010.30",Adequate,8.779%,4.074%,470,"1,045.38",35.08,3.47%,Undervalued,0.77,0.71,2026-09-11
+8,PBD84,10.15% Prime Debenture 2084,Commercial Banks,10.15%,06-Jul-2027,0.84,"5,000,000,000","1,070.00",Adequate,3.291%,4.074%,(78),"1,063.38",(6.62),(0.62%),Overvalued,0.82,0.80,2026-09-12
+9,SBID83,10.25% Nepal SBI Bank Debenture 2083,Commercial Banks,10.25%,28-Jul-2027,0.90,"2,401,482,000","1,060.00",Adequate,4.946%,4.074%,87,"1,067.79",7.79,0.73%,Undervalued,0.88,0.84,2026-09-13
+10,PBLD84,10% Prabhu Bank Debenture 2084 ,Commercial Banks,10.00%,13-Aug-2027,0.95,"2,000,000,000","1,065.10",Adequate,4.361%,4.074%,29,"1,067.80",2.70,0.25%,Undervalued,0.92,0.88,2026-09-14
+11,SBLD84,8.5% SBL Debenture 2084,Commercial Banks,8.50%,13-Oct-2027,1.12,"3,000,000,000","1,025.00",Adequate,7.298%,4.074%,322,"1,059.20",34.20,3.34%,Undervalued,1.08,1.00,2026-09-15
+12,ADBLB,4% Agricultural Bond,Commercial Banks,4.00%,09-Feb-2028,1.44,"6,000,000","1,000.00",Stale - 60 days,4.423%,4.074%,35,"1,004.72",4.72,0.47%,Undervalued,1.41,1.35,2026-09-16
+13,NIBD84,8.5% Nepal Investment Bank Debenture 2084,Commercial Banks,8.50%,20-Feb-2028,1.47,"4,000,000,000","1,017.20",Adequate,8.208%,4.074%,413,"1,074.23",57.03,5.61%,Undervalued,1.40,1.29,2026-09-17
+14,GBILD84/85,"Global IME Bank Debenture, 2084/85",Commercial Banks,11.25%,23-Feb-2028,1.48,"5,000,000,000","1,120.00",Adequate,3.891%,4.074%,(18),"1,117.26",(2.74),(0.24%),Fairly valued,1.39,1.34,2026-09-18
+15,SCBD,10.30% Standard Chartered Bank Limited Debenture,Commercial Banks,10.30%,28-Feb-2028,1.49,"2,400,000,000","1,056.60",Adequate,7.325%,4.074%,325,"1,103.32",46.72,4.42%,Undervalued,1.41,1.31,2026-09-19
+16,MBLD2085,10.25% Machhapuchhre Bank Debenture 2085,Commercial Banks,10.25%,21-Jul-2028,1.89,"3,000,000,000","1,188.30",Adequate,0.878%,4.074%,(320),"1,125.03",(63.27),(5.32%),Overvalued,1.76,1.74,2026-09-20
+17,NMBD2085,10 % NMB DEBENTURE 2085,Commercial Banks,10.00%,31-Jul-2028,1.92,"1,684,505,000","1,136.00",Adequate,3.337%,4.074%,(74),"1,121.73",(14.27),(1.26%),Overvalued,1.78,1.72,2026-09-21
+18,NBBD2085,10.25% NBBL Debenture 2085,Commercial Banks,10.25%,02-Aug-2028,1.92,"2,000,000,000","1,160.70",Stale - 34 days,2.363%,4.074%,(171),"1,126.93",(33.77),(2.91%),Overvalued,1.78,1.74,2026-09-22
+20,NBLD85,Nabil Debenture 2085,Commercial Banks,8.00%,14-Aug-2028,1.95,"2,207,108,000","1,025.10",Adequate,7.301%,4.074%,323,"1,084.08",58.98,5.75%,Undervalued,1.83,1.71,2026-09-23
+21,EBLD85,10.50% Everest Bank Limited Debenture 2085,Commercial Banks,10.50%,25-Aug-2028,1.98,"2,000,000,000","1,147.00",Adequate,3.507%,4.074%,(57),"1,135.60",(11.40),(0.99%),Overvalued,1.83,1.77,2026-09-24
+23,SAND2085,10% Sanima Bank Limited Debenture,Commercial Banks,10.00%,08-Jan-2029,2.36,"2,000,000,000","1,150.00",Stale - 32 days,3.890%,4.074%,(18),"1,145.64",(4.36),(0.38%),Fairly valued,2.15,2.07,2026-09-25
+25,ADBLB86,Agricultural Bond (8 Year),Commercial Banks,4.00%,12-Jul-2029,2.86,"6,000,000,000","1,010.00",Stale - 36 days,3.857%,4.074%,(22),"1,004.27",(5.73),(0.57%),Fairly valued,2.72,2.62,2026-09-26
+26,BOKD86KA,"BOK Debenture 2086 ""KA""",Commercial Banks,10.50%,11-Sep-2029,3.03,"1,100,000,000","1,096.50",Adequate,7.521%,4.074%,345,"1,195.99",99.49,9.07%,Undervalued,2.66,2.47,2026-09-27
+27,HBLD86,"Himalayan Bank Limited Bond, 2086",Commercial Banks,10.50%,19-Sep-2029,3.05,"2,500,000,000","1,112.40",Adequate,6.964%,4.074%,289,"1,197.24",84.84,7.63%,Undervalued,2.68,2.50,2026-09-28
+28,PBLD86,10.25% Prabhu Bank  Debenture 2086,Commercial Banks,10.25%,14-Nov-2029,3.21,"1,000,000,000","1,103.00",Thin - 1 units,7.187%,4.074%,311,"1,198.14",95.14,8.63%,Undervalued,2.80,2.61,2026-09-29
+29,LBLD86,10% Laxmi Bank Debenture 2086,Commercial Banks,10.00%,17-Nov-2029,3.21,"2,000,000,000","1,085.00",Adequate,7.566%,4.074%,349,"1,190.80",105.80,9.75%,Undervalued,2.81,2.61,2026-09-30
+31,KBLD86,10.25% KBL Debenture 2086,Commercial Banks,10.25%,01-Feb-2030,3.42,"3,000,000,000","1,110.00",Adequate,7.135%,4.074%,306,"1,209.87",99.87,9.00%,Undervalued,2.96,2.76,2026-10-01
+32,EBLD86,Everest Bank Limited,Commercial Banks,8.50%,15-Feb-2030,3.46,"856,783,000","1,070.00",Adequate,6.668%,4.074%,259,"1,153.73",83.73,7.83%,Undervalued,3.05,2.86,2026-10-02
+33,NICAD85/86,10% NIC Asia Debenture 2085/86,Commercial Banks,10.00%,25-Feb-2030,3.49,"2,404,688,000","1,120.00",Adequate,6.618%,4.074%,254,"1,205.06",85.06,7.59%,Undervalued,3.02,2.83,2026-10-03
+34,SBIBD86,10% Nepal SBI Bank Debenture 2086,Commercial Banks,10.00%,18-Mar-2030,3.55,"2,033,888,000","1,152.10",Stale - 36 days,5.690%,4.074%,162,"1,208.03",55.93,4.85%,Undervalued,3.07,2.91,2026-10-04
+35,PBD85,8.75 % Prime Debenture 2085,Commercial Banks,8.75%,08-Apr-2030,3.60,"2,447,963,000","1,114.90",Adequate,5.611%,4.074%,154,"1,167.87",52.97,4.75%,Undervalued,3.16,2.99,2026-10-05
+36,CIZBD86,10.25% Citizens Bank Debenture 2086,Commercial Banks,10.25%,11-Apr-2030,3.61,"2,500,000,000","1,177.60",Adequate,5.262%,4.074%,119,"1,220.05",42.45,3.61%,Undervalued,3.11,2.96,2026-10-06
+37,ADBLB87,Agricultural Bond (9 Year),Commercial Banks,4.00%,10-Sep-2030,4.03,"6,000,000,000","1,015.00",Adequate,3.767%,4.074%,(31),"1,003.82",(11.18),(1.10%),Overvalued,3.74,3.61,2026-10-07
+38,NABILD87,9% Nabil Debenture 2087,Commercial Banks,9.00%,20-Dec-2030,4.30,"3,000,000,000","1,116.00",Thin - 1 units,6.288%,4.074%,221,"1,205.78",89.78,8.05%,Undervalued,3.66,3.44,2026-10-08
+39,BOKD86,8.5% BOK Debenture 2086,Commercial Banks,8.50%,21-Dec-2030,4.31,"1,600,000,000","1,053.10",Adequate,7.468%,4.074%,339,"1,185.68",132.58,12.59%,Undervalued,3.67,3.42,2026-10-09
+40,SBD87,8.5% Sanima Debenture 2087,Commercial Banks,8.50%,11-Jan-2031,4.36,"3,052,404,000","1,062.00",Adequate,7.237%,4.074%,316,"1,187.78",125.78,11.84%,Undervalued,3.72,3.47,2026-10-10
+42,GBILD86/87,Global IME Bank Limited Debenture 2086/87,Commercial Banks,8.50%,05-Apr-2031,4.59,"3,000,000,000","1,055.00",Adequate,7.485%,4.074%,341,"1,196.47",141.47,13.41%,Undervalued,3.88,3.61,2026-10-11
+43,NCCD86,9.5% NCC Debenture 2086,Commercial Banks,9.50%,09-Apr-2031,4.61,"3,000,000,000","1,118.00",Adequate,6.900%,4.074%,283,"1,239.80",121.80,10.89%,Undervalued,3.84,3.59,2026-10-12
+44,NBLD87,8.5% Nepal Bank Debenture 2087,Commercial Banks,8.50%,23-May-2031,4.73,"3,500,000,000","1,080.00",Adequate,6.880%,4.074%,281,"1,201.29",121.29,11.23%,Undervalued,3.98,3.72,2026-10-13
+45,NMBD87/88,NMB Debenture 8.50% - 2087/88,Commercial Banks,8.50%,25-May-2031,4.73,"2,000,000,000","1,085.00",Adequate,6.758%,4.074%,268,"1,201.49",116.49,10.74%,Undervalued,3.98,3.73,2026-10-14
+46,PBLD87,8.5% Prabhu Bank Debenture 2087,Commercial Banks,8.50%,13-Jun-2031,4.78,"2,650,000,000","1,100.00",Adequate,6.410%,4.074%,234,"1,203.37",103.37,9.40%,Undervalued,4.03,3.78,2026-10-15
+47,NICD88,NIC ASIA Rinpatra 2088,Commercial Banks,8.50%,07-Jul-2031,4.85,"1,573,872,000","1,067.00",Adequate,7.234%,4.074%,316,"1,205.73",138.73,13.00%,Undervalued,4.06,3.78,2026-10-16
+50,LBLD88,8.5% Laxmi Bank Debenture 2088,Commercial Banks,8.50%,26-Jul-2031,4.90,"2,000,000,000","1,125.00",Adequate,5.871%,4.074%,180,"1,207.53",82.53,7.34%,Undervalued,4.12,3.89,2026-10-17
+51,MBLD87,8.5% Machhapuchchhre Debenture 2087,Commercial Banks,8.50%,09-Aug-2031,4.94,"2,253,496,000","1,127.00",Adequate,5.844%,4.074%,177,"1,208.95",81.95,7.27%,Undervalued,4.15,3.92,2026-10-18
+52,CBLD88,Civil Bank Debenture 2088,Commercial Banks,10.25%,29-Dec-2031,5.33,"3,000,000,000","1,155.00",Adequate,7.131%,4.074%,306,"1,308.32",153.32,13.27%,Undervalued,4.27,3.98,2026-10-19
+54,PBD88,10% Prime Debenture 2088,Commercial Banks,10.00%,24-Apr-2032,5.65,"1,741,884,000","1,185.00",Adequate,6.426%,4.074%,235,"1,311.51",126.51,10.68%,Undervalued,4.51,4.23,2026-10-20
+55,CCBD88,Century Debenture 2088,Commercial Banks,10.50%,22-May-2032,5.73,"2,200,000,000","1,165.00",Adequate,7.350%,4.074%,328,"1,341.08",176.08,15.11%,Undervalued,4.49,4.19,2026-10-21
+56,RBBD2088,7% RBBL Debenture 2088 (RBBD2088),Commercial Banks,7.00%,03-Jul-2032,5.84,"2,500,000,000","1,055.00",Adequate,6.142%,4.074%,207,"1,161.89",106.89,10.13%,Undervalued,4.88,4.60,2026-10-22
+57,SBD89,10.25% Sanima Debenture 2089,Commercial Banks,10.25%,13-Jul-2032,5.87,"5,000,000,000","1,190.00",Adequate,6.673%,4.074%,260,"1,334.96",144.96,12.18%,Undervalued,4.62,4.33,2026-10-23
+58,SBLD89,10.75% SBL Debenture 2089,Commercial Banks,10.75%,14-Jul-2032,5.87,"4,000,000,000","1,293.50",Adequate,5.229%,4.074%,116,"1,361.64",68.14,5.27%,Undervalued,4.63,4.40,2026-10-24
+59,KBLD89,11% KBL Debenture 2089,Commercial Banks,11.00%,22-Sep-2032,6.06,"3,000,000,000","1,250.00",Adequate,6.358%,4.074%,228,"1,385.31",135.31,10.82%,Undervalued,4.69,4.41,2026-10-25
+60,EBLEB89,"Everest Bank Limited Energy Bond, 2089",Commercial Banks,7.50%,30-Jan-2033,6.42,"746,830,000","1,100.00",Stale - 43 days,5.876%,4.074%,180,"1,203.85",103.85,9.44%,Undervalued,5.23,4.94,2026-10-26
+62,NMBD89/90,NMB Debenture 10.75%-2089/90,Commercial Banks,10.75%,12-Apr-2033,6.62,"4,000,000,000","1,223.00",Adequate,6.887%,4.074%,281,"1,400.36",177.36,14.50%,Undervalued,5.02,4.69,2026-10-27
+66,NABILD2089,7% Nabil Debenture 2089,Commercial Banks,7.00%,30-Jul-2033,6.92,"3,000,000,000","1,095.00",Adequate,5.558%,4.074%,148,"1,186.12",91.12,8.32%,Undervalued,5.62,5.32,2026-10-28
+67,SBID89,9% Nepal SBI Bank Rinpatra 2089,Commercial Banks,9.00%,25-Aug-2033,6.99,"1,418,366,000","1,130.00",Adequate,6.950%,4.074%,288,"1,310.93",180.93,16.01%,Undervalued,5.38,5.03,2026-10-29
+68,CIZBD90,10% Citizens Bank Debenture 2090,Commercial Banks,10.00%,15-Oct-2033,7.13,"3,000,000,000","1,225.00",Adequate,6.355%,4.074%,228,"1,378.79",153.79,12.55%,Undervalued,5.40,5.07,2026-10-30
+69,KBLD90,10% KBL Debenture 2090,Commercial Banks,10.00%,04-Nov-2033,7.18,"5,000,000,000","1,341.80",Adequate,4.620%,4.074%,55,"1,381.21",39.41,2.94%,Undervalued,5.52,5.27,2026-10-31
+70,NIMBD90,10% NIMB Debenture 2090,Commercial Banks,10.00%,21-Feb-2034,7.48,"4,040,000,000","1,217.00",Adequate,6.610%,4.074%,254,"1,394.45",177.45,14.58%,Undervalued,5.58,5.24,2026-11-01
+71,EBLD91,Everest Bank Limited Debenture 2091,Commercial Banks,7.50%,12-Mar-2035,8.53,"3,000,000,000","1,087.00",Adequate,6.409%,4.074%,234,"1,257.53",170.53,15.69%,Undervalued,6.48,6.09,2026-11-02
+72,NICAD2091,7% NIC ASIA Debenture 2091 (NICAD2091),Commercial Banks,7.00%,13-Apr-2035,8.62,"5,000,000,000","1,061.20",Adequate,6.302%,4.074%,223,"1,222.95",161.75,15.24%,Undervalued,6.62,6.23,2026-11-03
+73,SBID2090,7% Nepal SBI Bank Debenture 2090,Commercial Banks,7.00%,22-Jul-2035,8.89,"3,000,000,000","1,041.00",Adequate,6.621%,4.074%,255,"1,228.50",187.50,18.01%,Undervalued,6.75,6.33,2026-11-04
+74,SBLD2091,7.25% SBL Debenture 2091 (SBLD2091),Commercial Banks,7.25%,22-Jul-2035,8.89,"2,500,000,000","1,056.00",Adequate,6.651%,4.074%,258,"1,247.33",191.33,18.12%,Undervalued,6.71,6.29,2026-11-05
+76,NMBEB92/93,NMB Energy Bond 4% - 2092/93,Commercial Banks,4.00%,03-Jun-2036,9.76,"1,500,000,000",,No trade recorded,,4.074%,,"1,002.32","1,002.32",,Not traded,,,2026-11-06
+77,NMBUR93/94,NMB Energy Bond 4% - 2093/94 ,Commercial Banks,4.00%,06-Aug-2037,10.94,"2,727,437,000",999.00,Adequate,4.108%,4.074%,3,"1,001.94",2.94,0.29%,Fairly valued,8.91,8.56,2026-11-07
+19,MND84/85,Muktinath Debenture 2084/85,Development Banks,8.75%,04-Aug-2028,1.93,"1,250,000,000","1,052.20",Adequate,6.556%,4.074%,248,"1,097.79",45.59,4.33%,Undervalued,1.80,1.69,2026-11-08
+22,GBBD85,"Garima Debenture, 2085",Development Banks,8.75%,28-Dec-2028,2.33,"1,000,000,000","1,058.00",Adequate,6.655%,4.074%,258,"1,114.95",56.95,5.38%,Undervalued,2.14,2.00,2026-11-09
+41,KSBBLD87,9% Kamana Sewa Bikas Bank Limited Debenture 2087,Development Banks,9.00%,23-Feb-2031,4.48,"1,000,000,000","1,112.20",Adequate,6.482%,4.074%,241,"1,213.25",101.05,9.09%,Undervalued,3.78,3.55,2026-11-10
+48,SDBD87,Shangri-la Development Bank Debenture 2087,Development Banks,9.00%,19-Jul-2031,4.88,"750,000,000","1,107.20",Adequate,6.777%,4.074%,270,"1,229.41",122.21,11.04%,Undervalued,4.06,3.80,2026-11-11
+49,JBBD87,Jyoti Bikash Bank Bond 2087,Development Banks,9.00%,23-Jul-2031,4.89,"1,500,000,000","1,133.00",Adequate,6.179%,4.074%,210,"1,229.86",96.86,8.55%,Undervalued,4.08,3.84,2026-11-12
+63,MLBLD89,11% Mahalaxmi Debenture 2089,Development Banks,11.00%,25-Apr-2033,6.65,"1,000,000,000","1,250.00",Adequate,6.672%,4.074%,260,"1,416.95",166.95,13.36%,Undervalued,5.03,4.71,2026-11-13
+65,LBBLD89,11% L.B.B.L. Debenture 2089,Development Banks,11.00%,14-Jun-2033,6.79,"1,000,000,000","1,231.00",Adequate,7.057%,4.074%,298,"1,424.13",193.13,15.69%,Undervalued,5.09,4.75,2026-11-14
+75,SHINED,Shine Resunga Debenture ,Development Banks,8.00%,24-Jul-2035,8.90,"1,000,000,000","1,125.00",Adequate,6.390%,4.074%,232,"1,304.00",179.00,15.91%,Undervalued,6.61,6.22,2026-11-15
+4,ICFCD83,12% ICFC Finance Limited Debenture 2083,Finance,12.00%,10-Mar-2027,0.52,"200,000,000",843.20,Thin - 1 units,61.619%,4.074%,"5,755","1,056.26",213.06,25.27%,Undervalued,0.51,0.32,2026-11-16
+5,GWFD83,12 % Goodwill Finance Limited Debenture 2083,Finance,12.00%,22-Mar-2027,0.55,"250,000,000","1,016.00",Adequate,12.291%,4.074%,822,"1,058.81",42.81,4.21%,Undervalued,0.54,0.48,2026-11-17
+24,MFLD85,9.5% Manjushree Finance Limited Debenture 2085,Finance,9.50%,14-Feb-2029,2.46,"500,000,000","1,105.00",Adequate,5.494%,4.074%,142,"1,139.02",34.02,3.08%,Undervalued,2.23,2.12,2026-11-18
+53,ICFCD88,9% ICFC Finance Limited Debenture 2088,Finance,9.00%,03-Feb-2032,5.43,"300,000,000","1,091.10",Adequate,7.329%,4.074%,326,"1,251.36",160.26,14.69%,Undervalued,4.41,4.11,2026-11-19
+61,ICFCD89,8% ICFC Finance Limited Debenture 2089,Finance,8.00%,09-Mar-2033,6.52,"500,000,000","1,101.00",Adequate,6.380%,4.074%,231,"1,235.71",134.71,12.24%,Undervalued,5.22,4.91,2026-11-20
+30,NIFRAUR85/86,NIFRA Uraj Rinpatra7%-2085/86,Investment,7.00%,04-Jan-2030,3.35,"2,289,813,000","1,030.00",Adequate,6.386%,4.074%,231,"1,100.77",70.77,6.87%,Undervalued,3.02,2.84,2026-11-21
+64,NIFRAGED,6% Nifra Green Energy Debenture 6% - 2088/89 (NIFRAGED),Investment,6.00%,11-Jun-2033,6.78,"5,000,000,000","1,000.10",Adequate,6.231%,4.074%,216,"1,123.28",123.18,12.32%,Undervalued,5.62,5.29,2026-11-22
+,,,,,,,,,,,,,,,,,,,
+Undervalued: YTM exceeds the benchmark effective rate by more than the tolerance set on Assumptions. Overvalued: YTM falls short by more than the tolerance. Valuation date 01-Sep-2026.,,,,,,,,,,,,,,,,,,,

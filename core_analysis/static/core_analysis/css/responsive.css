@@ -1,0 +1,171 @@
+/* ============================================================================
+   Shared mobile layer.
+
+   DESKTOP SAFETY CONTRACT — read before editing this file.
+   Every rule here lives inside a `@media (max-width: …)` block, so nothing in
+   this stylesheet can render above 1024px. That is what lets the file be loaded
+   last on every page without auditing the desktop layout each time. If you ever
+   need a rule that applies at all widths, it does NOT belong here — put it in
+   the page's own stylesheet where its desktop impact is reviewable.
+
+   Breakpoints (the site previously had ~20 ad-hoc ones; these are the canonical
+   set for new mobile work — existing page-level queries are left alone):
+     1024px  tablet / small laptop — multi-rail layouts collapse
+      720px  phone landscape       — single column, compact chrome
+      480px  phone portrait        — smallest supported comfortable width
+   ========================================================================== */
+
+/* ── Tablet ─────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* Multi-rail desk layouts collapse to a single column. Each of these is a
+     fixed-track grid (e.g. `300px minmax(0,1fr) 340px`) that cannot reflow on
+     its own — below the widest track the content would simply overflow. */
+  .s360-grid,
+  .mi-split,
+  .pf-risk-attribution-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Side rails stop being rails; they stack in document order. */
+  .rail-l, .rail-r { position: static !important; max-height: none !important; }
+}
+
+/* ── Phone landscape and below ──────────────────────────────────────────── */
+@media (max-width: 720px) {
+  /* Page shell: reclaim the horizontal padding a phone cannot spare. */
+  .workspace-wrap, .s360-wrap, .mi-wrap, .dsx-wrap, .pf-wrap {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Primary nav becomes a swipeable strip. It is `flex-wrap: nowrap` with eight
+     items, which on a phone either overflows the viewport or crushes the labels
+     to unreadable slivers. A scroll strip keeps every section reachable and
+     keeps the tap targets full size. */
+  .mi-primary-nav {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mi-primary-nav::-webkit-scrollbar { display: none; }
+  .mi-primary-nav .mi-nav-link {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+  /* The dropdown is absolutely positioned inside a scroll container, so it
+     would be clipped by the strip. Anchor it to the viewport edge instead. */
+  .mi-nav-drop { position: static; }
+  .mi-nav-drop .mi-nav-menu { left: 12px; right: 12px; min-width: 0; }
+
+  /* Header: title block and control cluster stack rather than compete. */
+  .workspace-header { padding: 0.9rem 1rem; }
+  .workspace-title { font-size: 1.05rem; }
+  .workspace-sub { font-size: 0.75rem; }
+  .header-actions { width: 100%; }
+  .theme-control-cluster { width: 100%; justify-content: flex-start; }
+
+  /* Cards and panels lose their desktop breathing room. */
+  .panel, .card, .mi-card, .dsx-card, .pf-card { padding: 12px !important; }
+
+  /* Any auto-fit grid still holding two columns at this width goes to one. */
+  .mgrid, .mgrid-tight, .gv-cards, .dsx-flow-tiles, .pf-kpis {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Tap targets: 44px is the platform minimum for a reliable finger hit. */
+  .btn, .ui-icon-btn, .fm-tab, .fm-pill, .pill, .dsx-play-btn {
+    min-height: 40px;
+  }
+
+  /* Controls stop sitting on one line and stop being too small to tap. */
+  .fm-controls, .dsx-controls, .gv-filters { gap: 8px; }
+  select, input, .fa-select, .fa-input, .dsx-select {
+    /* 16px is the threshold below which iOS Safari zooms the page on focus —
+       the zoom is what makes a form feel broken on an iPhone, not the layout. */
+    font-size: 16px !important;
+  }
+
+  /* Wide tables scroll horizontally with the label column pinned, rather than
+     being squeezed to illegibility. `.rx-scroll` is applied by responsive.js to
+     any table that would otherwise overflow its container. */
+  .rx-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rx-scroll > table { width: auto; min-width: 100%; }
+  .rx-scroll > table th:first-child,
+  .rx-scroll > table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    /* Opaque, or the scrolling columns read straight through the pinned one. */
+    background: var(--bg-raised, var(--surface, #0d1117));
+    box-shadow: 1px 0 0 var(--line, rgba(128, 128, 128, .3));
+  }
+  .rx-scroll > table thead th:first-child { z-index: 4; }
+
+  /* Tables that already ship their own scrolling wrapper are skipped by
+     responsive.js (nesting a second one would break their sticky headers), so
+     they need the pinned label column applied directly. Without this they
+     scroll sideways with nothing to anchor the row you are reading. */
+  .pf-table-wrap .pf-table th:first-child,
+  .pf-table-wrap .pf-table td:first-child,
+  .pf-mini-table-wrap .pf-mini-table th:first-child,
+  .pf-mini-table-wrap .pf-mini-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface-2, var(--bg-raised, #0d1117));
+    box-shadow: 1px 0 0 var(--line, rgba(128, 128, 128, .3));
+  }
+  /* The header's own `position: sticky; top: 0` and this rule meet in the
+     top-left cell, which must outrank both to avoid being scrolled over. */
+  .pf-table-wrap .pf-table thead th:first-child,
+  .pf-mini-table-wrap .pf-mini-table thead th:first-child { z-index: 4; }
+
+  /* Charts: canvases sized for a desk are the main source of sideways scroll. */
+  canvas, svg.dsx-flow-svg, .chart-wrap, .mi-chart {
+    max-width: 100% !important;
+  }
+}
+
+/* ── Phone portrait ─────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .workspace-wrap, .s360-wrap, .mi-wrap, .dsx-wrap, .pf-wrap {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .workspace-header { padding: 0.75rem 0.85rem; }
+  .workspace-title { font-size: 0.95rem; }
+
+  /* Tabs and pills wrap onto their own rows instead of overflowing. */
+  .fm-tabs, .fm-pills, .fm-controls, .fm-side { flex-wrap: wrap; }
+  .fm-side { width: 100%; }
+
+  /* NOTE: .pf-sec-row / .pf-fac-srow / .peer .row are deliberately NOT touched.
+     They look like they need collapsing but do not: their fixed tracks total
+     ~290px, ~200px and ~205px, so they already fit at 390px. Forcing them to two
+     columns re-flowed their 3-4 children onto two rows and split each bar from
+     its own percentage — worse than leaving them alone. Only the label track is
+     trimmed, so a long sector name gives the bar more room. */
+  .pf-sec-row { grid-template-columns: 104px minmax(0, 1fr) 52px 68px; }
+  .pf-fac-srow { grid-template-columns: 104px minmax(0, 1fr) 48px; }
+
+  /* Genuinely too wide: six tracks (name + meta + four buttons) totalling well
+     over 500px, so the archived-portfolio row overflowed the viewport. Stack the
+     labels and let the four actions share a row of their own. */
+  .pf-archived-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .pf-archived-row .pf-archived-name,
+  .pf-archived-row .pf-archived-meta { grid-column: 1 / -1; }
+  .pf-archived-row .pf-btn { min-height: 36px; padding-left: 4px; padding-right: 4px; }
+
+  /* Name + type + submit on one row leaves the button ~30px at this width. */
+  .pf-manager-form { grid-template-columns: minmax(0, 1fr); }
+}

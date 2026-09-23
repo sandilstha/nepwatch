@@ -1,0 +1,76 @@
+<div class="pf-section" id="broker-ledger"><span>Broker Ledger &amp; Fiscal Year
+  <a class="pf-help" href="{% url 'portfolio_sop' %}#broker-ledger" title="Broker ledger import, reconciliation, realized P/L and Nepali fiscal years">?</a></span></div>
+<div class="pf-card pf-ledger-card">
+  {% if ledger.has_ledger %}
+  <div class="pf-ledger-status{% if ledger.is_reconciled %} is-ok{% else %} has-warning{% endif %}">
+    <strong>{% if ledger.is_reconciled %}Reconciled{% else %}Review required{% endif %}</strong>
+    <span>Ledger through {{ ledger.last_transaction_date|date:"Y-m-d" }}</span>
+    {% if ledger.stale_against_snapshot %}<span>Holdings/WACC snapshot is newer ({{ ledger.latest_snapshot_date|date:"Y-m-d" }})</span>{% endif %}
+    <span>{{ ledger.integrity_issue_count }} sequence/balance issue{{ ledger.integrity_issue_count|pluralize }}</span>
+    <span>{{ ledger.duplicate_count }} duplicate{{ ledger.duplicate_count|pluralize }} skipped</span>
+  </div>
+
+  <div class="pf-kpis pf-ledger-kpis">
+    <div class="pf-kpi"><span class="pf-kpi-label">Opening Cash</span><span class="pf-kpi-val">{% if ledger.summary.opening_balance is not None %}Rs {{ ledger.summary.opening_balance|floatformat:2 }}{% else %}—{% endif %}</span><span class="pf-kpi-sub">FY {{ ledger.selected_fiscal_year }}</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">Closing Cash</span><span class="pf-kpi-val {% if ledger.summary.closing_balance < 0 %}num-neg{% else %}num-pos{% endif %}">{% if ledger.summary.closing_balance is not None %}Rs {{ ledger.summary.closing_balance|floatformat:2 }}{% else %}—{% endif %}</span><span class="pf-kpi-sub">CR positive · DR negative</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">Purchases</span><span class="pf-kpi-val">Rs {{ ledger.summary.purchases|floatformat:2 }}</span><span class="pf-kpi-sub">bill debit, deductions included</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">Sales</span><span class="pf-kpi-val">Rs {{ ledger.summary.sales|floatformat:2 }}</span><span class="pf-kpi-sub">net bill credit</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">Realized P/L</span><span class="pf-kpi-val {% if ledger.summary.realized_pl < 0 %}num-neg{% else %}num-pos{% endif %}">Rs {{ ledger.summary.realized_pl|floatformat:2 }}</span><span class="pf-kpi-sub">{% if ledger.summary.realized_coverage_pct is not None %}{{ ledger.summary.realized_coverage_pct|floatformat:1 }}% basis coverage{% else %}no sales{% endif %}{% if ledger.summary.realized_pl_estimated %} · includes WACC estimate{% endif %}</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">Dividends</span><span class="pf-kpi-val num-pos">Rs {{ ledger.summary.dividends|floatformat:2 }}</span><span class="pf-kpi-sub">ledger-classified cash income</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">Charges &amp; Taxes</span><span class="pf-kpi-val num-neg">Rs {{ ledger.summary.charges_and_taxes|floatformat:2 }}</span><span class="pf-kpi-sub">bill deductions + explicit rows</span></div>
+    <div class="pf-kpi"><span class="pf-kpi-label">FY Performance</span><span class="pf-kpi-val {% if ledger.summary.performance < 0 %}num-neg{% else %}num-pos{% endif %}">Rs {{ ledger.summary.performance|floatformat:2 }}</span><span class="pf-kpi-sub">realized + dividend − standalone costs</span></div>
+  </div>
+
+  {% if not has_holdings %}
+  {% include "core_analysis/_portfolio_reconciliation.html" %}
+  {% endif %}
+
+  <details class="pf-ledger-transactions pf-ledger-collapse" open>
+  <summary class="pf-card-head pf-ledger-table-head">
+    <span>FY {{ ledger.selected_fiscal_year }} Transactions</span>
+    <span class="pf-ledger-table-meta">
+      {{ ledger.transaction_total }} row{{ ledger.transaction_total|pluralize }}
+      <b class="pf-ledger-toggle-hide">Hide</b><b class="pf-ledger-toggle-show">Show</b>
+    </span>
+  </summary>
+  <div class="pf-table-wrap pf-ledger-table-wrap">
+    <table class="pf-table pf-ledger-table">
+      <thead><tr><th class="l">AD / BS Date</th><th class="l">Type</th><th class="l">Voucher / Reference</th><th class="l">Particulars</th><th>Debit</th><th>Credit</th><th>Balance</th><th>Realized P/L</th></tr></thead>
+      <tbody>
+      {% for tx in ledger.transactions %}
+        <tr{% if tx.sequence_gap or tx.balance_mismatch %} class="pf-ledger-row-warning"{% endif %}>
+          <td class="l">{{ tx.date_ad|date:"Y-m-d" }}<small>{{ tx.date_bs }}</small></td>
+          <td class="l"><span class="pf-ledger-type type-{{ tx.transaction_type }}">{{ tx.get_transaction_type_display }}</span></td>
+          <td class="l"><b>{{ tx.voucher_no }}</b><small>{{ tx.reference_no }}</small></td>
+          <td class="l pf-ledger-particulars">{{ tx.particulars }}</td>
+          <td>{% if tx.debit %}{{ tx.debit|floatformat:2 }}{% else %}—{% endif %}</td>
+          <td>{% if tx.credit %}{{ tx.credit|floatformat:2 }}{% else %}—{% endif %}</td>
+          <td class="{% if tx.balance < 0 %}num-neg{% else %}num-pos{% endif %}">{{ tx.balance|floatformat:2 }} {{ tx.balance_side }}</td>
+          <td class="{% if tx.realized_pl_value < 0 %}num-neg{% elif tx.realized_pl_value > 0 %}num-pos{% endif %}">{% if tx.transaction_type == 'sell' %}{{ tx.realized_pl_value|floatformat:2 }}{% if tx.realized_is_estimated %}<small>estimated</small>{% endif %}{% if tx.realized_unresolved_qty %}<small>{{ tx.realized_unresolved_qty|floatformat:2 }} kitta unresolved</small>{% endif %}{% else %}—{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8" class="pf-muted">No transactions in this fiscal year.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if ledger.transaction_page_count > 1 %}
+  <nav class="pf-ledger-pagination" aria-label="Fiscal year transaction pages">
+    {% if ledger.transaction_has_previous %}
+    <a href="?portfolio={{ active_portfolio.id }}&amp;fy={{ ledger.selected_fiscal_year|urlencode }}&amp;ledger_page={{ ledger.transaction_previous_page }}#broker-ledger">Previous</a>
+    {% else %}<span class="is-disabled">Previous</span>{% endif %}
+    <strong>Page {{ ledger.transaction_page }} of {{ ledger.transaction_page_count }}</strong>
+    {% if ledger.transaction_has_next %}
+    <a href="?portfolio={{ active_portfolio.id }}&amp;fy={{ ledger.selected_fiscal_year|urlencode }}&amp;ledger_page={{ ledger.transaction_next_page }}#broker-ledger">Next</a>
+    {% else %}<span class="is-disabled">Next</span>{% endif %}
+  </nav>
+  {% endif %}
+  </details>
+  <div class="pf-note">Rows are merged by fingerprint, not blindly replaced. Buy/sell bill deductions are inferred from bill total versus parsed trade gross and remain combined because this statement does not itemize broker commission, SEBON fee, DP charge and CGT separately. A WACC-based realized P/L value is visibly marked as an estimate whenever the ledger lacks the opening lot.</div>
+  {% else %}
+  <div class="pf-ledger-empty">
+    <strong>No broker ledger imported</strong>
+    <span>Upload the broker Account Statement to add cash, buy/sell bills, realized P/L, duplicate checks, holdings reconciliation, and Nepali FY reporting. Existing Holdings and WACC imports remain unchanged.</span>
+  </div>
+  {% endif %}
+</div>

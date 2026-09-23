@@ -1,0 +1,232 @@
+/* Mutual Fund Desk — the six report screens.
+ *
+ * Everything is prefixed .mfd- and these pages load no other page's stylesheet
+ * beyond the shared shell, so nothing here can leak into the dashboards. The
+ * tables are wide by nature (the sector report has sixteen columns), so the
+ * horizontal scroll lives on the wrapper and the first column is pinned.
+ */
+
+/* THE TOKEN IS `--surface`, NOT `--surface-1`. There is no --surface-1 in
+   tokens.css. An invalid var() with no fallback drops to `unset`, which for a
+   non-inherited property like background means transparent and for `color`
+   means inherit — so painting the BASIC FUNDAMENTALS bar with `--ink-1` behind
+   `--surface-1` text gave near-white on near-white and the heading vanished. The same typo left the sticky first column transparent, so rows
+   bled through it on horizontal scroll. Both fixed; do not reintroduce it. */
+
+/* ---------- report switcher ---------- */
+.mfd-switch {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 14px 0 16px;
+}
+.mfd-chip {
+  padding: 7px 14px; border-radius: 999px; text-decoration: none;
+  font-size: 12.5px; font-weight: 700; letter-spacing: .01em;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.mfd-chip:hover { color: var(--ink-1); border-color: var(--accent, #22c55e); }
+.mfd-chip.on {
+  background: var(--accent, #22c55e); border-color: var(--accent, #22c55e);
+  color: #06210f;
+}
+
+/* ---------- controls row ---------- */
+.mfd-bar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px;
+  margin-bottom: 14px;
+}
+.mfd-field { display: flex; flex-direction: column; gap: 5px; }
+.mfd-field > label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.mfd-select, .mfd-input {
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-1);
+  border-radius: 8px; padding: 8px 11px; font-size: 13px; font-weight: 600;
+  min-width: 170px; font-family: inherit;
+}
+.mfd-btn {
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-1);
+  border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+}
+.mfd-btn:hover { border-color: var(--accent, #22c55e); color: var(--accent, #22c55e); }
+.mfd-spacer { margin-left: auto; }
+
+/* ---------- tables ---------- */
+/* `overflow-x: auto` makes this a scroll container in BOTH axes, so the sticky
+   table head below can only stick against THIS box, never against the viewport.
+   Without a height cap the box never scrolls vertically and the sticky header
+   silently does nothing on a 500-row table. Capping the height is what makes it
+   work; `--mfd-cap` lets a short table opt out. */
+.mfd-wrap {
+  overflow: auto; max-height: var(--mfd-cap, 72vh);
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface);
+  overscroll-behavior: contain;
+}
+/* Panels that are short by construction should not grow a scrollbar or a
+   pointless inner scroll region. */
+.mfd-wrap--auto { --mfd-cap: none; }
+.mfd-wrap:has(.mfd-kv), .mfd-wrap:has(.mfd-facts-t) { --mfd-cap: none; }
+.mfd-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+.mfd-table th, .mfd-table td {
+  padding: 8px 11px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.mfd-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--surface-2); color: var(--ink-2);
+  font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  text-align: right; cursor: pointer; user-select: none;
+}
+.mfd-table thead th:first-child,
+.mfd-table tbody td:first-child { text-align: left; }
+/* The identity column stays visible while the value columns scroll — a sector
+   row is meaningless once you have scrolled the fund's ticker off screen. */
+.mfd-table thead th:first-child { z-index: 4; }
+.mfd-table tbody td:first-child,
+.mfd-table thead th:first-child {
+  position: sticky; left: 0; background: var(--surface);
+}
+.mfd-table thead th:first-child { background: var(--surface-2); }
+.mfd-table tbody td { text-align: right; color: var(--ink-1); }
+.mfd-table tbody tr:hover td { background: var(--surface-2); }
+.mfd-table tbody tr:hover td:first-child { background: var(--surface-2); }
+.mfd-table th.sorted::after { content: " \25BC"; font-size: 8px; }
+.mfd-table th.sorted.asc::after { content: " \25B2"; }
+
+/* The industry aggregate. Pinned to the top and weighted so it reads as a
+   summary of the rows rather than as one more fund among them. */
+.mfd-table tbody tr.mfd-total td,
+.mfd-table tbody tr.mfd-total:hover td {
+  font-weight: 800; background: var(--surface-2); color: var(--ink-1);
+  border-bottom: 2px solid var(--line);
+}
+
+.mfd-table a { color: var(--accent, #22c55e); text-decoration: none; font-weight: 700; }
+.mfd-table a:hover { text-decoration: underline; }
+.mfd-pos { color: var(--up, #22c55e); }
+.mfd-neg { color: var(--down, #ef4444); }
+.mfd-muted { color: var(--ink-3); }
+.mfd-sub { color: var(--ink-3); font-size: 11px; font-weight: 500; }
+
+.mfd-empty {
+  padding: 40px 20px; text-align: center; color: var(--ink-2);
+  line-height: 1.75; font-size: 13px;
+}
+.mfd-empty b { color: var(--ink-1); }
+
+.mfd-note {
+  margin-top: 10px; font-size: 11.5px; line-height: 1.65; color: var(--ink-3);
+}
+.mfd-note b { color: var(--ink-2); }
+
+/* ---------- overview cards ---------- */
+.mfd-cards {
+  display: grid; gap: 12px; margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.mfd-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 16px 18px;
+}
+.mfd-card .v { font-size: 24px; font-weight: 800; color: var(--ink-1); line-height: 1.2; }
+.mfd-card .k {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3); margin-top: 6px;
+}
+.mfd-card .h { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+.mfd-links { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.mfd-link {
+  display: block; text-decoration: none; padding: 18px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+}
+.mfd-link:hover { border-color: var(--accent, #22c55e); }
+.mfd-link .t { font-size: 14px; font-weight: 800; color: var(--ink-1); }
+.mfd-link .d { font-size: 12px; color: var(--ink-3); margin-top: 5px; line-height: 1.55; }
+
+/* ---------- financials header ---------- */
+.mfd-facts {
+  display: grid; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 14px;
+}
+.mfd-fact { background: var(--surface); padding: 11px 14px; }
+.mfd-fact .k {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.mfd-fact .v { font-size: 14px; font-weight: 700; color: var(--ink-1); margin-top: 4px; }
+
+.mfd-split { display: grid; gap: 14px; grid-template-columns: 260px minmax(0, 1fr); align-items: start; }
+@media (max-width: 900px) { .mfd-split { grid-template-columns: 1fr; } }
+
+/* ---------- financials: left statement rail + right holdings ---------- */
+.mfd-fin { display: grid; gap: 14px; grid-template-columns: 320px minmax(0, 1fr); align-items: start; }
+@media (max-width: 1000px) { .mfd-fin { grid-template-columns: 1fr; } }
+
+.mfd-rail-head {
+  font-size: 13px; font-weight: 800; color: var(--ink-1); line-height: 1.4;
+  padding: 11px 13px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 10px 10px 0 0;
+}
+.mfd-rail-pick {
+  display: flex; flex-direction: column; gap: 8px; padding: 11px 13px;
+  background: var(--surface);
+  border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px;
+}
+.mfd-rail-pick .mfd-select { min-width: 0; width: 100%; }
+
+.mfd-basic {
+  margin: 10px 0 0; padding: 7px 12px; border-radius: 8px 8px 0 0;
+  background: var(--ink-1, #edf4ff); color: var(--surface, #07142e);
+  font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+}
+/* The label caps its own table, so the two read as one block instead of a
+   floating strip with a gap under it. */
+.mfd-basic + .mfd-wrap { border-radius: 0 0 12px 12px; border-top: 0; }
+/* Key/value statement lines: label left, figure right, no sort affordance —
+   these are a filed document, not a sortable dataset. */
+.mfd-kv thead { display: none; }
+.mfd-kv td:first-child { white-space: normal; color: var(--ink-2); width: 62%; }
+.mfd-kv td:last-child { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mfd-kv tr.mfd-kvhead td {
+  background: var(--surface-2); color: var(--ink-3);
+  font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
+}
+
+/* The header strip of scheme facts reads as one row of labelled values. */
+.mfd-facts-t thead th { text-align: center; cursor: default; }
+.mfd-facts-t tbody td { text-align: center; font-weight: 700; }
+.mfd-facts-t tbody td:first-child,
+.mfd-facts-t thead th:first-child { text-align: center; position: static; }
+
+.mfd-secbar {
+  display: flex; align-items: center; gap: 12px; margin: 12px 0;
+  padding: 9px 13px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface);
+}
+.mfd-seclabel {
+  font-size: 11px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.mfd-secpct { margin-left: auto; font-weight: 800; color: var(--accent, #22c55e); }
+
+/* The holdings table fills the column so it ends level with the left rail's
+   INCOME STATEMENT box, instead of stopping short and leaving a ragged gap.
+   Grid rows already stretch to the taller column; what was missing was telling
+   the table itself to take the slack rather than the column's trailing space.
+
+   `min-height: 0` is the part that is easy to miss: a flex item defaults to
+   min-height:auto, which refuses to shrink below its content, so the table
+   would overflow the column instead of scrolling inside it. */
+.mfd-fin-main { display: flex; flex-direction: column; }
+.mfd-wrap--fill {
+  flex: 1 1 0;
+  min-height: 24vh;      /* never collapse to a sliver on a short fund */
+  max-height: none;      /* the column height governs, not the global cap */
+}
+/* Whichever column is shorter stretches; the rail's own boxes stay their
+   natural size so the statement never grows blank space between its rows. */
+.mfd-fin > aside { align-self: start; }

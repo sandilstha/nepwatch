@@ -1,0 +1,677 @@
+/* Stock 360 — all-in-one single-stock dashboard.
+   Token-driven, theme-aware (dark default), echoes the platform's
+   --ink-2 / --accent / --bg-raised / panel conventions. */
+
+/* This sheet used to redefine the ENTIRE palette (--bg, --line, --ink-2,
+   --accent, --shadow …) with its own hex values, and it loads after tokens.css,
+   so it won. That is why Stock 360 read as a different product: the platform is
+   navy (--bg #020b1f) while this page painted GitHub-dark (#0e1117), with a
+   blue accent instead of the platform's green.
+
+   The palette now comes from tokens.css like every other page. What remains is
+   only an ALIAS layer: this page's private names (--panel, --pos, --ink …)
+   pointing at the platform tokens. Aliases resolve against :root at use time,
+   so they follow the theme automatically — no per-theme block needed.
+
+   Do NOT redeclare --bg / --line / --ink-2 / --ink-3 / --accent / --shadow
+   here; tokens.css owns them and overriding them re-breaks the theme. */
+:root{
+  --bg-raised: var(--surface);
+  --panel:     var(--surface);
+  --panel-2:   var(--surface-2);
+  --ink:       var(--ink-1);
+  --line-2:    var(--line);
+  --accent-weak: var(--accent-soft);
+  --pos:       var(--up);
+  --pos-weak:  var(--up-soft);
+  --neg:       var(--down);
+  --neg-weak:  var(--down-soft);
+  --neutral:      var(--flat);
+  --neutral-weak: var(--flat-soft);
+  --r:    var(--radius);
+  --r-sm: var(--radius-sm);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Consolas,monospace;
+  --sans:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* tokens.css has no warning colour, so this one stays local — but it is
+     theme-split below rather than a single value that only suits dark. */
+  --warn:#e6b04a; --warn-weak:rgba(230,176,74,.14);
+}
+[data-theme="light"]{
+  --warn:#b7811f; --warn-weak:rgba(183,129,31,.13);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:0.875rem;line-height:1.45;-webkit-font-smoothing:antialiased}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.eyebrow{font-size:0.6562rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+h1,h2,h3{margin:0;text-wrap:balance}
+a{color:inherit;text-decoration:none}
+code{font-family:var(--mono);font-size:.9em;background:var(--panel-2);padding:1px 5px;border-radius:5px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)} .neu{color:var(--neutral)}
+.loading{color:var(--ink-3);font-size:0.8125rem;padding:6px 0}
+.notice{background:var(--panel-2);border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:13px 14px;font-size:0.7812rem;color:var(--ink-2);line-height:1.55}
+.notice b{color:var(--ink)}
+
+/* HERO */
+.hero{position:sticky;top:0;z-index:40;background:var(--bg-raised);border-bottom:1px solid var(--line)}
+.hero-search-row{max-width:var(--shell-max);margin:0 auto;padding:14px 22px 4px;display:flex;justify-content:center}
+.search-top{max-width:520px;width:100%}
+.search-top input{padding:11px 14px 11px 38px;font-size:0.9062rem;border-radius:12px}
+.hero-inner{max-width:var(--shell-max);margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em;font-size:0.9375rem}
+.brand .dot{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#8f6ef0);display:grid;place-items:center;color:#fff;font-size:0.75rem;font-weight:800}
+.search{position:relative;flex:1;min-width:210px;max-width:340px;margin:0}
+.search input{width:100%;background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink);border-radius:10px;padding:9px 12px 9px 34px;font-size:0.8438rem;font-weight:600}
+.search input::placeholder{color:var(--ink-3);font-weight:500}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none}
+.ac{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--panel);border:1px solid var(--line-2);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;display:none;max-height:280px;overflow-y:auto;z-index:50}
+.ac.open{display:block}
+.ac div{padding:8px 12px;display:flex;justify-content:space-between;gap:10px;cursor:pointer;font-size:0.8125rem}
+.ac div:hover,.ac div.hi{background:var(--accent-weak)}
+.ac .t{font-weight:700}
+.ac .n{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ticker{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ticker .sym{font-size:1.25rem;font-weight:800;letter-spacing:-.02em}
+.ticker .co{color:var(--ink-2);font-size:0.8125rem;font-weight:600}
+.ticker .price{font-size:1.625rem;font-weight:800}
+.chg{font-weight:700;font-size:0.875rem;padding:2px 8px;border-radius:7px}
+.chg.up{color:var(--pos);background:var(--pos-weak)}
+.chg.down{color:var(--neg);background:var(--neg-weak)}
+.quickstats{display:flex;gap:20px;flex-wrap:wrap;margin-left:auto}
+.qs{display:flex;flex-direction:column;gap:1px}
+.qs .k{font-size:0.625rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.qs .v{font-size:0.875rem;font-weight:700}
+.gauge52{display:flex;flex-direction:column;gap:4px;min-width:150px}
+.gauge52 .bar{height:6px;border-radius:4px;background:linear-gradient(90deg,var(--neg),var(--warn),var(--pos));position:relative}
+.gauge52 .mk{position:absolute;top:-3px;width:2px;height:12px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--bg-raised)}
+.gauge52 .lbls{display:flex;justify-content:space-between;font-size:0.625rem;color:var(--ink-3)}
+.icon-btn{background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink-2);border-radius:8px;padding:7px 11px;font-size:0.75rem;font-weight:700;cursor:pointer}
+.icon-btn:hover{color:var(--ink);border-color:var(--accent)}
+
+.pills{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.pills-inner{max-width:var(--shell-max);margin:0 auto;padding:8px 22px;display:flex;gap:6px;overflow-x:auto}
+.pill{white-space:nowrap;padding:6px 13px;border-radius:20px;font-size:0.7812rem;font-weight:700;color:var(--ink-2);cursor:pointer;border:1px solid transparent;background:transparent;font-family:inherit}
+.pill:hover{color:var(--ink);background:var(--panel-2)}
+.pill.active{color:var(--accent);background:var(--accent-weak);border-color:var(--accent-weak)}
+
+.wrap{max-width:var(--shell-max);margin:0 auto;padding:22px}
+.col{display:flex;flex-direction:column;gap:22px;min-width:0}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.phead{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.phead h2{font-size:0.8125rem;font-weight:800;letter-spacing:.01em}
+.phead .desk-score{margin-left:auto;font-size:0.6875rem;font-weight:800;padding:3px 9px;border-radius:20px}
+.sc-pos{background:var(--pos-weak);color:var(--pos)} .sc-neg{background:var(--neg-weak);color:var(--neg)}
+.sc-warn{background:var(--warn-weak);color:var(--warn)} .sc-neu{background:var(--neutral-weak);color:var(--neutral)}
+.phead .link{font-size:0.6875rem;font-weight:700;color:var(--accent);cursor:pointer}
+.pbody{padding:16px}
+.fresh{font-size:0.625rem;color:var(--ink-3);font-weight:600;letter-spacing:.02em}
+
+/* ===== Overview (photo layout): title + 4 cards ===== */
+.s360-title{display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:18px}
+.s360-name{min-width:0;flex:1}
+.s360-name h1{font-size:1.875rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.s360-name h1 .sym{font-weight:800;color:var(--ink-2)}
+.s360-quote{display:flex;align-items:baseline;gap:10px;margin-top:8px;flex-wrap:wrap}
+.s360-quote .cur{font-size:0.75rem;font-weight:700;color:var(--ink-2)}
+.s360-quote .price{font-size:1.625rem;font-weight:800}
+.s360-52{min-width:180px}
+.s360-52 .hl-vals{display:flex;justify-content:space-between;font-size:0.75rem;font-weight:700;color:var(--ink-2)}
+.s360-52 .hl-bar{height:6px;border-radius:4px;margin:4px 0;background:linear-gradient(90deg,var(--neg),var(--warn),var(--pos));position:relative}
+.s360-52 .hl-bar .mk{position:absolute;top:-3px;width:2px;height:12px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--bg)}
+.s360-52 .hl-lab{font-size:0.6562rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-top:2px}
+
+.s360-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.ocard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px}
+.ocard h3{font-size:1.1875rem;font-weight:800;letter-spacing:-.01em;margin-bottom:8px}
+.ocard .oc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ocard .oc-head h3{margin:0}
+.ocard .oc-head .link{margin-left:auto}
+.kv-loading{color:var(--ink-3);font-size:0.75rem;padding:6px 0}
+/* <dl> carries a browser default margin:1em 0, and nothing reset it — that was
+   a ~14px gap above the first row AND below the last one inside every kv card. */
+.kv{margin:0}
+/* Separators run the full card width: the row is pulled out by the card's 18px
+   side padding and given it back as its own padding, so the text stays put
+   while the rule reaches both edges instead of floating inset. */
+.kv .kv-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  margin:0 -18px;padding:9px 18px;border-bottom:1px solid var(--line)}
+/* Last row: no trailing rule and no trailing padding, so the card closes on the
+   value rather than on empty space. */
+.kv .kv-row:last-child{border-bottom:none;padding-bottom:0}
+.kv dt{font-size:0.7812rem;color:var(--ink-2)}
+.kv dd{margin:0;font-size:0.8438rem;font-weight:700}
+
+/* Investment style box */
+
+/* Price card */
+.chart-box{flex:1;min-height:180px}
+#ovChart{width:100%;height:100%;min-height:180px;display:block}
+.tf{font:inherit;font-size:0.7188rem;font-weight:700;cursor:pointer;color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:5px 12px}
+.tf:hover{color:var(--ink);border-color:var(--line-2)}
+.tf.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+@media (max-width:1080px){.s360-cards{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.s360-cards{grid-template-columns:1fr}.s360-name h1{font-size:1.5rem}}
+
+.vstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.vcell{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 13px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.vcell .stripe{position:absolute;left:0;top:0;bottom:0;width:3px}
+.vcell .lab{font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
+.vcell .sc{font-size:1.4375rem;font-weight:800;margin-top:3px}
+.vcell .verdict{font-size:0.6875rem;font-weight:700;margin-top:1px}
+
+/* auto-FIT, not auto-fill. auto-fill keeps empty tracks alive: with 4 tiles in a
+   984px row it built SEVEN 132px tracks, leaving 426px of dead space on the
+   right and squeezing each tile so narrow that "Broker Accumulation (1 month)"
+   wrapped onto three lines — which then stretched all four tiles to that height
+   and left ~42px empty at the bottom of the other three. auto-fit collapses the
+   empty tracks, so the tiles share the full width and shrink back to one row of
+   content. */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px}
+.mcard{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px}
+.mcard .k{font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.mcard .v{font-size:1.1875rem;font-weight:800;margin-top:4px}
+.mcard .sub{font-size:0.6875rem;color:var(--ink-3);font-weight:600;margin-top:2px}
+
+.rets{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.ret{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px;text-align:center}
+.ret .k{font-size:0.625rem;font-weight:700;color:var(--ink-3);text-transform:uppercase}
+.ret .v{font-size:0.9375rem;font-weight:800;margin-top:3px}
+#priceChart{width:100%;height:200px;display:block}
+.momentum-sep{height:1px;background:var(--line);margin:16px 0}
+
+
+.peer{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.peer .row{display:grid;grid-template-columns:130px 1fr 62px;align-items:center;gap:10px;font-size:0.75rem}
+.peer .track{height:8px;background:var(--panel-2);border-radius:6px;position:relative;overflow:hidden}
+.peer .fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.peer .med{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink-2);opacity:.5}
+.peer .pv{text-align:right;font-weight:700}
+
+.btwrap{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btcol .cap{font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;display:flex;justify-content:space-between}
+.brow{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line);font-size:0.75rem}
+.brow:last-child{border-bottom:none}
+.brow .rk{color:var(--ink-3);font-weight:700;font-size:0.6875rem}
+.brow .bn{font-weight:700}
+.brow .mini{height:4px;border-radius:3px;margin-top:3px}
+
+.ro{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ro h3{font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.chip{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border-radius:var(--r-sm);margin-bottom:8px;font-size:0.7812rem;border:1px solid var(--line)}
+.chip .ic{font-size:0.8125rem;margin-top:1px}
+.chip .src{font-size:0.625rem;color:var(--ink-3);font-weight:600;margin-top:2px}
+.chip.good{background:var(--pos-weak)} .chip.bad{background:var(--neg-weak)} .chip.warnc{background:var(--warn-weak)}
+
+.pf-badge{font-size:0.6875rem;font-weight:800;padding:4px 10px;border-radius:20px;background:var(--pos-weak);color:var(--pos)}
+
+.s360-btn{margin-left:auto;font:inherit;font-size:0.7188rem;font-weight:800;cursor:pointer;
+  color:#fff;background:linear-gradient(135deg,var(--accent),#8f6ef0);border:0;
+  border-radius:20px;padding:5px 13px}
+.s360-btn:hover{filter:brightness(1.08)}
+.s360-btn:disabled{opacity:.6;cursor:default;filter:grayscale(.3)}
+.ai-narrative{font-size:0.8125rem;line-height:1.6}
+.ai-narrative h1,.ai-narrative h2,.ai-narrative h3,.ai-narrative h4{font-size:0.8438rem;font-weight:800;margin:14px 0 6px}
+.ai-narrative p{margin:0 0 10px}
+.ai-narrative ul,.ai-narrative ol{margin:0 0 10px;padding-left:20px}
+.ai-narrative li{margin:3px 0}
+.ai-narrative strong{color:var(--ink)}
+.ai-meta{font-size:0.625rem;color:var(--ink-3);font-weight:600;margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+
+.ai{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line-2);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.ai-head{padding:14px 16px 4px}
+.ai-head .eyebrow{color:var(--accent)}
+.ai-gauge{padding:6px 0 10px}
+.ai-sec{border-top:1px solid var(--line);padding:12px 16px}
+.ai-sec .eyebrow{margin-bottom:8px;display:block}
+.reason{display:flex;gap:9px;font-size:0.75rem;margin-bottom:9px;align-items:flex-start}
+.reason .w{font-family:var(--mono);font-weight:700;font-size:0.6875rem;min-width:34px;text-align:right}
+.reason .tx{color:var(--ink)}
+.disclaimer{font-size:0.625rem;color:var(--ink-3);padding:0 16px 14px;line-height:1.5}
+
+footer{max-width:var(--shell-max);margin:0 auto;padding:8px 22px 40px;color:var(--ink-3);font-size:0.6875rem}
+
+@media (max-width:980px){
+  .vstrip{grid-template-columns:repeat(2,1fr)}
+  .rets{grid-template-columns:repeat(3,1fr)}
+  .btwrap,.ro{grid-template-columns:1fr}
+  .quickstats{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:no-preference){
+  .fill,.mk{transition:all .5s cubic-bezier(.2,.7,.2,1)}
+}
+
+/* ===== Freshness chip (hero) — how current this print is, stated up front ===== */
+.fresh-chip{font-size:0.625rem;font-weight:800;padding:3px 9px;border-radius:20px;
+  border:1px solid var(--line);letter-spacing:.02em;cursor:help;white-space:nowrap}
+.fresh-chip.fc-pos{background:var(--pos-weak);color:var(--pos)}
+.fresh-chip.fc-warn{background:var(--warn-weak);color:var(--warn)}
+.fresh-chip.fc-neg{background:var(--neg-weak);color:var(--neg)}
+.fresh-chip.fc-neu{background:var(--panel-2);color:var(--ink-2)}
+
+
+/* ===== Valuation & Peers ===== */
+.val-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px}
+@media (max-width:900px){.val-grid{grid-template-columns:1fr}}
+.mgrid-tight{margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(112px,1fr))}
+.val-verdict{margin-top:8px;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--line)}
+.val-verdict.pos{background:var(--pos-weak)} .val-verdict.neg{background:var(--neg-weak)}
+.val-verdict.warn{background:var(--warn-weak)} .val-verdict.neu{background:var(--panel-2)}
+.vv-label{font-size:1.0625rem;font-weight:800}
+.vv-sub{font-size:0.75rem;color:var(--ink-2);font-weight:600;margin-top:3px;line-height:1.5}
+.val-assump{margin-top:11px;font-size:0.6875rem;color:var(--ink-3);line-height:1.6}
+.val-assump b{color:var(--ink-2)}
+.val-inputs{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:14px;
+  padding-top:12px;border-top:1px dashed var(--line-2)}
+.val-inputs label{font-size:0.625rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.val-inputs .ipt{display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--ink-2)}
+.val-inputs input{width:66px;font:inherit;font-size:0.8125rem;font-weight:700;padding:4px 7px;
+  color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:6px}
+.val-inputs .s360-btn{margin-left:0}
+.s360-btn.ghost{background:none;color:var(--ink-2);border:1px solid var(--line)}
+
+.sens{width:100%;border-collapse:collapse;font-size:0.7188rem;margin-top:4px}
+.sens th{background:var(--panel-2);color:var(--ink-2);font-weight:800;padding:4px 6px;
+  border:1px solid var(--line);font-size:0.625rem}
+.sens td{padding:4px 6px;border:1px solid var(--line);text-align:right;
+  font-variant-numeric:tabular-nums;font-weight:700}
+.sens td.ok{background:var(--pos-weak);color:var(--pos)}
+.sens td.no{color:var(--ink-3)}
+.sens td.na{color:var(--ink-3);opacity:.6}
+
+.peer-head{display:flex;gap:13px;align-items:center;padding:12px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--line);margin-top:8px}
+.peer-head.pos{background:var(--pos-weak)} .peer-head.neg{background:var(--neg-weak)}
+.peer-head.warn{background:var(--warn-weak)} .peer-head.neu{background:var(--panel-2)}
+.ph-score{font-size:1.625rem;font-weight:800;line-height:1}
+.ph-label{font-size:0.8125rem;font-weight:800}
+.ph-sub{font-size:0.6875rem;color:var(--ink-2);font-weight:600;margin-top:2px}
+.peer-metrics{margin-top:13px;display:flex;flex-direction:column;gap:11px}
+.pm-top{display:flex;justify-content:space-between;font-size:0.75rem;font-weight:700}
+.pm-med{font-size:0.6562rem;color:var(--ink-3);font-weight:600;margin-left:7px}
+.pm-bar{height:6px;background:var(--panel-2);border-radius:4px;margin:5px 0 3px;overflow:hidden}
+.pm-bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.pm-sub{font-size:0.6562rem;color:var(--ink-3);font-weight:600}
+.peer-tbl{width:100%;border-collapse:collapse;font-size:0.75rem}
+.peer-tbl th{text-align:right;font-size:0.625rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-2);padding:5px 7px;border-bottom:1px solid var(--line)}
+.peer-tbl th:first-child{text-align:left}
+.peer-tbl td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:right}
+.peer-tbl td:first-child{text-align:left}
+.peer-tbl tr.me{background:var(--panel-2)}
+.peer-tbl tr.me td{font-weight:800}
+.peer-tbl a{color:var(--accent);text-decoration:none}
+.peer-tbl a:hover{text-decoration:underline}
+
+/* ===== Dividend card ===== */
+.oc-note{font-size:0.625rem;color:var(--ink-3);font-weight:700}
+.dv-k{font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.dv-v{font-size:1.0625rem;font-weight:800;margin-top:2px}
+.dv-v-lg{font-size:1.5rem;line-height:1.1}
+.dv-note{font-size:0.5938rem;color:var(--ink-3);font-weight:600;margin-top:8px;line-height:1.5}
+
+/* The one highlighted dividend: declared figure + proposal split + dates. */
+.dv-current{border:1px solid var(--accent);border-radius:8px;padding:10px 12px;margin-top:8px;
+  background:var(--surface-2)}
+.dv-current.is-proposed{border-style:dashed}
+.dv-cur-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:0.5938rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+.dv-cur-fy{color:var(--ink-2)}
+.dv-cur-chip{margin-left:auto;padding:1px 7px;border-radius:999px;border:1px solid var(--line);
+  color:var(--ink-3);text-transform:none;letter-spacing:0}
+.dv-current.is-proposed .dv-cur-chip{color:var(--accent);border-color:var(--accent)}
+.dv-cur-grid{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
+.dv-cur-main{margin-right:6px}
+.dv-prop-dates{display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:8px;
+  font-size:0.5938rem;font-weight:600;color:var(--ink-3)}
+.dv-prop-dates b{color:var(--ink-1);font-weight:800}
+
+/* History: one column per fiscal year, scrolls sideways inside the card. */
+.dv-hist-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--line);border-radius:8px}
+.dv-hist{border-collapse:collapse;min-width:100%;font-size:0.625rem;font-weight:700}
+.dv-hist th,.dv-hist td{padding:5px 9px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right}
+.dv-hist tr:last-child td{border-bottom:none}
+.dv-hist thead th{font-size:0.5625rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);
+  background:var(--surface-2)}
+.dv-hist th:first-child,.dv-hist td:first-child{text-align:left;color:var(--ink-2);position:sticky;left:0;
+  background:var(--surface)}
+.dv-hist thead th:first-child{background:var(--surface-2)}
+.dv-hist td.paid{color:var(--accent);font-weight:800}
+.dv-hist .pend{color:var(--ink-3);font-style:italic}
+.dv-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:0.5938rem;font-weight:600;color:var(--ink-3)}
+.dv-stats b{color:var(--ink-1);font-weight:800}
+
+/* ===== Floorsheet extras: window row, net-buy chart, flow map ===== */
+.win-row{display:flex;gap:5px;margin-left:auto;margin-right:10px}
+.win-row .tf{padding:3px 9px;font-size:0.6562rem}
+.flow-extra{border-top:1px solid var(--line);padding-top:14px}
+
+/* Hand-off to the broker desk's flow map (drawn there, not here) */
+.flow-link{display:flex;align-items:center;gap:13px;padding:14px 16px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--panel-2);text-decoration:none;transition:border-color .15s}
+.flow-link:hover{border-color:var(--accent);background:var(--accent-weak)}
+.flow-link .fl-ic{font-size:1.125rem;color:var(--accent);font-weight:800}
+.flow-link b{display:block;font-size:0.8125rem;font-weight:800;color:var(--ink)}
+.flow-link em{display:block;font-style:normal;font-size:0.6875rem;color:var(--ink-2);
+  font-weight:600;margin-top:3px;line-height:1.5}
+.flow-link .fl-go{margin-left:auto;color:var(--ink-3);font-weight:800}
+
+/* Two valuation reads, side by side, with the disagreement named */
+.val-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+@media (max-width:640px){.val-pair{grid-template-columns:1fr}}
+.val-pair .val-verdict{margin-top:0}
+.vv-tag{font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-2);margin-bottom:4px}
+.val-pair .vv-label{font-size:0.9375rem}
+.val-recon{margin-top:9px;padding:9px 12px;border-radius:var(--r-sm);background:var(--panel-2);
+  border:1px dashed var(--line-2);font-size:0.7188rem;color:var(--ink-2);line-height:1.55}
+
+/* Statements: sector digest vs full matrix */
+
+/* ===== Three-column desk =====================================================
+   Rails carry the at-a-glance reads (ratios, dividend, peer rank on the left;
+   technical and order flow on the right); the middle column carries the
+   reasoning. Wide tables — statements, the sector model — stay full width below,
+   because a 24-quarter matrix squeezed into a third of the viewport is unusable.
+   Rails are fixed-width and the middle is the only flexible track, so the page
+   keeps the same shape from 1280px up instead of the rails growing with it. */
+.s360-grid{
+  display:grid;
+  grid-template-columns:300px minmax(0,1fr) 340px;
+  /* No margin-bottom: the parent .col is a flex column with gap:22px, so a
+     margin here ADDED to that gap — 44px before Financial Statements where
+     every other block break is 22px. The gap alone spaces this. */
+  gap:18px;align-items:start;
+}
+.s360-grid .rail,.s360-grid .mid{display:flex;flex-direction:column;gap:18px;min-width:0}
+/* In a 300px rail the overview cards stack rather than sitting side by side. */
+.rail .s360-cards{display:flex;flex-direction:column;gap:14px}
+.rail .mgrid{grid-template-columns:1fr 1fr}
+.rail .mcard .v{font-size:1.0625rem}
+.rail .btwrap{grid-template-columns:1fr}
+.rail .peer-tbl{font-size:0.6875rem}
+.rail .peer-tbl th,.rail .peer-tbl td{padding:4px 5px}
+
+/* Peers left the valuation panel for the left rail, so the intrinsic model now
+   has the whole width of the middle column. */
+.val-grid{grid-template-columns:1fr}
+
+@media (max-width:1300px){
+  /* Right rail drops under the middle column first — order flow reads fine at
+     full width, whereas the middle column's tables do not want to be narrower. */
+  .s360-grid{grid-template-columns:300px minmax(0,1fr)}
+  .s360-grid .rail-r{grid-column:1 / -1}
+  .rail-r .mgrid{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+  .rail-r .btwrap{grid-template-columns:1fr 1fr}
+}
+@media (max-width:900px){
+  .s360-grid{grid-template-columns:1fr}
+  .s360-grid .rail-l,.s360-grid .rail-r{grid-column:auto}
+  .rail .s360-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}
+/* Panel headers must wrap inside a 340px rail — the window selector and the
+   "open desk" link would otherwise push past the panel edge and clip. */
+.rail .phead{flex-wrap:wrap;row-gap:6px}
+.rail .win-row{margin-left:auto;margin-right:0}
+.rail .phead .link{margin-left:auto}
+.rail .phead h2{flex:1 1 100%}
+.rail .phead .desk-score{margin-left:0}
+
+/* ===== Morningstar panel: tighter =====
+   The model markup was authored for a standalone page with generous margins.
+   Hosted here it sits inside a panel that already supplies padding, so the
+   stacked 18-26px margins read as dead space. The scatter is a 720x380 viewBox
+   with width:100% — stretched across the full page it grows to ~700px tall and
+   most of that is empty plot area, so it gets a max-width and is centred. */
+#model .gv-head{margin:0 0 10px}
+#model .gv-cards{gap:8px;margin-bottom:12px}
+#model .gv-card{padding:9px 11px;border-radius:9px}
+#model .gv-card b{font-size:1.125rem}
+/* Box hugs the chart rather than stretching the border across the panel with
+   the plot floating in the middle of it. */
+/* In the middle column the panel is already narrow, so the chart takes the
+   full width it is given rather than being capped and centred. */
+#model .gv-scatter-wrap{padding:10px;margin:0 auto 12px;max-width:100%}
+#model .gv-scatter{display:block}
+#model .gv-cap-row{margin-bottom:6px}
+#model .gv-filters{margin-bottom:8px}
+#model .gv-pager{margin-top:8px}
+#model .fa-section-title{margin:0}
+
+/* ===== Page width =====
+   stock360.css is loaded by this page only, so overriding the shared token here
+   widens Stock 360 without moving any other desk. Three columns plus the model
+   panel need more room than the platform default (1720px) comfortably gives. */
+:root{--shell-max: min(max(1280px, 96vw), 1860px, 96vw);}
+
+/* Morningstar, compact: the summary cards and the results table were sized for
+   a full-width standalone page and are oversized inside a column. */
+#model .gv-cards{grid-template-columns:repeat(4,1fr);gap:7px}
+#model .gv-card{padding:7px 10px}
+#model .gv-card b{font-size:1rem}
+#model .gv-card span{font-size:0.5938rem}
+#model .gv-scatter{max-height:330px}
+#model .gv-table th,#model .gv-table td{padding:5px 8px;font-size:0.7188rem}
+#model .gv-filters,#model .gv-pager{font-size:0.7188rem}
+
+/* The peer list under the scatter (filters, table, pager) starts collapsed on
+   Stock 360: this page is about ONE company, and the scatter already places it
+   against its sector. The header button adds .list-open to reveal it — the rows
+   are always built, so opening costs nothing but layout. */
+#model .gv-filters,
+#model .gv-table-wrap,
+#model .gv-pager{display:none}
+#model.list-open .gv-filters{display:flex}
+#model.list-open .gv-table-wrap{display:block}
+#model.list-open .gv-pager{display:flex}
+#model .phead .s360-btn{margin-left:auto}
+#model .phead .link{margin-left:12px}
+
+/* ===== Financial statements: readable at full width =====
+   The matrix was sized for a cramped standalone page (12.5px body, 10px period
+   sublabels). This section spans the full 1860px shell, so the constraint is
+   legibility, not fit — the numbers are the point of the block. */
+   The `:not([data-den])` guard hands sizing back to the density tiers in
+   fundamentals-desk.css once a period count is active — an id selector would
+   otherwise out-specify them and every tier would render identically. */
+#statements table.fm-table:not([data-den]){font-size:0.875rem}
+#statements .fm-table:not([data-den]) th,#statements .fm-table:not([data-den]) td{padding:7px 12px}
+#statements .fm-table .fm-q{font-size:0.6875rem}
+#statements .fm-table:not([data-den]) tr.fm-growth td{font-size:0.75rem}
+/* Full-width shell: one step roomier than the standalone page at every tier. */
+#statements .fm-table[data-den="roomy"] th,#statements .fm-table[data-den="roomy"] td{padding:9px 20px;font-size:0.9375rem}
+#statements .fm-table[data-den="normal"] th,#statements .fm-table[data-den="normal"] td{padding:8px 15px;font-size:0.875rem}
+#statements .fm-table[data-den="tight"] th,#statements .fm-table[data-den="tight"] td{padding:7px 11px;font-size:0.8125rem}
+#statements .fm-table[data-den="micro"] th,#statements .fm-table[data-den="micro"] td{padding:6px 8px;font-size:0.75rem}
+#statements .fm-tab,#statements .fm-pill{font-size:0.8125rem}
+
+/* ===== SOP Confluence signal ===== */
+.sop-calls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sop-call{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--line)}
+.sop-call.pos{background:var(--pos-weak)} .sop-call.neg{background:var(--neg-weak)}
+.sop-call.warn{background:var(--warn-weak)}
+.sop-call .k{font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.sop-call .v{font-size:1.125rem;font-weight:800;margin-top:2px}
+.sop-call.pos .v{color:var(--pos)} .sop-call.neg .v{color:var(--neg)} .sop-call.warn .v{color:var(--warn)}
+.sop-call .sub{font-size:0.625rem;color:var(--ink-2);font-weight:600;margin-top:3px;line-height:1.45}
+/* The disagreement between the two calls is the finding, so it gets its own line. */
+.sop-conflict{margin-top:9px;padding:8px 11px;border-radius:var(--r-sm);background:var(--warn-weak);
+  border:1px dashed var(--warn);font-size:0.6875rem;color:var(--ink-2);line-height:1.5}
+.sop-why{margin-top:9px;font-size:0.6875rem;color:var(--ink-2);line-height:1.5}
+.sop-inds{display:flex;flex-wrap:wrap;gap:5px}
+.sop-ind{font-size:0.625rem;font-weight:700;padding:3px 8px;border-radius:20px;border:1px solid var(--line)}
+.sop-ind.on{background:var(--pos-weak);color:var(--pos);border-color:var(--pos-weak)}
+.sop-ind.off{background:var(--panel-2);color:var(--ink-3)}
+.sop-bt{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.sop-row{display:flex;justify-content:space-between;font-size:0.7188rem;padding:3px 0;
+  border-bottom:1px solid var(--line)}
+.sop-row span:first-child{color:var(--ink-2)}
+
+/* Search now lives in the title row beside the company it changes. It keeps the
+   .search base styling; this only sizes and places it between the name block
+   and the 52-week gauge. */
+.s360-search{flex:0 1 320px;min-width:220px;margin-left:auto}
+.s360-search input{padding:9px 12px 9px 34px}
+@media (max-width:760px){.s360-search{flex:1 1 100%;margin-left:0;max-width:none}}
+
+/* Floorsheet moved out of the right rail to full width: at 340px the broker
+   tables wrapped every line, and the rail ran a screen longer than the other
+   two columns. Side by side is what it was always shaped for. */
+#flow .btwrap{grid-template-columns:1fr 1fr}
+
+/* Home link. The brand is also clickable (the usual affordance), but a labelled
+   button is what people actually look for — this page has no primary nav. */
+a.brand{text-decoration:none;color:inherit}
+a.brand:hover{opacity:.85}
+.home-btn{display:inline-flex;align-items:center;text-decoration:none;line-height:1}
+.home-btn:hover{color:var(--ink);border-color:var(--accent)}
+
+/* ===== Valuation & Model page =====
+   Shares this stylesheet with Stock 360, so it needs to undo two decisions made
+   for that page: the peer list is collapsed there (no room) and shown here, and
+   valuation/peers sit side by side rather than stacked. */
+body.val-page #model .gv-filters{display:flex}
+body.val-page #model .gv-table-wrap{display:block}
+body.val-page #model .gv-pager{display:flex}
+body.val-page #model .gv-scatter-wrap{max-width:900px}
+.val-grid-2{grid-template-columns:1.05fr .95fr}
+@media (max-width:900px){.val-grid-2{grid-template-columns:1fr}}
+
+/* ===== Two-column desk (after Valuation + Morningstar moved to their own page)
+   The summary cards now run full width under the title, so the grid carries the
+   reasoning column and a single rail. With only one panel left in the middle,
+   a three-track layout left a column-height hole. */
+.s360-grid-2{grid-template-columns:minmax(0,1fr) 360px}
+.s360-grid-2 .s360-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+/* Below the 3-column breakpoint the cards stack, so they size to their own
+   content — nothing to be level with. */
+#overview .s360-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:16px;align-items:start}
+
+/* ── Three overview cards, one bottom edge ───────────────────────────────────
+   Dividend is the tall one (proposed block + declared row + payout bars +
+   note). Giving it 1.3fr against the other two lets its content reflow and
+   drops it 370 -> 350px; past 1.3fr it floors at 350 and extra width buys
+   nothing, so there is no point starving Market / Key Ratios further.
+
+   Market and Key Ratios are fixed-height lists (6 label/value rows), so width
+   does not change their 296px — the last 54px has to come from stretch. Net
+   effect vs. simply stretching equal columns: every card is level at 350
+   instead of 370, and the dead space inside Market / Key Ratios is 72px rather
+   than 92px. */
+@media (min-width:1081px){
+  #overview .s360-cards{grid-template-columns:1fr 1fr 1.3fr;align-items:stretch}
+}
+@media (max-width:1100px){
+  .s360-grid-2{grid-template-columns:1fr}
+  .s360-grid-2 .rail-r{grid-column:auto}
+  .rail-r .mgrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+}
+
+/* ── Financial Statements ends level with the rail ───────────────────────────
+   Guarded at 1301px, NOT the 1100px stack point: `@media (max-width:1300px)`
+   above already drops .rail-r onto its own full-width row, so between 1101 and
+   1300 the two are stacked, not side by side. Applying the chain there gave the
+   flex items a row height set by their own (now shrinkable) content and
+   collapsed the table to 2px. Only run this where the rail is genuinely
+   alongside the column.
+
+   The grid row is sized by the RAIL: with the table allowed to shrink
+   (min-height:0 all the way down the chain) the left column's min-content is
+   far shorter than the rail, so the rail sets the row height and the table
+   flexes into whatever is left. It scrolls inside .fm-wrap, so nothing is lost
+   — the same rows are there, just reached by scrolling instead of by making
+   the page taller than the rail.
+
+   Every ancestor between #statements and .fm-wrap needs flex + min-height:0;
+   miss one and the default min-height:auto refuses to shrink and the whole
+   thing silently falls back to its natural height. */
+@media (min-width:1301px){
+  .s360-grid-2{align-items:stretch}
+  .s360-grid-2 .mid{min-height:0}
+  .s360-grid-2 #statements{flex:1 1 0;min-height:0;display:flex;flex-direction:column}
+  .s360-grid-2 #statements .pbody{flex:1;min-height:0;display:flex;flex-direction:column}
+  .s360-grid-2 #statements #stmt-full{flex:1;min-height:0;display:flex;flex-direction:column}
+  .s360-grid-2 #statements .fm-wrap{flex:1;min-height:0;max-height:none}
+}
+
+
+/* ===================================================================== */
+/* Bento grid (GridStack) — tiles, drag handle, resize grips, fallback   */
+/* ===================================================================== */
+/* Pull the grid up to the title: .col's 22px gap + the title's own margin was a 56px hole. */
+.grid-stack{margin-top:-14px}
+#overview .s360-title{margin-bottom:0}
+/* Grid margin is 0; the gutter is the tile-content's own padding so the
+   saved x/y/w/h stay in whole cells. */
+.grid-stack-item-content{padding:6px;overflow:visible!important;inset:0}
+.grid-stack-item-content>.card{height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-sizing:border-box}
+/* Header is the ONLY drag handle. */
+.grid-stack-item .card-header{cursor:grab;user-select:none;flex:0 0 auto}
+.grid-stack-item.ui-draggable-dragging .card-header,.grid-stack-item .card-header:active{cursor:grabbing}
+.grid-stack-item.ui-draggable-dragging>.grid-stack-item-content>.card{box-shadow:0 18px 40px rgba(0,0,0,.35);border-color:var(--accent)}
+/* Everything under the header scrolls INSIDE the tile so a wide table never
+   breaks the grid. */
+.grid-stack-item-content>.card>:not(.card-header){flex:1 1 auto;min-height:0;overflow:auto}
+/* Auto-fit measurement: the card at its natural height for one layout read. */
+.grid-stack-item-content>.card.is-measuring{height:auto;position:absolute;left:6px;right:6px;visibility:hidden}
+.grid-stack-item-content>.card.is-measuring>:not(.card-header){flex:0 0 auto;overflow:visible}
+.grid-stack-item-content>.card.ocard{padding:0}
+.grid-stack-item-content>.card.ocard>.card-header{padding:12px 18px 8px;margin:0}
+.grid-stack-item-content>.card.ocard>:not(.card-header){padding:0 18px 14px}
+.grid-stack-item-content>.card.ocard>.card-header h3{margin:0}
+/* Statement table: the grid tile is the height limit now, not a fixed cap. */
+.grid-stack-item-content>.card#statements .fm-wrap{max-height:none}
+
+/* Resize grips: hidden until the tile is hovered; corner grip is an L-shaped
+   accent bracket, edge grips a thin accent bar. Theme colours via tokens. */
+.grid-stack-item>.ui-resizable-handle{background:none!important;opacity:0;transition:opacity .15s ease}
+.grid-stack-item:hover>.ui-resizable-handle,.grid-stack-item.ui-resizable-resizing>.ui-resizable-handle{opacity:1}
+.grid-stack-item>.ui-resizable-se,.grid-stack-item>.ui-resizable-sw{width:14px;height:14px;bottom:9px;transform:none!important;border-radius:0}
+.grid-stack-item>.ui-resizable-se{right:9px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);border-bottom-right-radius:5px}
+.grid-stack-item>.ui-resizable-sw{left:9px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);border-bottom-left-radius:5px}
+.grid-stack-item>.ui-resizable-e,.grid-stack-item>.ui-resizable-w{width:6px;top:22px;bottom:22px;right:6px;border-radius:3px;background:var(--line)!important}
+.grid-stack-item>.ui-resizable-w{left:6px;right:auto}
+.grid-stack-item>.ui-resizable-s{height:6px;left:22px;right:22px;bottom:6px;border-radius:3px;background:var(--line)!important}
+.grid-stack-item:hover>.ui-resizable-e:hover,.grid-stack-item:hover>.ui-resizable-w:hover,.grid-stack-item:hover>.ui-resizable-s:hover{background:var(--accent)!important}
+.grid-stack-placeholder>.placeholder-content{border:2px dashed var(--accent);border-radius:var(--r);background:rgba(18,211,154,.06);inset:6px}
+
+.s360-reset{margin-left:auto;font-size:0.6875rem}
+@media (max-width:760px){.s360-reset{display:none}}
+
+/* Fallback — GridStack missing or its CSS never applied: a plain responsive
+   grid, cards at natural height, nothing absolutely positioned. */
+.grid-stack.s360-fallback{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;height:auto!important}
+.grid-stack.s360-fallback .grid-stack-item{position:static!important;width:auto!important;height:auto!important;transform:none!important;min-height:0}
+.grid-stack.s360-fallback .grid-stack-item-content{position:static;padding:0}
+.grid-stack.s360-fallback .grid-stack-item-content>.card{height:auto}
+.grid-stack.s360-fallback .grid-stack-item-content>.card>:not(.card-header){overflow:visible}
+.grid-stack.s360-fallback .card-header{cursor:default}
+.grid-stack.s360-fallback .ui-resizable-handle{display:none}
+
+/* ---- Debentures & Bonds panel (Stock 360) and the bond desk ---- */
+.bond-wrap{margin-top:14px;overflow-x:auto}
+.bond-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
+.bond-table th,.bond-table td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+.bond-table th{font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);background:var(--panel-2)}
+.bond-table th.num,.bond-table td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bond-table tr:hover td{background:var(--panel-2)}
+.bond-table .bond-name{font-size:0.6875rem;color:var(--ink-3);font-weight:600;white-space:normal;max-width:260px}
+.bond-table .desk-score{font-size:0.625rem;font-weight:800;padding:2px 8px;border-radius:20px}
+.bond-table a{color:var(--accent);text-decoration:none}
+.bond-group{margin-top:22px}
+.bond-group h3{font-size:0.8125rem;font-weight:800;margin:0 0 6px}
+.bond-group h3 a{color:var(--accent);text-decoration:none}
+.bond-group .sub{font-size:0.6875rem;color:var(--ink-3);font-weight:600;margin-bottom:6px}
+.bond-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.bond-filters select,.bond-filters input{background:var(--panel-2);color:var(--ink-1);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:0.8125rem}
+.bond-acc{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin-top:10px;background:var(--panel-2)}
+.bond-acc summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:2px}
+.bond-acc summary::-webkit-details-marker{display:none}
+.bond-acc summary h3{display:flex;align-items:center;gap:8px;margin:0}
+.bond-acc summary h3::before{content:"▸";color:var(--ink-3);font-size:0.75rem}
+.bond-acc[open] summary h3::before{content:"▾"}
+.bond-acc summary .desk-score{font-size:0.625rem;padding:2px 8px;border-radius:20px}
+.bond-mine{border-color:var(--accent)}

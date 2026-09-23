@@ -1,0 +1,247 @@
+/* Workbench-only layout components.
+   Loaded after dashboard.css so these scoped grids remain stable. */
+
+/* Floor Sheet-style workbench sub-tabs. */
+.workspace-wrap > .mi-primary-nav {
+  margin-bottom: 0;
+}
+
+#workspaceTabs:not(.nav-section-inventory) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 6px;
+  margin: 0 0 14px !important;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+#workspaceTabs .workspace-subtab-item {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+#workspaceTabs .workspace-subtab {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0 0 -1px;
+  padding: 12px 16px;
+  appearance: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-2);
+  font: 600 0.875rem/1 'Manrope', sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  transform: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+#workspaceTabs .workspace-subtab:hover,
+#workspaceTabs .workspace-subtab:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-1);
+  transform: none;
+}
+
+#workspaceTabs .workspace-subtab.active {
+  border-color: transparent;
+  border-bottom-color: var(--amber);
+  background: transparent;
+  box-shadow: none;
+  color: var(--amber);
+  font-weight: 600;
+  transform: none;
+}
+
+#workspaceTabs .workspace-subtab.active::before {
+  content: none;
+}
+
+/* Stage Analysis: primary controls, eight model parameters, and filter footer. */
+#stageForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#stageForm .stage-primary-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.2fr)
+    minmax(150px, 1fr)
+    minmax(150px, 1fr)
+    minmax(230px, 1fr)
+    minmax(210px, 1fr);
+  align-items: end;
+  gap: 12px;
+}
+
+#stageForm .stage-field,
+#stageForm .stage-param-field {
+  min-width: 0;
+}
+
+#stageForm .stage-field .form-label,
+#stageForm .stage-param-field .form-label {
+  display: block;
+  min-height: 17px;
+}
+
+#stageForm .stage-quick-range-row {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#stageForm .stage-quick-range-row .btn {
+  min-width: 36px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: 6px;
+}
+
+#stageForm .stage-submit-field .btn {
+  min-height: 38px;
+}
+
+#stageForm .stage-parameter-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(100px, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+
+#stageForm .stage-footer-row {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+#stageForm .stage-range-note {
+  color: var(--ink-2);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+#stageForm .stage-filter-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#stageForm .stage-filter-option {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#stageForm .stage-filter-option:hover {
+  border-color: var(--line-bright);
+  color: var(--ink-1);
+}
+
+#stageForm .stage-filter-option .form-check-input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* IMM scoring: keep all eight indicator parameters on one aligned desktop row. */
+#immForm .imm-parameter-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(90px, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+
+#immForm .imm-parameter-grid > * {
+  min-width: 0 !important;
+}
+
+@media (max-width: 1199.98px) {
+  #stageForm .stage-primary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #stageForm .stage-symbol-field {
+    grid-column: 1 / -1;
+  }
+
+  #stageForm .stage-parameter-grid,
+  #immForm .imm-parameter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  #workspaceTabs:not(.nav-section-inventory) {
+    gap: 0 4px;
+  }
+
+  #workspaceTabs .workspace-subtab {
+    padding: 11px 12px;
+    font-size: 0.8125rem;
+  }
+
+  #stageForm .stage-primary-grid,
+  #stageForm .stage-parameter-grid,
+  #immForm .imm-parameter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #stageForm .stage-symbol-field,
+  #stageForm .stage-quickrange-field,
+  #stageForm .stage-submit-field {
+    grid-column: 1 / -1;
+  }
+
+  #stageForm .stage-footer-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  #stageForm .stage-filter-group {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 479.98px) {
+  #stageForm .stage-primary-grid,
+  #stageForm .stage-parameter-grid,
+  #immForm .imm-parameter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #stageForm .stage-symbol-field,
+  #stageForm .stage-quickrange-field,
+  #stageForm .stage-submit-field {
+    grid-column: auto;
+  }
+}
+
