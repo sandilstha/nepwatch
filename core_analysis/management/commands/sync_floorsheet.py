@@ -33,7 +33,7 @@ from core_analysis.models import NepseFloorsheet
 
 # Default upstream NEPSE API host. Overridable per-run with --api-base-url, or
 # globally via the NEPSE_API_BASE_URL environment variable.
-DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.100:8000")
+DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.32:8000")
 FLOORSHEET_PATH = "/api/nepse-data/api/floorsheet/"
 MAX_PAGE_SIZE = 10_000
 MAX_BATCH_SIZE = 10_000

@@ -16,7 +16,7 @@ from core_analysis.management.commands.backfill_companies import (
 
 # Default upstream NEPSE API host. Overridable per-run with --api-base-url, or
 # globally via the NEPSE_API_BASE_URL environment variable.
-DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.100:8000")
+DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.32:8000")
 
 
 # Everything except the pk and the (business_date, symbol) unique key. api_id is

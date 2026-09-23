@@ -12,7 +12,7 @@ from core_analysis.models import CompanyProfile, StockPriceAdjustment
 
 # Default upstream NEPSE API host. Overridable per-run with --api-base-url, or
 # globally via the NEPSE_API_BASE_URL environment variable.
-DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.100:8000")
+DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.32:8000")
 
 
 class Command(BaseCommand):
