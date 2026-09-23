@@ -1,66 +1,32 @@
-# Run the whole stack locally with:  docker compose up --build
+# Run the app locally with:  docker compose up --build
 # App will be at http://localhost:8000
 #
-# This spins up MySQL + the Django app. The app container waits for MySQL,
-# runs migrations and collectstatic, then serves via gunicorn (WhiteNoise
-# serves the static assets).
+# No MySQL container: the app connects to the MySQL already running on this PC.
+# Credentials come from the `.env` file next to this one (copy .env.example).
+#
+# One caveat: inside a container `127.0.0.1` means the container itself, not
+# your PC — so DB_HOST is overridden below to `host.docker.internal`, which
+# Docker maps to the host machine. Everything else in .env is used as-is.
+#
+# Your host MySQL must also accept the connection:
+#   • bind-address = 0.0.0.0  (not 127.0.0.1) in my.ini, then restart MySQL
+#   • the DB user must be allowed from a non-local host, e.g.
+#       CREATE USER 'nepse'@'%' IDENTIFIED BY '...';
+#       GRANT ALL ON nepse_database.* TO 'nepse'@'%'; FLUSH PRIVILEGES;
+#   • Windows Firewall must allow inbound TCP on the MySQL port
 
 services:
-  db:
-    image: mysql:8.4
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    environment:
-      MYSQL_DATABASE: nepse_database
-      MYSQL_ROOT_PASSWORD: nepse_root_pw
-    ports:
-      # Exposed so you can inspect the DB from the host (e.g. MySQL Workbench).
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pnepse_root_pw"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: unless-stopped
-
   web:
     build: .
-    depends_on:
-      db:
-        condition: service_healthy
+    env_file:
+      - .env
     environment:
-      # ── Database (points at the `db` service above) ──────────────────────
-      DB_NAME: nepse_database
-      DB_USER: root
-      DB_PASSWORD: nepse_root_pw
-      DB_HOST: db
-      DB_PORT: "3306"
-
-      # ── Django ───────────────────────────────────────────────────────────
-      # Local dev default: DEBUG on, so no secret key / allowed hosts / TLS
-      # requirements. For a production-style run, comment DJANGO_DEBUG below
-      # back to "0" and set the four DJANGO_* vars that follow it.
-      DJANGO_DEBUG: "1"
-      # DJANGO_DEBUG: "0"
-      # DJANGO_SECRET_KEY: "change-me-to-a-long-random-string"
-      # DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
-      # DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost:8000"
-      # DJANGO_SECURE_SSL_REDIRECT: "0"   # keep 0 when serving plain HTTP locally
-
-      # Gunicorn worker count. Keep at 1 so the in-process LocMemCache (and the
-      # dashboard's cold-build stampede lock) stay shared. To scale beyond 1,
-      # also set REDIS_URL so the cache/lock are shared across workers.
-      WEB_CONCURRENCY: "1"
-      # REDIS_URL: "redis://redis:6379/0"
-
-      # ── Optional integrations (leave blank to disable) ───────────────────
-      # GEMINI_API_KEY: ""
-      # OPENROUTER_API_KEY: ""
-      # GOOGLE_ANALYTICS_ID: ""
+      # Reach the host's MySQL from inside the container. Set DB_HOST_DOCKER in
+      # .env to override (e.g. a LAN IP, or another machine's address).
+      DB_HOST: ${DB_HOST_DOCKER:-host.docker.internal}
+    extra_hosts:
+      # Needed on Linux; harmless on Docker Desktop for Windows/macOS.
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     restart: unless-stopped
-
-volumes:
-  mysql_data:
