@@ -18,7 +18,7 @@ from django.db import connection
 
 from core_analysis.models import NepseMarketCapDaily
 
-DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.100:8000")
+DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.32:8000")
 _PATH = "/api/nepse-data/api/market-cap/"
 _TIMEOUT = 30
 
